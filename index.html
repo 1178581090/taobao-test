@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>淘宝标题优化工具</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+.header { background: linear-gradient(135deg, #ff5000, #ff6a28); color: #fff; padding: 24px 0; text-align: center; }
+.header h1 { font-size: 22px; margin-bottom: 4px; }
+.header p { font-size: 13px; opacity: .85; }
+
+.container { max-width: 720px; margin: 20px auto; padding: 0 16px; }
+
+.card { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+textarea { width: 100%; height: 80px; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 12px; font-size: 14px; resize: vertical; font-family: inherit; transition: border .2s; }
+textarea:focus { outline: none; border-color: #ff5000; }
+
+.btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .2s; }
+.btn-primary { background: #ff5000; color: #fff; }
+.btn-primary:hover { background: #e64800; }
+.btn-secondary { background: #f0f0f0; color: #666; }
+.btn-secondary:hover { background: #e4e4e4; }
+
+.score-ring { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin: 0 auto 12px; }
+.score-ring.good { background: #e8f5e9; color: #2e7d32; }
+.score-ring.medium { background: #fff3e0; color: #e65100; }
+.score-ring.bad { background: #ffebee; color: #c62828; }
+
+.score-label { text-align: center; font-size: 13px; color: #999; margin-bottom: 16px; }
+
+.check-list { list-style: none; }
+.check-list li { padding: 8px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f5f5f5; }
+.check-list li:last-child { border-bottom: none; }
+.check-list .icon { font-size: 16px; flex-shrink: 0; }
+.check-list .pass { color: #4caf50; }
+.check-list .fail { color: #f44336; }
+.check-list .tip { color: #ff9800; }
+.check-list .detail { color: #999; font-size: 12px; margin-left: auto; }
+
+.tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid #f0f0f0; }
+.tab { padding: 8px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: #999; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
+.tab.active { color: #ff5000; border-bottom-color: #ff5000; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #ff5000; }
+
+.generated-title { background: #fff8f5; border: 1px dashed #ff5000; border-radius: 8px; padding: 16px; font-size: 14px; color: #333; margin-top: 12px; min-height: 44px; word-break: break-all; }
+
+.tip-box { background: #fffbf0; border: 1px solid #ffe58f; border-radius: 8px; padding: 14px 16px; margin-top: 12px; font-size: 13px; color: #8c6d00; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>淘宝标题优化工具</h1>
+  <p>专为演出服定制类目设计</p>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('analyze')">标题诊断</button>
+    <button class="tab" onclick="switchTab('generate')">标题生成</button>
+    <button class="tab" onclick="switchTab('tips')">优化技巧</button>
+  </div>
+
+  <!-- 标题诊断 -->
+  <div id="panel-analyze" class="panel active">
+    <div class="card">
+      <h2>输入你的商品标题</h2>
+      <textarea id="titleInput" placeholder="例如：红楼梦贾宝玉古装演出服 舞台剧戏曲服装定制 成人儿童影楼摄影"></textarea>
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="analyze()">开始诊断</button>
+        <button class="btn btn-secondary" onclick="clearInput()">清空</button>
+      </div>
+    </div>
+
+    <div id="result" style="display:none;">
+      <div class="card" style="text-align:center;">
+        <div id="scoreRing" class="score-ring good">--</div>
+        <div class="score-label">综合得分（满分100）</div>
+      </div>
+      <div class="card">
+        <h2>诊断明细</h2>
+        <ul id="checkList" class="check-list"></ul>
+      </div>
+      <div id="suggestBox"></div>
+    </div>
+  </div>
+
+  <!-- 标题生成 -->
+  <div id="panel-generate" class="panel">
+    <div class="card">
+      <h2>填写商品属性</h2>
+      <div class="form-group">
+        <label>核心产品词（这是什么？）</label>
+        <input id="gen-core" placeholder="如：古装演出服、舞蹈服、盔甲">
+      </div>
+      <div class="form-group">
+        <label>角色/款式</label>
+        <input id="gen-style" placeholder="如：贾宝玉、花木兰、古典舞">
+      </div>
+      <div class="form-group">
+        <label>材质/工艺</label>
+        <input id="gen-material" placeholder="如：缎面刺绣、铠甲片、雪纺">
+      </div>
+      <div class="form-group">
+        <label>适用场景</label>
+        <input id="gen-scene" placeholder="如：舞台演出、舞蹈比赛、影楼摄影">
+      </div>
+      <div class="form-group">
+        <label>目标人群</label>
+        <select id="gen-audience">
+          <option value="">不限</option>
+          <option value="成人">成人</option>
+          <option value="儿童">儿童</option>
+          <option value="成人儿童">成人+儿童</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="generate()">生成标题</button>
+      <div id="genResult" class="generated-title" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- 优化技巧 -->
+  <div id="panel-tips" class="panel">
+    <div class="card">
+      <h2>演出服类目标题公式</h2>
+      <div class="tip-box">
+        <strong>黄金公式：</strong><br>
+        核心产品词 + 角色/款式 + 材质属性 + 适用场景 + 人群词<br><br>
+        <strong>示例：</strong><br>
+        古装演出服 红楼梦贾宝玉 刺绣缎面 舞台剧戏曲服装 成人儿童定制
+      </div>
+    </div>
+    <div class="card">
+      <h2>关键规则</h2>
+      <div class="tip-box">
+        1. 手机端只显示前 <strong>30个字符</strong>，核心词往前放<br>
+        2. 不要堆砌重复关键词，会被搜索降权<br>
+        3. 避免特殊符号 ★▼▲之类的，影响可读性<br>
+        4. 演出服建议加上「定制」二字，精准匹配需求<br>
+        5. 热搜属性词：古典舞、民族舞、六一、年会、影楼、舞台剧
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.tab[onclick*="'+tab+'"]').classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+function clearInput() {
+  document.getElementById('titleInput').value = '';
+  document.getElementById('result').style.display = 'none';
+}
+
+// ===== 标题诊断 =====
+const GOOD_KEYWORDS = [
+  '演出服', '舞蹈服', '古装', '盔甲', '定制', '舞台',
+  '成人', '儿童', '影楼', '摄影', '表演', '比赛', '戏曲'
+];
+
+const BAD_PATTERNS = [/[★▼▲◆■●✦✿✤]/g, /\.{2,}/g, /！！/g];
+
+function analyze() {
+  const title = document.getElementById('titleInput').value.trim();
+  if (!title) return alert('请输入标题');
+
+  let checks = [];
+  let score = 0;
+
+  // 1. 长度
+  const len = title.length;
+  if (len >= 20 && len <= 40) { checks.push({ icon: 'pass', text: '标题长度', detail: len+'字 — 刚好', cls: 'pass' }); score += 20; }
+  else if (len >= 15 && len < 20) { checks.push({ icon: 'tip', text: '标题长度', detail: len+'字 — 偏短，建议补到20字以上', cls: 'tip' }); score += 12; }
+  else if (len > 40 && len <= 50) { checks.push({ icon: 'tip', text: '标题长度', detail: len+'字 — 偏长，手机端可能截断', cls: 'tip' }); score += 15; }
+  else if (len > 50) { checks.push({ icon: 'fail', text: '标题长度', detail: len+'字 — 太长，手机端只显30字', cls: 'fail' }); score += 8; }
+  else { checks.push({ icon: 'fail', text: '标题长度', detail: len+'字 — 太短，信息量不足', cls: 'fail' }); score += 5; }
+
+  // 2. 核心产品词
+  const hasCore = /演出服|舞蹈服|古装|盔甲|服装|服饰/.test(title);
+  if (hasCore) { checks.push({ icon: 'pass', text: '核心产品词', detail: '有', cls: 'pass' }); score += 20; }
+  else { checks.push({ icon: 'fail', text: '核心产品词', detail: '缺少，必须包含"演出服/服装"等品类词', cls: 'fail' }); score += 0; }
+
+  // 3. 属性丰富度
+  const attrCount = (title.match(/古装|舞蹈|儿童|成人|男女|刺绣|旗袍|汉服|戏曲|舞台剧|古典|民族|现代|芭蕾|拉丁|爵士|街舞|合唱|礼服|婚纱|Cosplay|铠甲|战袍|戏曲/g) || []).length;
+  if (attrCount >= 2) { checks.push({ icon: 'pass', text: '属性词丰富度', detail: attrCount+'个属性词', cls: 'pass' }); score += 20; }
+  else if (attrCount === 1) { checks.push({ icon: 'tip', text: '属性词丰富度', detail: '仅1个，建议加风格/材质/场景词', cls: 'tip' }); score += 10; }
+  else { checks.push({ icon: 'fail', text: '属性词丰富度', detail: '缺少属性词，买家搜不到你', cls: 'fail' }); score += 0; }
+
+  // 4. 场景词
+  const hasScene = /舞台|表演|比赛|演出|影楼|摄影|年会|六一|艺考|培训|排练|走秀|庆典/.test(title);
+  if (hasScene) { checks.push({ icon: 'pass', text: '场景/用途词', detail: '有', cls: 'pass' }); score += 15; }
+  else { checks.push({ icon: 'tip', text: '场景/用途词', detail: '缺了，加上"舞台/比赛/影楼"等', cls: 'tip' }); score += 5; }
+
+  // 5. 定制词
+  if (/定制|来图|来样|批量/.test(title)) { checks.push({ icon: 'pass', text: '定制标识', detail: '有，精准匹配定制需求', cls: 'pass' }); score += 10; }
+  else { checks.push({ icon: 'tip', text: '定制标识', detail: '建议加"定制"，演出服买家常搜', cls: 'tip' }); score += 3; }
+
+  // 6. 重复词
+  const words = title.split(/[\s,，、]+/).filter(w => w.length >= 2);
+  const dupes = words.filter((w, i) => words.indexOf(w) !== i);
+  if (dupes.length === 0) { checks.push({ icon: 'pass', text: '无重复词', detail: '通过', cls: 'pass' }); score += 10; }
+  else { checks.push({ icon: 'fail', text: '重复词', detail: '"'+dupes.join('","')+'"重复了', cls: 'fail' }); score += 2; }
+
+  // 7. 特殊符号
+  let hasBadSymbol = false;
+  BAD_PATTERNS.forEach(p => { if (p.test(title)) hasBadSymbol = true; });
+  if (!hasBadSymbol) { checks.push({ icon: 'pass', text: '无违规符号', detail: '通过', cls: 'pass' }); score += 5; }
+  else { checks.push({ icon: 'fail', text: '违规符号', detail: '去掉★▼表情等特殊符号', cls: 'fail' }); score += 0; }
+
+  // 8. 人群词
+  if (/成人|儿童|男|女|小孩|幼儿|少儿/.test(title)) { checks.push({ icon: 'pass', text: '人群/性别词', detail: '有，方便买家筛选', cls: 'pass' }); score += 5; }
+  else { checks.push({ icon: 'tip', text: '人群/性别词', detail: '加"成人/儿童/男/女"等', cls: 'tip' }); score += 1; }
+
+  score = Math.min(score, 100);
+  renderResult(score, checks, title);
+}
+
+function renderResult(score, checks, title) {
+  document.getElementById('result').style.display = 'block';
+
+  const ring = document.getElementById('scoreRing');
+  ring.textContent = score;
+  ring.className = 'score-ring ' + (score >= 70 ? 'good' : score >= 50 ? 'medium' : 'bad');
+
+  document.getElementById('checkList').innerHTML = checks.map(c =>
+    '<li>' +
+      '<span class="icon '+c.cls+'">' + (c.cls==='pass'?'✓':c.cls==='fail'?'✗':'△') + '</span>' +
+      '<span>'+c.text+'</span>' +
+      '<span class="detail">'+c.detail+'</span>' +
+    '</li>'
+  ).join('');
+
+  let suggest = '';
+  if (score >= 80) suggest = '标题整体不错，建议定期检查搜索热词变化，持续优化。';
+  else if (score >= 60) suggest = '标题还行，补齐上面标注的缺口就能提升搜索曝光。';
+  else suggest = '标题需要较大改进，参照右侧"优化技巧"重新组织关键词。';
+
+  document.getElementById('suggestBox').innerHTML =
+    '<div class="card"><h2>优化建议</h2><div class="tip-box">'+suggest+'</div></div>';
+}
+
+// ===== 标题生成 =====
+function generate() {
+  const core = document.getElementById('gen-core').value.trim();
+  const style = document.getElementById('gen-style').value.trim();
+  const material = document.getElementById('gen-material').value.trim();
+  const scene = document.getElementById('gen-scene').value.trim();
+  const audience = document.getElementById('gen-audience').value;
+
+  if (!core && !style) return alert('至少填写核心产品词或角色款式');
+
+  const parts = [];
+  if (style) parts.push(style);
+  if (material) parts.push(material);
+  if (core) parts.push(core);
+  else parts.push('演出服');
+  if (scene) parts.push(scene);
+  if (audience) parts.push(audience);
+  if (!/定制/.test(parts.join(' '))) parts.push('定制');
+
+  const title = parts.join(' ');
+  const box = document.getElementById('genResult');
+  box.style.display = 'block';
+  box.innerHTML = '<strong>生成结果：</strong><br>' + title +
+    '<br><span style="color:#999;font-size:12px;">（共'+title.length+'字）</span>';
+
+  document.getElementById('titleInput').value = title;
+}
+</script>
+</body>
+</html>
