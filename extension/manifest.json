@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "淘宝竞品分析助手",
+  "version": "1.0",
+  "description": "提取淘宝搜索结果页商品数据，配合竞品分析工具使用",
+  "permissions": ["clipboardWrite"],
+  "host_permissions": ["https://s.taobao.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://s.taobao.com/search*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
