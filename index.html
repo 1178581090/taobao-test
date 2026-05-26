@@ -12,7 +12,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .header h1 { font-size: 22px; margin-bottom: 4px; }
 .header p { font-size: 13px; opacity: .85; }
 
-.container { max-width: 720px; margin: 20px auto; padding: 0 16px; }
+.container { max-width: 900px; margin: 20px auto; padding: 0 16px; }
 
 .card { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
 .card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -57,6 +57,52 @@ textarea:focus { outline: none; border-color: #ff5000; }
 .generated-title { background: #fff8f5; border: 1px dashed #ff5000; border-radius: 8px; padding: 16px; font-size: 14px; color: #333; margin-top: 12px; min-height: 44px; word-break: break-all; }
 
 .tip-box { background: #fffbf0; border: 1px solid #ffe58f; border-radius: 8px; padding: 14px 16px; margin-top: 12px; font-size: 13px; color: #8c6d00; line-height: 1.8; }
+
+.loading { text-align:center;padding:40px;color:#999; }
+.loading .spinner { width:32px;height:32px;border:3px solid #f0f0f0;border-top-color:#ff5000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.analysis-cards { display:flex;flex-direction:column;gap:12px; }
+.analysis-card { background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #e0e0e0; }
+.analysis-card.priority-high { border-left-color:#f44336; }
+.analysis-card.priority-mid { border-left-color:#ff9800; }
+.analysis-card.priority-ok { border-left-color:#4caf50; }
+.analysis-card .card-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }
+.analysis-card .card-header h3 { font-size:15px;margin:0; }
+.analysis-card .card-body { font-size:13px;color:#555;line-height:1.7; }
+.analysis-card .card-suggestion { margin-top:8px;font-size:13px;font-weight:500; }
+
+.badge { padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500; }
+.badge.warn { background:#fff3e0;color:#e65100; }
+.badge.ok { background:#e8f5e9;color:#2e7d32; }
+.badge.action { background:#ffebee;color:#c62828; }
+
+.keyword-tag { display:inline-block;background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:4px;font-size:12px;margin:2px; }
+.keyword-tag.covered { background:#f5f5f5;color:#999; }
+
+.stat-row { display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px; }
+.stat-item { font-size:13px; }
+.stat-item strong { display:block;font-size:16px; }
+
+.progress-bar { height:6px;background:#f0f0f0;border-radius:3px;margin-top:8px;overflow:hidden; }
+.progress-bar .fill { height:100%;background:#4caf50;border-radius:3px;transition:width .3s; }
+
+.paste-area { width:100%;min-height:80px;border:1.5px dashed #e0e0e0;border-radius:8px;padding:12px;font-size:12px;color:#999;resize:vertical;font-family:monospace; }
+.paste-area:focus { outline:none;border-color:#ff5000; }
+
+.result-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
+.result-header .count { font-size:13px;color:#999; }
+
+.data-table-wrap { margin-top:16px;overflow-x:auto; }
+.data-table { width:100%;border-collapse:collapse;font-size:12px; }
+.data-table th { text-align:left;padding:8px;background:#fafafa;border-bottom:2px solid #f0f0f0;white-space:nowrap; }
+.data-table td { padding:8px;border-bottom:1px solid #f5f5f5; }
+.data-table tr:hover td { background:#fff8f5; }
+
+.checklist-item { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px; }
+.checklist-item input[type="checkbox"] { width:18px;height:18px;cursor:pointer;accent-color:#ff5000; }
+.checklist-item.done span { text-decoration:line-through;color:#bbb; }
+.checklist-item .source { font-size:11px;color:#999;margin-left:auto; }
 </style>
 </head>
 <body>
@@ -71,6 +117,8 @@ textarea:focus { outline: none; border-color: #ff5000; }
     <button class="tab active" onclick="switchTab('analyze')">标题诊断</button>
     <button class="tab" onclick="switchTab('generate')">标题生成</button>
     <button class="tab" onclick="switchTab('tips')">优化技巧</button>
+        <button class="tab" onclick="switchTab('compete')">竞品分析</button>
+        <button class="tab" onclick="switchTab('checklist')">明日清单</button>
   </div>
 
   <!-- 标题诊断 -->
@@ -153,14 +201,128 @@ textarea:focus { outline: none; border-color: #ff5000; }
       </div>
     </div>
   </div>
+
+  <!-- 竞品分析 -->
+  <div id="panel-compete" class="panel">
+    <div class="card">
+      <h2>搜索并分析竞品</h2>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">搜索关键词</label>
+          <input id="compKeyword" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：古装演出服 定制">
+        </div>
+        <div style="flex:1;min-width:150px;">
+          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的售价（¥）</label>
+          <input id="compMyPrice" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：168">
+        </div>
+        <div style="flex:1;min-width:150px;">
+          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的成本（¥）<span style="color:#999;font-weight:400;">选填</span></label>
+          <input id="compMyCost" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="选填，用于利润测算">
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="startCompeteSearch()">搜索分析</button>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#999;">
+        点击后自动打开淘宝搜索结果页 → 等待页面加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」
+      </div>
+    </div>
+
+    <div id="compPasteCard" class="card" style="display:none;">
+      <h2>粘贴数据</h2>
+      <textarea id="compPasteArea" class="paste-area" placeholder="在淘宝搜索页点击「复制到剪贴板」后，回到这里按 Ctrl+V 粘贴 JSON 数据..."></textarea>
+      <div style="margin-top:8px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="readFromPaste()">分析数据</button>
+        <button class="btn btn-secondary" onclick="readFromClipboard()">自动读取剪贴板</button>
+      </div>
+    </div>
+
+    <div id="compLoading" class="card" style="display:none;">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div>正在分析数据...</div>
+      </div>
+    </div>
+
+    <div id="compResult" style="display:none;">
+      <div class="result-header card">
+        <span class="count" id="compResultCount"></span>
+        <span style="font-size:13px;color:#999;">仅分析搜索结果第 1 页</span>
+      </div>
+
+      <div class="analysis-cards">
+        <div id="cardTitle" class="analysis-card">
+          <div class="card-header">
+            <h3>标题关键词分析</h3>
+            <span class="badge" id="titleBadge"></span>
+          </div>
+          <div class="card-body" id="titleBody"></div>
+          <div class="card-suggestion" id="titleSuggestion"></div>
+        </div>
+
+        <div id="cardPrice" class="analysis-card">
+          <div class="card-header">
+            <h3>价格竞争力</h3>
+            <span class="badge" id="priceBadge"></span>
+          </div>
+          <div class="stat-row" id="priceStats"></div>
+          <div class="card-suggestion" id="priceSuggestion"></div>
+        </div>
+
+        <div id="cardActivity" class="analysis-card">
+          <div class="card-header">
+            <h3>活动与优惠对比</h3>
+            <span class="badge" id="activityBadge"></span>
+          </div>
+          <div class="card-body" id="activityBody"></div>
+          <div class="card-suggestion" id="activitySuggestion"></div>
+        </div>
+
+        <div id="cardProfit" class="analysis-card">
+          <div class="card-header">
+            <h3>利润测算</h3>
+            <span class="badge" id="profitBadge"></span>
+          </div>
+          <div class="card-body" id="profitBody"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2 style="cursor:pointer;" onclick="toggleDataTable()">原始数据 <span style="font-size:12px;color:#999;" id="dataTableToggle">▼ 展开</span></h2>
+        <div id="dataTableWrap" class="data-table-wrap" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 明日清单 -->
+  <div id="panel-checklist" class="panel">
+    <div class="card">
+      <h2>待办清单</h2>
+      <p style="font-size:13px;color:#999;margin-bottom:12px;">基于竞品分析结果自动生成，勾选状态自动保存</p>
+      <div id="checklistContainer">
+        <div style="text-align:center;padding:40px;color:#999;">
+          还没有分析数据<br>
+          <span style="font-size:12px;">去「竞品分析」Tab 完成分析后，任务会自动生成</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;" id="checklistProgress" style="display:none;">
+      <div style="font-size:14px;margin-bottom:6px;" id="checklistProgressText"></div>
+      <div class="progress-bar">
+        <div class="fill" id="checklistProgressBar" style="width:0;"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('.tab[onclick*="'+tab+'"]').classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
+  const targetTab = document.querySelector('.tab[onclick*="' + tab + '"]');
+  if (targetTab) targetTab.classList.add('active');
+  const targetPanel = document.getElementById('panel-' + tab);
+  if (targetPanel) targetPanel.classList.add('active');
 }
 
 function clearInput() {
