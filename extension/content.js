@@ -3,31 +3,14 @@
 function extractProducts() {
   const products = [];
 
-  const selectors = [
-    '.m-itemlist .item',
-    '[data-spm="item"]',
-    '.J_MatchItem',
-    '.item.J_MatchItem',
-    '.grid-view .item'
-  ];
+  // 淘宝2026版搜索页：商品卡片是 <a class="doubleCardWrapperAdapt--...">
+  const cardLinks = document.querySelectorAll('a[class*="doubleCardWrapperAdapt"]');
+  console.log('找到商品卡片链接:', cardLinks.length);
 
-  let items = [];
-  for (const sel of selectors) {
-    items = document.querySelectorAll(sel);
-    if (items.length > 0) break;
-  }
-
-  if (items.length === 0) {
-    const allItems = document.querySelectorAll('[data-nid], [data-item-id]');
-    if (allItems.length > 0) {
-      items = allItems;
-    }
-  }
-
-  items.forEach((item, index) => {
+  cardLinks.forEach((link, index) => {
     try {
-      const product = extractSingleProduct(item, index);
-      if (product && product.title && product.price) {
+      const product = extractSingleProduct(link, index);
+      if (product && product.title && product.price > 0) {
         products.push(product);
       }
     } catch (e) {
@@ -38,49 +21,78 @@ function extractProducts() {
   return products;
 }
 
-function extractSingleProduct(item, index) {
-  const titleEl = item.querySelector('.title a, .J_ClickStat, a[title], .row-2 a');
-  const title = (titleEl ? titleEl.textContent.trim() || titleEl.getAttribute('title') : '');
+function extractSingleProduct(cardLink, index) {
+  // 标题：title--ASSt27UY
+  const titleEl = cardLink.querySelector('[class*="title--"]');
+  const title = titleEl ? titleEl.textContent.trim() : '';
 
-  const priceEl = item.querySelector('.price strong, .price, .c-price, [class*="price"] strong');
-  let price = '';
-  if (priceEl) {
-    price = priceEl.textContent.trim().replace(/[^0-9.]/g, '');
+  // 价格：整数 priceInt--yqqZMJ5a + 小数 priceFloat--XpixvyQ1
+  const priceIntEl = cardLink.querySelector('[class*="priceInt--"]');
+  const priceFloatEl = cardLink.querySelector('[class*="priceFloat--"]');
+  let price = 0;
+  if (priceIntEl) {
+    const intPart = priceIntEl.textContent.trim().replace(/[^0-9]/g, '');
+    const floatPart = priceFloatEl ? priceFloatEl.textContent.trim().replace(/[^0-9]/g, '') : '';
+    price = parseFloat(intPart + '.' + (floatPart || '0'));
   }
 
-  const salesEl = item.querySelector('.deal-cnt, .sale-cnt, [class*="deal"], [class*="sale"]');
+  // 销量：priceWrapper 中 "¥价格" 和 "销量+人付款" 紧挨在一起，无分隔
+  // 如 "¥20.83000+人付款山东菏泽" → 价格=20.8, 销量=3000+人付款
+  const priceWrapper = cardLink.querySelector('[class*="innerNormalPriceWrapper--"], [class*="innerPriceWrapper--"]');
   let sales = '';
-  if (salesEl) {
-    sales = salesEl.textContent.trim();
+  if (priceWrapper && price > 0) {
+    const fullText = priceWrapper.textContent.trim();
+    const intText = priceIntEl.textContent.trim();
+    const floatText = priceFloatEl ? priceFloatEl.textContent.trim() : '';
+    // 定位 "¥<int>" 在文本中的位置
+    const prefixIdx = fullText.indexOf('¥' + intText);
+    if (prefixIdx >= 0) {
+      let rest = fullText.substring(prefixIdx + 1 + intText.length);
+      // 跳过 ".浮点数"
+      if (rest.startsWith('.')) {
+        rest = rest.substring(1 + floatText.length);
+      }
+      // 跳过可选的 "优惠后"/"券后"
+      rest = rest.replace(/^(优惠后|券后)/, '');
+      const match = rest.match(/^([\d.]+万?\+?人付款)/);
+      if (match) sales = match[1];
+    }
   }
 
-  const shopEl = item.querySelector('.shopname, .shop span, [class*="shop"] span, [class*="seller"]');
+  // 店铺名：shopName--hdF527QA
+  const shopEl = cardLink.querySelector('[class*="shopName--"]');
   let shop = '';
   if (shopEl) {
     shop = shopEl.textContent.trim();
   }
 
-  const isTmall = !!item.querySelector('.tmall, [class*="tmall"], .icon-tmall, img[src*="tmall"]');
+  // 天猫判断：链接指向 detail.tmall.com
+  const isTmall = cardLink.href.includes('detail.tmall.com');
 
+  // 活动标签：subIconWrapper--Vl8zAdQn 下的 span
   const activityTags = [];
-  const tagEls = item.querySelectorAll('.icon, .tag, [class*="icon"], [class*="tag"], .activity');
-  tagEls.forEach(el => {
-    const text = el.textContent.trim();
-    if (text && text.length < 20 && !/^\d+$/.test(text)) {
-      activityTags.push(text);
-    }
-  });
+  const subIconWrapper = cardLink.querySelector('[class*="subIconWrapper--"]');
+  if (subIconWrapper) {
+    const spans = subIconWrapper.querySelectorAll('span');
+    spans.forEach(span => {
+      const text = span.textContent.trim();
+      if (text && text.length < 20) {
+        activityTags.push(text);
+      }
+    });
+  }
 
-  const promoEl = item.querySelector('.coupon, [class*="coupon"], [class*="promo"], .yh');
+  // 优惠券
   let promo = '';
-  if (promoEl) {
-    promo = promoEl.textContent.trim();
+  const couponEl = cardLink.querySelector('[class*="coupon"], [class*="Coupon"]');
+  if (couponEl) {
+    promo = couponEl.textContent.trim();
   }
 
   return {
     index: index + 1,
     title,
-    price: parseFloat(price) || 0,
+    price,
     sales,
     shop,
     isTmall,
@@ -91,8 +103,7 @@ function extractSingleProduct(item, index) {
 
 function init() {
   const products = extractProducts();
-
-  if (products.length === 0) return;
+  console.log('提取到有效商品数量:', products.length);
 
   const bar = document.createElement('div');
   bar.id = '__tb_extract_bar__';
@@ -102,22 +113,33 @@ function init() {
     'font-family:-apple-system,BlinkMacSystemFont,sans-serif;';
 
   const text = document.createElement('span');
-  text.textContent = `已提取 ${products.length} 个商品数据`;
+  text.textContent = products.length > 0
+    ? `已提取 ${products.length} 个商品数据`
+    : `未提取到商品数据（找到 ${document.querySelectorAll('*').length} 个 DOM 元素）`;
 
   const btn = document.createElement('button');
-  btn.textContent = '复制到剪贴板';
+  btn.textContent = products.length > 0 ? '复制到剪贴板' : '调试信息';
   btn.style.cssText = 'background:#fff;color:#ff5000;border:none;padding:6px 16px;' +
     'border-radius:4px;cursor:pointer;font-size:13px;font-weight:500;';
   btn.onclick = async () => {
-    const json = JSON.stringify({ source: 'taobao-search', url: location.href, count: products.length, products });
-    try {
-      await navigator.clipboard.writeText(json);
-      text.textContent = `已复制 ${products.length} 个商品到剪贴板，请返回工具页面`;
-      btn.textContent = '已复制 ✓';
-      btn.style.background = '#e8f5e9';
-      btn.style.color = '#2e7d32';
-    } catch (e) {
-      text.textContent = '复制失败，请点击重试';
+    if (products.length > 0) {
+      const json = JSON.stringify({ source: 'taobao-search', url: location.href, count: products.length, products });
+      try {
+        await navigator.clipboard.writeText(json);
+        text.textContent = `已复制 ${products.length} 个商品到剪贴板，请返回工具页面`;
+        btn.textContent = '已复制 ✓';
+        btn.style.background = '#e8f5e9';
+        btn.style.color = '#2e7d32';
+      } catch (e) {
+        text.textContent = '复制失败，请点击重试';
+      }
+    } else {
+      // 调试模式
+      console.log('页面 URL:', location.href);
+      console.log('页面标题:', document.title);
+      console.log('DOM 元素总数:', document.querySelectorAll('*').length);
+      console.log('doubleCardWrapperAdapt 卡片数:', document.querySelectorAll('[class*="doubleCardWrapperAdapt"]').length);
+      console.log('item.taobao.com 链接数:', document.querySelectorAll('a[href*="item.taobao.com"]').length);
     }
   };
 
@@ -126,4 +148,5 @@ function init() {
   document.body.insertBefore(bar, document.body.firstChild);
 }
 
-setTimeout(init, 2000);
+// 延迟提取，等淘宝动态内容渲染
+setTimeout(init, 3000);
