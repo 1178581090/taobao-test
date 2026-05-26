@@ -306,7 +306,7 @@ textarea:focus { outline: none; border-color: #ff5000; }
         </div>
       </div>
     </div>
-    <div class="card" style="text-align:center;" id="checklistProgress" style="display:none;">
+    <div class="card" style="text-align:center;display:none;" id="checklistProgress">
       <div style="font-size:14px;margin-bottom:6px;" id="checklistProgressText"></div>
       <div class="progress-bar">
         <div class="fill" id="checklistProgressBar" style="width:0;"></div>
@@ -627,11 +627,17 @@ function renderTitleCard(keywords, total) {
 }
 
 function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
-  const diff = myPrice > 0 ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
+  const diff = (myPrice > 0 && avgPrice > 0) ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
   const absDiff = Math.abs(diff);
 
   let level, badgeClass;
-  if (myPrice === 0) {
+  if (avgPrice === 0 && myPrice === 0) {
+    level = '无数据';
+    badgeClass = '';
+  } else if (avgPrice === 0) {
+    level = '数据不足';
+    badgeClass = 'warn';
+  } else if (myPrice === 0) {
     level = '未填写价格';
     badgeClass = '';
   } else if (absDiff <= 10) {
@@ -655,7 +661,9 @@ function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
     (myPrice > 0 ? '<div class="stat-item"><span style="color:#888;">偏离</span><strong style="color:' + (diff > 0 ? '#e65100' : '#2e7d32') + '">' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '%</strong></div>' : '');
 
   let suggestion = '';
-  if (myPrice > 0 && absDiff > 30) {
+  if (avgPrice === 0) {
+    suggestion = '<strong>提示：</strong>未能提取到有效的价格数据，请确认搜索结果页面中的数据是否已正确复制。';
+  } else if (myPrice > 0 && absDiff > 30) {
     suggestion = diff > 0
       ? '<strong>建议：</strong>你的价格明显高于同行。考虑突出定制差异，或增加入门款 SKU。'
       : '<strong>建议：</strong>你的价格明显低于同行。检查利润空间是否充足，考虑适当提价。';
@@ -725,7 +733,7 @@ function renderProfitCard(myPrice, myCost, sortedActivities) {
       (myPrice >= 200
         ? '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>利润 ¥' + profitWithDiscount.toFixed(0) + '（' + (profitWithDiscount / priceWithDiscount * 100).toFixed(0) + '%）</strong></div>'
         : '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>单件不满200，需凑单</strong></div>') +
-      '<div class="stat-item"><span style="color:#888;">含' + couponAmount + '元优惠券</span><strong>利润 ¥' + profitWithCoupon.toFixed(0) + '（' + (profitWithCoupon / (myPrice - couponAmount) * 100).toFixed(0) + '%）</strong></div>' +
+      '<div class="stat-item"><span style="color:#888;">含' + couponAmount + '元优惠券</span><strong>利润 ¥' + profitWithCoupon.toFixed(0) + '（' + (myPrice > couponAmount ? (profitWithCoupon / (myPrice - couponAmount) * 100).toFixed(0) : '--') + '%）</strong></div>' +
     '</div>';
 
   const badgeEl = $('profitBadge');
