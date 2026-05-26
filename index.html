@@ -444,6 +444,503 @@ function generate() {
 
   document.getElementById('titleInput').value = title;
 }
+
+// ===== 通用工具 =====
+function $(id) { return document.getElementById(id); }
+
+// ===== 竞品分析 =====
+
+// 存储分析结果，供明日清单使用
+let lastAnalysisResult = null;
+let checklistTasks = JSON.parse(localStorage.getItem('tb_checklist_tasks') || '[]');
+
+function startCompeteSearch() {
+  const keyword = $('compKeyword').value.trim();
+  if (!keyword) return alert('请输入搜索关键词');
+
+  $('compPasteCard').style.display = '';
+  $('compResult').style.display = 'none';
+  $('compPasteArea').value = '';
+  $('compPasteArea').focus();
+
+  const url = 'https://s.taobao.com/search?q=' + encodeURIComponent(keyword);
+  window.open(url, '_blank');
+}
+
+function readFromPaste() {
+  const raw = $('compPasteArea').value.trim();
+  if (!raw) return alert('请先在淘宝搜索页点击「复制到剪贴板」，然后回到这里粘贴 JSON 数据');
+  processData(raw);
+}
+
+async function readFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text || text.length < 10) {
+      alert('剪贴板中没有有效数据，请先在淘宝搜索页点击「复制到剪贴板」');
+      return;
+    }
+    $('compPasteArea').value = text;
+    processData(text);
+  } catch (e) {
+    alert('无法读取剪贴板（file:// 协议限制）。请手动粘贴：在淘宝页复制后，回到这里按 Ctrl+V 粘贴，然后点击「分析数据」');
+  }
+}
+
+// ===== 数据解析 =====
+
+function processData(raw) {
+  $('compPasteCard').style.display = 'none';
+  $('compLoading').style.display = '';
+  $('compResult').style.display = 'none';
+
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    $('compLoading').style.display = 'none';
+    $('compPasteCard').style.display = '';
+    return alert('JSON 解析失败，请确认粘贴的是从扩展复制的完整数据');
+  }
+
+  if (!data.products || !Array.isArray(data.products) || data.products.length === 0) {
+    $('compLoading').style.display = 'none';
+    $('compPasteCard').style.display = '';
+    return alert('数据中没有商品列表，请确认已正确复制');
+  }
+
+  const myPrice = parseFloat($('compMyPrice').value) || 0;
+  const myCost = parseFloat($('compMyCost').value) || 0;
+
+  setTimeout(() => {
+    analyzeAndRender(data.products, myPrice, myCost);
+    $('compLoading').style.display = 'none';
+    $('compResult').style.display = '';
+    $('compResultCount').textContent = '已分析 ' + data.products.length + ' 个商品';
+  }, 400);
+}
+
+function analyzeAndRender(products, myPrice, myCost) {
+  const valid = products.filter(p => p.title && p.price > 0);
+
+  // 标题关键词分析
+  const allTitles = valid.map(p => p.title);
+  const keywordFreq = getKeywordFrequency(allTitles);
+  const topKeywords = keywordFreq.slice(0, 15);
+
+  // 价格分析
+  const prices = valid.map(p => p.price).sort((a, b) => a - b);
+  const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+  const minPrice = prices[0] || 0;
+  const maxPrice = prices[prices.length - 1] || 0;
+
+  // 活动分析
+  const activityCount = {};
+  valid.forEach(p => {
+    if (p.activityTags) {
+      p.activityTags.forEach(tag => {
+        activityCount[tag] = (activityCount[tag] || 0) + 1;
+      });
+    }
+    if (p.promo) {
+      const key = '优惠:' + p.promo;
+      activityCount[key] = (activityCount[key] || 0) + 1;
+    }
+  });
+
+  const sortedActivities = Object.entries(activityCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  // 渲染四张卡片
+  renderTitleCard(topKeywords, valid.length);
+  renderPriceCard(myPrice, avgPrice, minPrice, maxPrice);
+  renderActivityCard(sortedActivities, valid.length);
+  if (myCost > 0 && myPrice > 0) {
+    renderProfitCard(myPrice, myCost, sortedActivities);
+  } else {
+    $('cardProfit').style.display = 'none';
+  }
+
+  // 渲染数据表
+  renderDataTable(valid);
+
+  // 保存分析结果
+  lastAnalysisResult = {
+    topKeywords, myPrice, avgPrice, minPrice, maxPrice,
+    sortedActivities, valid, totalCount: products.length, myCost
+  };
+
+  // 生成明日清单
+  generateChecklistTasks(lastAnalysisResult);
+}
+
+function getKeywordFrequency(titles) {
+  const freq = {};
+  const stopWords = ['的', '和', '与', '及', '之', 'a', 'the', 'is', 'for', 'and'];
+
+  titles.forEach(title => {
+    const words = title.split(/[\s,，、/｜|]+/).filter(w => w.length >= 2);
+    const segments = [];
+    for (let i = 0; i < title.length - 1; i++) {
+      for (let len = 2; len <= 4; len++) {
+        const seg = title.substring(i, i + len);
+        if (!/[^一-龥a-zA-Z0-9]/.test(seg)) {
+          segments.push(seg);
+        }
+      }
+    }
+    const allWords = [...new Set([...words, ...segments])];
+    allWords.forEach(w => {
+      if (stopWords.includes(w) || w.length < 2) return;
+      freq[w] = (freq[w] || 0) + 1;
+    });
+  });
+
+  return Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .map(([word, count]) => ({ word, count, pct: Math.round(count / titles.length * 100) }));
+}
+
+// ===== 四张分析卡片渲染 =====
+
+function renderTitleCard(keywords, total) {
+  const significant = keywords.filter(k => k.pct >= 30);
+  const badgeEl = $('titleBadge');
+
+  let html = '';
+  if (significant.length === 0) {
+    html = '<p>数据量不足，无法分析高频关键词</p>';
+    badgeEl.textContent = '数据不足';
+    badgeEl.className = 'badge';
+  } else {
+    html = '<p style="margin-bottom:8px;">同行高频词（出现占比 ≥ 30%）：</p>';
+    significant.forEach(k => {
+      html += '<span class="keyword-tag">' + escHtml(k.word) + '（' + k.pct + '%）</span>';
+    });
+    badgeEl.textContent = significant.length + ' 个高频词';
+    badgeEl.className = 'badge warn';
+  }
+
+  $('titleBody').innerHTML = html;
+  $('titleSuggestion').innerHTML = '<strong>操作：</strong>检查你的标题是否覆盖了上述高频词。缺少的词建议补充到标题中。';
+}
+
+function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
+  const diff = myPrice > 0 ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
+  const absDiff = Math.abs(diff);
+
+  let level, badgeClass;
+  if (myPrice === 0) {
+    level = '未填写价格';
+    badgeClass = '';
+  } else if (absDiff <= 10) {
+    level = '正常';
+    badgeClass = 'ok';
+  } else if (absDiff <= 30) {
+    level = '注意';
+    badgeClass = 'warn';
+  } else {
+    level = '需调整';
+    badgeClass = 'action';
+  }
+
+  $('priceBadge').textContent = level;
+  $('priceBadge').className = 'badge ' + badgeClass;
+
+  $('priceStats').innerHTML =
+    '<div class="stat-item"><span style="color:#888;">你的价格</span><strong>' + (myPrice > 0 ? '¥' + myPrice : '未填') + '</strong></div>' +
+    '<div class="stat-item"><span style="color:#888;">同行均价</span><strong>¥' + avgPrice.toFixed(0) + '</strong></div>' +
+    '<div class="stat-item"><span style="color:#888;">价格区间</span><strong>¥' + minPrice + ' - ¥' + maxPrice + '</strong></div>' +
+    (myPrice > 0 ? '<div class="stat-item"><span style="color:#888;">偏离</span><strong style="color:' + (diff > 0 ? '#e65100' : '#2e7d32') + '">' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '%</strong></div>' : '');
+
+  let suggestion = '';
+  if (myPrice > 0 && absDiff > 30) {
+    suggestion = diff > 0
+      ? '<strong>建议：</strong>你的价格明显高于同行。考虑突出定制差异，或增加入门款 SKU。'
+      : '<strong>建议：</strong>你的价格明显低于同行。检查利润空间是否充足，考虑适当提价。';
+  } else if (myPrice > 0 && absDiff > 10) {
+    suggestion = diff > 0
+      ? '<strong>提示：</strong>价格略高于同行均价。确保你的定制服务和产品质量能支撑这个溢价。'
+      : '<strong>提示：</strong>价格略低于同行。微幅低价的策略可以吸引价格敏感买家，注意控制好利润。';
+  } else if (myPrice > 0) {
+    suggestion = '<strong>结论：</strong>你的价格在同行正常范围内，无需调整。';
+  }
+  $('priceSuggestion').innerHTML = suggestion;
+}
+
+function renderActivityCard(sortedActivities, total) {
+  if (sortedActivities.length === 0) {
+    $('activityBody').innerHTML = '<p>未检测到竞品有明显的活动/优惠标识</p>';
+    $('activityBadge').textContent = '无数据';
+    $('activityBadge').className = 'badge';
+    $('activitySuggestion').innerHTML = '';
+    return;
+  }
+
+  const topActivities = sortedActivities.filter(([, count]) => count >= total * 0.2);
+
+  let html = '<p style="margin-bottom:8px;">同行中常见的活动和优惠（同行使用占比）：</p>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+  sortedActivities.slice(0, 8).forEach(([name, count]) => {
+    const pct = Math.round(count / total * 100);
+    html += '<span class="keyword-tag">' + escHtml(name.replace('优惠:', '')) + ' <span style="opacity:.7;">' + pct + '%</span></span>';
+  });
+  html += '</div>';
+
+  $('activityBody').innerHTML = html;
+  $('activityBadge').textContent = topActivities.length > 0 ? '建议跟进' : '参考';
+  $('activityBadge').className = 'badge ' + (topActivities.length > 0 ? 'action' : 'warn');
+
+  let suggestion = '<strong>操作：</strong>';
+  if (topActivities.length > 0) {
+    suggestion += '去千牛卖家中心搜索对应活动名称，查看你是否可以报名参与。常见入口：千牛 → 营销中心 → 店铺优惠券/满减活动。';
+  } else {
+    suggestion += '竞品活动信息不多，可自行选择合适的营销工具。';
+  }
+  $('activitySuggestion').innerHTML = suggestion;
+}
+
+function renderProfitCard(myPrice, myCost, sortedActivities) {
+  $('cardProfit').style.display = '';
+
+  const baseProfit = myPrice - myCost;
+  const baseMargin = (baseProfit / myPrice * 100);
+
+  const discountAmount = 15;
+  let profitWithDiscount = baseProfit;
+  let priceWithDiscount = myPrice;
+
+  if (myPrice >= 200) {
+    priceWithDiscount = myPrice - discountAmount;
+    profitWithDiscount = priceWithDiscount - myCost;
+  }
+
+  const couponAmount = 3;
+  const profitWithCoupon = baseProfit - couponAmount;
+
+  $('profitBody').innerHTML =
+    '<div class="stat-row">' +
+      '<div class="stat-item"><span style="color:#888;">不参与活动</span><strong>利润 ¥' + baseProfit.toFixed(0) + '（' + baseMargin.toFixed(0) + '%）</strong></div>' +
+      (myPrice >= 200
+        ? '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>利润 ¥' + profitWithDiscount.toFixed(0) + '（' + (profitWithDiscount / priceWithDiscount * 100).toFixed(0) + '%）</strong></div>'
+        : '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>单件不满200，需凑单</strong></div>') +
+      '<div class="stat-item"><span style="color:#888;">含' + couponAmount + '元优惠券</span><strong>利润 ¥' + profitWithCoupon.toFixed(0) + '（' + (profitWithCoupon / (myPrice - couponAmount) * 100).toFixed(0) + '%）</strong></div>' +
+    '</div>';
+
+  const badgeEl = $('profitBadge');
+  if (baseMargin >= 30) {
+    badgeEl.textContent = '利润充裕';
+    badgeEl.className = 'badge ok';
+  } else if (baseMargin >= 15) {
+    badgeEl.textContent = '利润适中';
+    badgeEl.className = 'badge warn';
+  } else {
+    badgeEl.textContent = '利润较薄';
+    badgeEl.className = 'badge action';
+  }
+}
+
+// ===== 原始数据表 =====
+
+function renderDataTable(valid) {
+  let html = '<table class="data-table"><thead><tr>' +
+    '<th>#</th><th>标题</th><th>价格</th><th>销量</th><th>店铺</th><th>天猫</th><th>活动/优惠</th>' +
+    '</tr></thead><tbody>';
+
+  valid.forEach((p, i) => {
+    html += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td title="' + escHtml(p.title) + '">' + escHtml(p.title).substring(0, 50) + (p.title.length > 50 ? '...' : '') + '</td>' +
+      '<td>¥' + p.price + '</td>' +
+      '<td>' + (p.sales || '-') + '</td>' +
+      '<td>' + escHtml(p.shop || '-') + '</td>' +
+      '<td>' + (p.isTmall ? '是' : '') + '</td>' +
+      '<td>' + escHtml([...(p.activityTags || []), p.promo || ''].filter(Boolean).join(' / ')) + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table>';
+  $('dataTableWrap').innerHTML = html;
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function toggleDataTable() {
+  const wrap = $('dataTableWrap');
+  const toggle = $('dataTableToggle');
+  if (wrap.style.display === 'none') {
+    wrap.style.display = '';
+    toggle.textContent = '▲ 收起';
+  } else {
+    wrap.style.display = 'none';
+    toggle.textContent = '▼ 展开';
+  }
+}
+
+// ===== 明日清单 =====
+
+function generateChecklistTasks(result) {
+  if (!result || !result.valid) return;
+
+  const tasks = [];
+  const seen = new Set();
+
+  // 规则1: 高频词参考
+  const topWords = result.topKeywords.slice(0, 10).map(k => k.word).join('、');
+  const taskKey1 = 'check_title_keywords';
+  if (!seen.has(taskKey1) && result.topKeywords.length >= 3) {
+    seen.add(taskKey1);
+    tasks.push({
+      id: taskKey1,
+      text: '检查标题是否包含同行高频词：' + topWords,
+      source: '同行 ' + result.topKeywords.length + ' 个高频词',
+      done: false
+    });
+  }
+
+  // 规则2: 价格偏离
+  if (result.myPrice > 0 && result.avgPrice > 0) {
+    const diff = Math.abs((result.myPrice - result.avgPrice) / result.avgPrice * 100);
+    if (diff > 30) {
+      const taskKey2 = 'adjust_price';
+      if (!seen.has(taskKey2)) {
+        seen.add(taskKey2);
+        tasks.push({
+          id: taskKey2,
+          text: '考虑调整定价（当前 ¥' + result.myPrice + '，同行均价 ¥' + result.avgPrice.toFixed(0) + '，偏离 ' + diff.toFixed(0) + '%）',
+          source: '价格偏离同行 ' + diff.toFixed(0) + '%',
+          done: false
+        });
+      }
+    }
+  }
+
+  // 规则3: 活动跟进
+  if (result.sortedActivities && result.sortedActivities.length > 0) {
+    result.sortedActivities.slice(0, 5).forEach(([name, count]) => {
+      const pct = Math.round(count / result.valid.length * 100);
+      if (pct >= 30) {
+        const cleanName = name.replace('优惠:', '');
+        const taskId = 'activity_' + cleanName;
+        if (!seen.has(taskId)) {
+          seen.add(taskId);
+          tasks.push({
+            id: taskId,
+            text: '设置「' + cleanName + '」活动（去千牛搜索"' + cleanName + '"查看报名方式）',
+            source: '同行 ' + pct + '% 使用',
+            done: false
+          });
+        }
+      }
+    });
+  }
+
+  // 规则4: 运费险
+  const hasShipping = result.sortedActivities.some(([name]) => /运费|运费险/.test(name));
+  if (hasShipping) {
+    const taskKey = 'open_shipping_insurance';
+    if (!seen.has(taskKey)) {
+      seen.add(taskKey);
+      const entry = result.sortedActivities.find(([name]) => /运费|运费险/.test(name));
+      const pct = Math.round(entry[1] / result.valid.length * 100);
+      tasks.push({
+        id: taskKey,
+        text: '开通运费险',
+        source: '同行 ' + pct + '% 支持',
+        done: false
+      });
+    }
+  }
+
+  // 合并已有任务的 done 状态
+  const existingMap = {};
+  checklistTasks.forEach(t => { existingMap[t.id] = t.done; });
+  tasks.forEach(t => {
+    if (existingMap.hasOwnProperty(t.id)) {
+      t.done = existingMap[t.id];
+    }
+  });
+
+  checklistTasks = tasks;
+  saveChecklist();
+  renderChecklist();
+}
+
+function saveChecklist() {
+  localStorage.setItem('tb_checklist_tasks', JSON.stringify(checklistTasks));
+}
+
+function renderChecklist() {
+  const container = $('checklistContainer');
+  const progressDiv = $('checklistProgress');
+
+  if (!checklistTasks || checklistTasks.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">还没有分析数据<br><span style="font-size:12px;">去「竞品分析」Tab 完成分析后，任务会自动生成</span></div>';
+    progressDiv.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  checklistTasks.forEach((task, i) => {
+    html += '<div class="checklist-item' + (task.done ? ' done' : '') + '">' +
+      '<input type="checkbox" ' + (task.done ? 'checked' : '') + ' onchange="toggleTask(' + i + ')">' +
+      '<span>' + escHtml(task.text) + '</span>' +
+      '<span class="source">' + escHtml(task.source) + '</span>' +
+      '</div>';
+  });
+  container.innerHTML = html;
+
+  const doneCount = checklistTasks.filter(t => t.done).length;
+  const total = checklistTasks.length;
+  const pct = Math.round(doneCount / total * 100);
+
+  progressDiv.style.display = '';
+  $('checklistProgressText').textContent = '已完成 ' + doneCount + ' / ' + total + ' 项';
+  $('checklistProgressBar').style.width = pct + '%';
+}
+
+function toggleTask(index) {
+  checklistTasks[index].done = !checklistTasks[index].done;
+  saveChecklist();
+  renderChecklist();
+}
+
+// ===== 初始化 =====
+
+document.addEventListener('DOMContentLoaded', () => {
+  // paste textarea 监听：粘贴后高亮按钮
+  const pasteArea = $('compPasteArea');
+  if (pasteArea) {
+    pasteArea.addEventListener('input', () => {
+      const btn = document.querySelector('#compPasteCard .btn-primary');
+      if (btn && pasteArea.value.trim()) {
+        btn.style.background = '#ff5000';
+        btn.style.color = '#fff';
+      }
+    });
+  }
+
+  // 恢复成本价
+  const savedCost = localStorage.getItem('tb_my_cost');
+  if (savedCost && $('compMyCost')) {
+    $('compMyCost').value = savedCost;
+  }
+
+  // 恢复明日清单
+  if (checklistTasks.length > 0) {
+    renderChecklist();
+  }
+});
+
+// 保存成本价
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'compMyCost') {
+    localStorage.setItem('tb_my_cost', e.target.value);
+  }
+});
 </script>
 </body>
 </html>
