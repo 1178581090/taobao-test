@@ -439,12 +439,33 @@ textarea:focus { outline: none; border-color: #ff5000; }
         <span style="font-size:13px;color:#999;">仅分析搜索结果第 1 页</span>
       </div>
 
-      <div id="actionPlanCard" class="action-plan" style="display:none;">
-        <h2>行动方案 <span style="font-size:12px;color:#999;font-weight:400;">— 已按优先级排序，从上到下执行</span></h2>
-        <div id="actionPlanContent"></div>
+      <!-- 诊断总览 -->
+      <div class="diagnostic-grid" id="diagnosticGrid" style="display:none;"></div>
+
+      <!-- 改进清单 -->
+      <div class="card" id="improveCard" style="display:none;">
+        <h2 id="improveTitle" style="font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#ff5000;flex-shrink:0;"></span>
+          改进清单
+        </h2>
+        <div class="improve-list" id="improveList"></div>
       </div>
 
-      <div class="analysis-cards">
+      <!-- 相近竞品对标 -->
+      <div class="peer-card" id="peerCard" style="display:none;margin-bottom:16px;">
+        <h2 style="font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#ff5000;flex-shrink:0;"></span>
+          相近竞品对标
+        </h2>
+        <div id="peerContent"></div>
+      </div>
+
+      <!-- 详细数据（折叠） -->
+      <div class="detail-toggle" id="detailToggle" onclick="toggleDetail()">
+        <span class="toggle-icon" id="detailToggleIcon">▶</span>
+        <span style="font-size:14px;font-weight:600;color:#666;">详细数据</span>
+      </div>
+      <div class="detail-content" id="detailContent" style="display:none;">
         <div id="cardTitle" class="analysis-card">
           <div class="card-header">
             <h3>标题关键词分析</h3>
@@ -453,7 +474,6 @@ textarea:focus { outline: none; border-color: #ff5000; }
           <div class="card-body" id="titleBody"></div>
           <div class="card-suggestion" id="titleSuggestion"></div>
         </div>
-
         <div id="cardPrice" class="analysis-card">
           <div class="card-header">
             <h3>价格竞争力</h3>
@@ -462,7 +482,6 @@ textarea:focus { outline: none; border-color: #ff5000; }
           <div class="stat-row" id="priceStats"></div>
           <div class="card-suggestion" id="priceSuggestion"></div>
         </div>
-
         <div id="cardActivity" class="analysis-card">
           <div class="card-header">
             <h3>活动与优惠对比</h3>
@@ -471,7 +490,6 @@ textarea:focus { outline: none; border-color: #ff5000; }
           <div class="card-body" id="activityBody"></div>
           <div class="card-suggestion" id="activitySuggestion"></div>
         </div>
-
         <div id="cardProfit" class="analysis-card">
           <div class="card-header">
             <h3>利润测算</h3>
@@ -481,6 +499,7 @@ textarea:focus { outline: none; border-color: #ff5000; }
         </div>
       </div>
 
+      <!-- 原始数据表 -->
       <div class="card" style="margin-top:12px;">
         <h2 style="cursor:pointer;" onclick="toggleDataTable()">原始数据 <span style="font-size:12px;color:#999;" id="dataTableToggle">▼ 展开</span></h2>
         <div id="dataTableWrap" class="data-table-wrap" style="display:none;"></div>
