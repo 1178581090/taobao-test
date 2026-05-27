@@ -1238,6 +1238,73 @@ function improvAction(pri, title) {
   }
 }
 
+function renderPeerComparison(products, myPrice) {
+  var valid = products.filter(function(p) { return p.title && p.price > 0; });
+  if (!myPrice || valid.length === 0) { $('peerCard').style.display = 'none'; return; }
+
+  // 找价格 ±15% 范围内的竞品
+  var lo = myPrice * 0.85, hi = myPrice * 1.15;
+  var peers = valid.filter(function(p) { return p.price >= lo && p.price <= hi; });
+  if (peers.length < 2) {
+    lo = myPrice * 0.75; hi = myPrice * 1.25;
+    peers = valid.filter(function(p) { return p.price >= lo && p.price <= hi; });
+  }
+  if (peers.length === 0) { $('peerCard').style.display = 'none'; return; }
+
+  // 取前 3 个，按价格接近度排序
+  peers.sort(function(a, b) { return Math.abs(a.price - myPrice) - Math.abs(b.price - myPrice); });
+  peers = peers.slice(0, 3);
+
+  var html = '<table class="peer-table"><thead><tr>';
+  html += '<th style="width:90px;"></th>';
+  html += '<th style="color:#ff5000;">你的商品 <span style="font-size:11px;font-weight:400;">¥' + myPrice + '</span></th>';
+  peers.forEach(function(p, i) {
+    html += '<th>竞品 #' + (i + 1) + ' <span style="font-size:11px;font-weight:400;">¥' + p.price + '</span></th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  // 标题行
+  html += '<tr>';
+  html += '<td style="font-weight:600;color:#333;">标题</td>';
+  html += '<td class="my-col title-col">—</td>';
+  peers.forEach(function(p) {
+    html += '<td class="title-col">' + escHtml(p.title).substring(0, 45) + (p.title.length > 45 ? '...' : '') + '</td>';
+  });
+  html += '</tr>';
+
+  // 销量行
+  html += '<tr>';
+  html += '<td style="font-weight:600;color:#333;">销量</td>';
+  html += '<td class="my-col">—</td>';
+  peers.forEach(function(p) {
+    html += '<td>' + (p.sales || '-') + '</td>';
+  });
+  html += '</tr>';
+
+  // 店铺行
+  html += '<tr>';
+  html += '<td style="font-weight:600;color:#333;">店铺</td>';
+  html += '<td class="my-col">—</td>';
+  peers.forEach(function(p) {
+    html += '<td>' + escHtml(p.shop || '-') + (p.isTmall ? ' <span style="font-size:11px;color:#ff5000;">天猫</span>' : '') + '</td>';
+  });
+  html += '</tr>';
+
+  // 活动行
+  html += '<tr>';
+  html += '<td style="font-weight:600;color:#333;">活动/优惠</td>';
+  html += '<td class="my-col">—</td>';
+  peers.forEach(function(p) {
+    var acts = [].concat(p.activityTags || [], p.promo ? [p.promo] : []);
+    html += '<td>' + (acts.length > 0 ? escHtml(acts.join(' / ')) : '无') + '</td>';
+  });
+  html += '</tr>';
+
+  html += '</tbody></table>';
+  $('peerContent').innerHTML = html;
+  $('peerCard').style.display = '';
+}
+
 function getKeywordFrequency(titles) {
   const freq = {};
   const stopWords = new Set(['的', '和', '与', '及', '之', '是', '在', '有', '为', '等', '了', '不', '也', '都', '就', '还', '要', '会', '可', '个', '这', '那', '我', '你', '他', '她', '它', '们', 'a', 'the', 'is', 'for', 'and', '没有', '可以', '什么', '一个', '这个', '自己', '我们', '他们', '还是', '不是', '已经']);
