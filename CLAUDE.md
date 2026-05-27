@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**交互语言：所有对话、代码注释、commit 信息均使用中文。**
+
 ## 项目概述
 
 淘宝店铺运营辅助工具，纯前端单页面应用，面向演出服定制类目。直接在浏览器打开 `index.html`。

@@ -3,937 +3,777 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>淘宝标题优化工具</title>
+<title>竞品分析 · 淘宝演出服</title>
 <style>
+:root {
+  --brand: #ff5000;
+  --brand-light: #fff1eb;
+  --brand-hover: #e64800;
+  --red: #e74c3c;
+  --red-light: #fdedec;
+  --amber: #f5a623;
+  --amber-light: #fef5e7;
+  --green: #27ae60;
+  --green-light: #eafaf1;
+  --bg: #f5f6f8;
+  --surface: #fff;
+  --border: #e8eaed;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
 
-.header { background: linear-gradient(135deg, #ff5000, #ff6a28); color: #fff; padding: 24px 0; text-align: center; }
-.header h1 { font-size: 22px; margin-bottom: 4px; }
-.header p { font-size: 13px; opacity: .85; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
 
-.container { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+/* ── Top Bar ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.topbar-dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  background: var(--brand);
+}
+.topbar-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
 
-.card { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-.card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-
-textarea { width: 100%; height: 80px; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 12px; font-size: 14px; resize: vertical; font-family: inherit; transition: border .2s; }
-textarea:focus { outline: none; border-color: #ff5000; }
-
-.btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .2s; }
-.btn-primary { background: #ff5000; color: #fff; }
-.btn-primary:hover { background: #e64800; }
-.btn-secondary { background: #f0f0f0; color: #666; }
-.btn-secondary:hover { background: #e4e4e4; }
-
-.score-ring { width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin: 0 auto 12px; }
-.score-ring.good { background: #e8f5e9; color: #2e7d32; }
-.score-ring.medium { background: #fff3e0; color: #e65100; }
-.score-ring.bad { background: #ffebee; color: #c62828; }
-
-.score-label { text-align: center; font-size: 13px; color: #999; margin-bottom: 16px; }
-
-.check-list { list-style: none; }
-.check-list li { padding: 8px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f5f5f5; }
-.check-list li:last-child { border-bottom: none; }
-.check-list .icon { font-size: 16px; flex-shrink: 0; }
-.check-list .pass { color: #4caf50; }
-.check-list .fail { color: #f44336; }
-.check-list .tip { color: #ff9800; }
-.check-list .detail { color: #999; font-size: 12px; margin-left: auto; }
-
-.tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid #f0f0f0; }
-.tab { padding: 8px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: #999; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
-.tab.active { color: #ff5000; border-bottom-color: #ff5000; }
-
-.panel { display: none; }
-.panel.active { display: block; }
-
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
-.form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; }
-.form-group input:focus, .form-group select:focus { outline: none; border-color: #ff5000; }
-
-.generated-title { background: #fff8f5; border: 1px dashed #ff5000; border-radius: 8px; padding: 16px; font-size: 14px; color: #333; margin-top: 12px; min-height: 44px; word-break: break-all; }
-
-.tip-box { background: #fffbf0; border: 1px solid #ffe58f; border-radius: 8px; padding: 14px 16px; margin-top: 12px; font-size: 13px; color: #8c6d00; line-height: 1.8; }
-
-.loading { text-align:center;padding:40px;color:#999; }
-.loading .spinner { width:32px;height:32px;border:3px solid #f0f0f0;border-top-color:#ff5000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.analysis-cards { display:flex;flex-direction:column;gap:12px; }
-.analysis-card { background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #e0e0e0; }
-.analysis-card.priority-high { border-left-color:#f44336; }
-.analysis-card.priority-mid { border-left-color:#ff9800; }
-.analysis-card.priority-ok { border-left-color:#4caf50; }
-.analysis-card .card-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }
-.analysis-card .card-header h3 { font-size:15px;margin:0; }
-.analysis-card .card-body { font-size:13px;color:#555;line-height:1.7; }
-.analysis-card .card-suggestion { margin-top:8px;font-size:13px;font-weight:500; }
-
-.badge { padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500; }
-.badge.warn { background:#fff3e0;color:#e65100; }
-.badge.ok { background:#e8f5e9;color:#2e7d32; }
-.badge.action { background:#ffebee;color:#c62828; }
-
-.keyword-tag { display:inline-block;background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:4px;font-size:12px;margin:2px; }
-.keyword-tag.covered { background:#f5f5f5;color:#999; }
-
-.stat-row { display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px; }
-.stat-item { font-size:13px; }
-.stat-item strong { display:block;font-size:16px; }
-
-.progress-bar { height:6px;background:#f0f0f0;border-radius:3px;margin-top:8px;overflow:hidden; }
-.progress-bar .fill { height:100%;background:#4caf50;border-radius:3px;transition:width .3s; }
-
-.paste-area { width:100%;min-height:80px;border:1.5px dashed #e0e0e0;border-radius:8px;padding:12px;font-size:12px;color:#999;resize:vertical;font-family:monospace; }
-.paste-area:focus { outline:none;border-color:#ff5000; }
-
-.result-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
-.result-header .count { font-size:13px;color:#999; }
-
-.data-table-wrap { margin-top:16px;overflow-x:auto; }
-.data-table { width:100%;border-collapse:collapse;font-size:12px; }
-.data-table th { text-align:left;padding:8px;background:#fafafa;border-bottom:2px solid #f0f0f0;white-space:nowrap; }
-.data-table td { padding:8px;border-bottom:1px solid #f5f5f5; }
-.data-table tr:hover td { background:#fff8f5; }
-
-.checklist-item { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px; }
-.checklist-item input[type="checkbox"] { width:18px;height:18px;cursor:pointer;accent-color:#ff5000; }
-.checklist-item.done span { text-decoration:line-through;color:#bbb; }
-.checklist-item .source { font-size:11px;color:#999;margin-left:auto; }
-
-/* ===== 竞品分析结果 ===== */
-.comp-result-section { margin-bottom:20px; }
-
-/* 诊断总览 */
-.diagnostic-grid {
+/* ── Main Layout ── */
+.main {
   display: grid;
-  grid-template-columns: 200px 1fr 300px;
+  grid-template-columns: 420px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 56px);
+}
+
+/* ── Left Panel (Setup) ── */
+.setup-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 28px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.setup-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: -12px;
+}
+.setup-mode-row {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+}
+.setup-mode-btn {
+  flex: 1;
+  padding: 7px 12px;
+  border: none;
+  background: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .2s;
+}
+.setup-mode-btn.active {
+  background: var(--surface);
+  color: var(--brand);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.field-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+  background: var(--surface);
+  color: var(--text);
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(255,80,0,.08);
+}
+.field-input::placeholder { color: var(--text-muted); }
+.field-row { display: flex; gap: 10px; }
+.field-row > * { flex: 1; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255,80,0,.2);
+}
+.btn-primary:hover {
+  background: var(--brand-hover);
+  box-shadow: 0 4px 14px rgba(255,80,0,.28);
+  transform: translateY(-1px);
+}
+.btn-secondary {
+  background: #f3f4f6;
+  color: var(--text-secondary);
+}
+.btn-secondary:hover { background: #e5e7eb; color: var(--text); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+.setup-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+}
+
+/* ── Right Panel (Results) ── */
+.result-panel {
+  padding: 24px 32px 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 12px;
+}
+.empty-icon {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+.empty-title { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.empty-desc { font-size: 13px; max-width: 360px; line-height: 1.6; }
+
+/* Card base */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
+}
+
+/* Card accent variant — colored left border for visual variety */
+.card-accent {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+}
+.card-accent-green {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--green);
+}
+
+/* Result count strip */
+.result-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--brand-light) 0%, #fff 60%);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,80,0,.1);
+}
+
+/* Diagnostic Overview */
+.diag-grid {
+  display: grid;
+  grid-template-columns: 170px 1fr 1fr;
   gap: 14px;
 }
-.score-card {
-  background: #fff; border-radius: 12px; padding: 24px 18px;
-  text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+.diag-score {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.score-ring-wrap { position: relative; width: 100px; height: 100px; margin-bottom: 8px; }
-.score-ring-wrap svg { transform: rotate(-90deg); display: block; }
-.score-value-num {
+.diag-ring-wrap { position: relative; width: 96px; height: 96px; margin-bottom: 8px; }
+.diag-ring-wrap svg { transform: rotate(-90deg); display: block; }
+.diag-ring-val {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 34px; font-weight: 700; font-family: 'Courier New', monospace;
-  color: #ff5000; line-height: 1;
+  font-size: 30px; font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--brand); line-height: 1;
 }
-.score-desc { font-size: 12px; color: #999; line-height: 1.5; }
+.diag-ring-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
 
-.dim-card {
-  background: #fff; border-radius: 12px; padding: 22px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  display: flex; flex-direction: column; gap: 18px; justify-content: center;
+.diag-dims {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
 }
-.dim-item { display: flex; flex-direction: column; gap: 4px; }
-.dim-head { display: flex; justify-content: space-between; align-items: baseline; }
-.dim-name { font-size: 13px; color: #666; }
-.dim-val { font-size: 13px; font-weight: 600; }
-.dim-track { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
-.dim-fill { height: 100%; border-radius: 3px; }
-.dim-fill.high { background: #ef5350; }
-.dim-fill.med  { background: #ff9800; }
-.dim-fill.low  { background: #66bb6a; }
+.diag-dim {}
+.diag-dim-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.diag-dim-name { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.diag-dim-val { font-size: 12px; font-weight: 700; color: var(--text); }
+.diag-dim-track { height: 5px; background: #f3f4f6; border-radius: 3px; overflow: hidden; }
+.diag-dim-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+.diag-dim-fill.hi { background: var(--red); }
+.diag-dim-fill.md { background: var(--amber); }
+.diag-dim-fill.lo { background: var(--green); }
 
-.finding-card {
-  background: #fff; border-radius: 12px; padding: 22px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  border-left: 4px solid #ff5000;
-  display: flex; flex-direction: column; justify-content: center;
+.diag-finding {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.finding-label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
-  color: #ff5000; margin-bottom: 4px; font-weight: 600;
+.diag-finding-tag {
+  font-size: 10px; font-weight: 700;
+  color: var(--brand); margin-bottom: 8px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
-.finding-text { font-size: 16px; font-weight: 600; color: #333; line-height: 1.5; margin-bottom: 12px; }
-.finding-stats { display: flex; gap: 10px; flex-wrap: wrap; }
-.finding-stat {
-  background: #fff8f5; border-radius: 6px; padding: 7px 12px; text-align: center; min-width: 64px;
+.diag-finding-text { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.6; margin-bottom: 14px; }
+.diag-finding-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.diag-stat {
+  background: var(--brand-light);
+  border-radius: 8px;
+  padding: 7px 12px;
+  text-align: center;
+  min-width: 60px;
 }
-.finding-stat .sn { font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace; color: #ff5000; line-height: 1.2; }
-.finding-stat .sl { font-size: 11px; color: #999; margin-top: 1px; }
+.diag-stat-n { font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: var(--brand); line-height: 1.2; }
+.diag-stat-l { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
 
-/* 改进清单 */
+/* Improvement List */
 .improve-list { display: flex; flex-direction: column; gap: 8px; }
 .improve-item {
-  background: #fff; border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow .2s;
 }
-.improve-inner {
-  display: grid; grid-template-columns: 46px 1fr auto; align-items: stretch;
-}
+.improve-item:hover { box-shadow: var(--shadow); }
 .improve-rank {
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 700; font-family: 'Courier New', monospace;
-  color: #ccc; border-right: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
 }
-.improve-item.pri-high .improve-rank { color: #ef5350; }
-.improve-item.pri-med  .improve-rank { color: #ff9800; }
-.improve-item.pri-low  .improve-rank { color: #66bb6a; }
+.improve-item.p-hi .improve-rank { color: var(--red); }
+.improve-item.p-md .improve-rank { color: var(--amber); }
+.improve-item.p-lo .improve-rank { color: var(--green); }
+.improve-item.p-nodata .improve-rank { color: var(--text-muted); }
 .improve-body { padding: 14px 18px; }
 .improve-body .title {
-  font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 13px; font-weight: 700; color: var(--text);
+  margin-bottom: 3px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
-.improve-body .desc { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 4px; }
+.improve-body .desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 5px; }
 .improve-body .evidence {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; color: #999; background: #fafafa;
-  border: 1px solid #f0f0f0; padding: 3px 8px; border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  font-size: 10px; color: var(--text-muted);
+  background: #f9fafb; border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 4px;
+  font-family: var(--font-mono);
 }
 .ev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .improve-action { padding: 14px 18px 14px 0; display: flex; align-items: flex-start; }
-
-.impact-badge {
-  display: inline-flex; font-size: 10px; font-weight: 600;
-  padding: 1px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em;
+.imp-badge {
+  display: inline-flex; font-size: 9px; font-weight: 700;
+  padding: 1px 7px; border-radius: 10px;
+  letter-spacing: .04em;
 }
-.impact-badge.high { background: #ffebee; color: #c62828; }
-.impact-badge.med  { background: #fff3e0; color: #e65100; }
-.impact-badge.low  { background: #e8f5e9; color: #2e7d32; }
+.imp-badge.hi { background: var(--red-light); color: #991b1b; }
+.imp-badge.md { background: var(--amber-light); color: #92400e; }
+.imp-badge.nodata { background: #f3f4f6; color: #6b7280; }
+.imp-badge.lo { background: var(--green-light); color: #065f46; }
 
-/* 相近竞品对标 */
-.peer-card { background: #fff; border-radius: 10px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-.peer-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* Peer Comparison table */
+.peer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .peer-table th {
-  text-align: left; font-size: 11px; font-weight: 600; color: #999;
-  padding: 8px 12px; border-bottom: 2px solid #f0f0f0;
+  text-align: left; font-size: 10px; font-weight: 700; color: var(--text-muted);
+  padding: 10px 12px; border-bottom: 2px solid var(--border);
 }
-.peer-table td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #555; vertical-align: top; }
+.peer-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
 .peer-table tr:last-child td { border-bottom: none; }
-.peer-table .my-col { background: #fff8f5; }
-.peer-table .my-col td { color: #ff5000; font-weight: 500; }
-.peer-table .diff-highlight { background: #fff3e0; padding: 1px 4px; border-radius: 2px; color: #e65100; }
-.peer-table .title-col { max-width: 240px; word-break: break-all; }
+.peer-table .me-col { background: var(--brand-light); }
+.peer-table .me-col td { color: var(--brand); font-weight: 600; }
+.peer-table .hl { background: #fef3c7; padding: 1px 4px; border-radius: 2px; color: #92400e; }
+.peer-table .tc { max-width: 200px; word-break: break-all; }
 
-/* 折叠面板 */
-.detail-toggle {
-  display: flex; align-items: center; gap: 10px; cursor: pointer;
-  padding: 14px 20px; background: #fff; border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06); user-select: none; margin-bottom: 14px;
+/* Collapse toggle */
+.toggle-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 20px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  transition: background .2s;
 }
-.detail-toggle:hover { background: #fafafa; }
-.detail-toggle .toggle-icon { font-size: 11px; color: #999; display: inline-block; transition: transform .2s; }
-.detail-toggle.open .toggle-icon { transform: rotate(90deg); }
-.detail-content { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.detail-content .analysis-card { margin: 0; }
+.toggle-bar:hover { background: #f9fafb; }
+.toggle-bar .arr { font-size: 10px; color: var(--text-muted); transition: transform .2s cubic-bezier(.4,0,.2,1); }
+.toggle-bar.open .arr { transform: rotate(90deg); }
+.toggle-content { display: none; }
+.toggle-content.open { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* 响应式 */
-@media (max-width: 800px) {
-  .diagnostic-grid { grid-template-columns: 1fr; }
-  .improve-inner { grid-template-columns: 38px 1fr; }
-  .improve-action { grid-column: 1 / -1; padding: 0 18px 12px; }
-  .detail-content { grid-template-columns: 1fr; }
+/* Analysis cards in detail */
+.a-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 18px 22px; box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border); border-left: 4px solid var(--border);
+}
+.a-card.p-hi { border-left-color: var(--red); }
+.a-card.p-md { border-left-color: var(--amber); }
+.a-card.p-ok { border-left-color: var(--green); }
+.a-card-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.a-card-hd h4 { font-size: 13px; font-weight: 600; }
+.a-card-bd { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+.a-card-sg { margin-top: 8px; font-size: 12px; font-weight: 500; color: var(--text); }
+
+/* Badges */
+.badge {
+  padding: 2px 9px; border-radius: 10px;
+  font-size: 10px; font-weight: 600;
+}
+.badge.warn { background: var(--amber-light); color: #92400e; }
+.badge.ok { background: var(--green-light); color: #065f46; }
+.badge.act { background: var(--red-light); color: #991b1b; }
+
+/* Tags */
+.kw-tag {
+  display: inline-block;
+  background: var(--brand-light);
+  color: var(--brand);
+  padding: 3px 9px; border-radius: 4px;
+  font-size: 11px; margin: 2px;
+}
+.kw-tag.covered { background: #f3f4f6; color: var(--text-muted); }
+
+/* Stats */
+.stat-row { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-it { font-size: 12px; color: var(--text-secondary); }
+.stat-it strong { display: block; font-size: 16px; color: var(--text); font-weight: 700; }
+
+/* Data table */
+.data-tbl-wrap { margin-top: 12px; overflow-x: auto; }
+.data-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-tbl th { text-align: left; padding: 9px; background: #f9fafb; border-bottom: 2px solid var(--border); white-space: nowrap; font-weight: 600; color: var(--text-secondary); }
+.data-tbl td { padding: 9px; border-bottom: 1px solid var(--border); }
+.data-tbl tr:hover td { background: var(--brand-light); }
+
+/* Paste area */
+.paste-area {
+  width: 100%; min-height: 80px;
+  border: 1px dashed var(--text-muted);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  resize: vertical;
+  font-family: var(--font-mono);
+}
+.paste-area:focus { outline: none; border-color: var(--brand); }
+
+/* Loading */
+.loading { text-align: center; padding: 40px; color: var(--text-muted); }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Dict manager */
+.dict-tag { display: inline-flex; align-items: center; gap: 4px; background: #f3f4f6; padding: 3px 9px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: background .2s; }
+.dict-tag:hover { background: #fee2e2; color: var(--red); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .setup-panel { border-right: none; border-bottom: 1px solid var(--border); max-height: none; }
+  .diag-grid { grid-template-columns: 1fr; }
+  .improve-item { grid-template-columns: 36px 1fr; }
+  .improve-action { grid-column: 1/-1; padding: 0 16px 12px; }
+  .toggle-content.open { grid-template-columns: 1fr; }
+  .topbar { padding: 0 16px; }
+  .result-panel { padding: 16px; }
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>淘宝标题优化工具</h1>
-  <p>专为演出服定制类目设计</p>
+<div class="topbar">
+  <a class="topbar-brand" href="#"><span class="topbar-dot"></span>竞品分析</a>
+  <span class="topbar-sub">淘宝演出服定制类目</span>
 </div>
 
-<div class="container">
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('analyze')">标题诊断</button>
-    <button class="tab" onclick="switchTab('generate')">标题生成</button>
-    <button class="tab" onclick="switchTab('tips')">优化技巧</button>
-        <button class="tab" onclick="switchTab('compete')">竞品分析</button>
-        <button class="tab" onclick="switchTab('checklist')">明日清单</button>
-  </div>
+<div class="main">
 
-  <!-- 标题诊断 -->
-  <div id="panel-analyze" class="panel active">
-    <div class="card">
-      <h2>输入你的商品标题</h2>
-      <textarea id="titleInput" placeholder="例如：红楼梦贾宝玉古装演出服 舞台剧戏曲服装定制 成人儿童影楼摄影"></textarea>
-      <div style="margin-top:12px;display:flex;gap:10px;">
-        <button class="btn btn-primary" onclick="analyze()">开始诊断</button>
-        <button class="btn btn-secondary" onclick="clearInput()">清空</button>
-      </div>
+  <!-- 左侧设置面板 -->
+  <div class="setup-panel">
+    <div class="setup-section-title">搜索设置</div>
+
+    <div class="setup-mode-row" id="searchModeRow">
+      <button class="setup-mode-btn active" data-mode="keyword">关键词搜索</button>
+      <button class="setup-mode-btn" data-mode="product">商品链接搜索 <span style="font-size:10px;opacity:.6;">更精准</span></button>
     </div>
 
-    <div id="result" style="display:none;">
-      <div class="card" style="text-align:center;">
-        <div id="scoreRing" class="score-ring good">--</div>
-        <div class="score-label">综合得分（满分100）</div>
-      </div>
-      <div class="card">
-        <h2>诊断明细</h2>
-        <ul id="checkList" class="check-list"></ul>
-      </div>
-      <div id="suggestBox"></div>
+    <div id="inputGroupKeyword">
+      <label class="field-label">搜索关键词</label>
+      <input class="field-input" id="compKeyword" placeholder="如：古装演出服 定制">
     </div>
-  </div>
-
-  <!-- 标题生成 -->
-  <div id="panel-generate" class="panel">
-    <div class="card">
-      <h2>填写商品属性</h2>
-      <div class="form-group">
-        <label>核心产品词（这是什么？）</label>
-        <input id="gen-core" placeholder="如：古装演出服、舞蹈服、盔甲">
-      </div>
-      <div class="form-group">
-        <label>角色/款式</label>
-        <input id="gen-style" placeholder="如：贾宝玉、花木兰、古典舞">
-      </div>
-      <div class="form-group">
-        <label>材质/工艺</label>
-        <input id="gen-material" placeholder="如：缎面刺绣、铠甲片、雪纺">
-      </div>
-      <div class="form-group">
-        <label>适用场景</label>
-        <input id="gen-scene" placeholder="如：舞台演出、舞蹈比赛、影楼摄影">
-      </div>
-      <div class="form-group">
-        <label>目标人群</label>
-        <select id="gen-audience">
-          <option value="">不限</option>
-          <option value="成人">成人</option>
-          <option value="儿童">儿童</option>
-          <option value="成人儿童">成人+儿童</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" onclick="generate()">生成标题</button>
-      <div id="genResult" class="generated-title" style="display:none;"></div>
+    <div id="inputGroupProduct" style="display:none;">
+      <label class="field-label">我的商品链接</label>
+      <input class="field-input" id="compProductUrl" placeholder="粘贴你自己的淘宝/天猫商品链接...">
     </div>
-  </div>
 
-  <!-- 优化技巧 -->
-  <div id="panel-tips" class="panel">
-    <div class="card">
-      <h2>演出服类目标题公式</h2>
-      <div class="tip-box">
-        <strong>黄金公式：</strong><br>
-        核心产品词 + 角色/款式 + 材质属性 + 适用场景 + 人群词<br><br>
-        <strong>示例：</strong><br>
-        古装演出服 红楼梦贾宝玉 刺绣缎面 舞台剧戏曲服装 成人儿童定制
-      </div>
+    <div>
+      <label class="field-label">我的成本（¥）<span style="color:var(--text-muted);font-weight:400;">选填</span></label>
+      <input class="field-input" id="compMyCost" type="number" placeholder="用于利润测算">
     </div>
-    <div class="card">
-      <h2>关键规则</h2>
-      <div class="tip-box">
-        1. 手机端只显示前 <strong>30个字符</strong>，核心词往前放<br>
-        2. 不要堆砌重复关键词，会被搜索降权<br>
-        3. 避免特殊符号 ★▼▲之类的，影响可读性<br>
-        4. 演出服建议加上「定制」二字，精准匹配需求<br>
-        5. 热搜属性词：古典舞、民族舞、六一、年会、影楼、舞台剧
+
+    <button class="btn btn-primary" id="btnCompSearch" style="width:100%;">搜索分析</button>
+
+    <!-- 数据筛选 -->
+    <div class="card" id="compFilters" style="display:none;">
+      <div class="card-header">
+        <h3><span class="card-dot"></span>数据筛选</h3>
+        <span style="font-size:12px;color:var(--text-muted);" id="filterSummary"></span>
       </div>
-    </div>
-  </div>
-
-  <!-- 竞品分析 -->
-  <div id="panel-compete" class="panel">
-    <div class="card">
-      <h2>搜索并分析竞品</h2>
-
-      <!-- 搜索模式切换 -->
-      <div style="margin-bottom:12px;">
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:24px;">
-          <input type="radio" name="searchMode" value="keyword" checked onchange="switchSearchMode('keyword')">
-          <span style="font-size:14px;">关键词搜索</span>
-        </label>
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="radio" name="searchMode" value="product" onchange="switchSearchMode('product')">
-          <span style="font-size:14px;">商品链接搜索 <span style="font-size:11px;color:#ff5000;">更精准</span></span>
-        </label>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-
-        <!-- 关键词输入 (关键词模式) -->
-        <div id="inputGroupKeyword" style="flex:1;min-width:180px;">
-          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">搜索关键词</label>
-          <input id="compKeyword" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：古装演出服 定制">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:1;min-width:140px;">
+          <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:2px;">价格区间（¥）</label>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <input id="filterPriceMin" type="number" placeholder="最低" style="width:50%;padding:7px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+            <span style="color:var(--text-muted);">-</span>
+            <input id="filterPriceMax" type="number" placeholder="最高" style="width:50%;padding:7px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+          </div>
         </div>
-
-        <!-- 商品链接输入 (商品链接模式) -->
-        <div id="inputGroupProduct" style="flex:2;min-width:300px;display:none;">
-          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的商品链接</label>
-          <input id="compProductUrl" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="粘贴你自己的淘宝/天猫商品链接...">
+        <div style="flex:1;min-width:160px;">
+          <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:2px;">标题必须包含</label>
+          <input id="filterInclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
         </div>
-
-        <!-- 共享：价格和成本 -->
-        <div style="flex:1;min-width:150px;">
-          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的售价（¥）</label>
-          <input id="compMyPrice" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：168">
-        </div>
-        <div style="flex:1;min-width:150px;">
-          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的成本（¥）<span style="color:#999;font-weight:400;">选填</span></label>
-          <input id="compMyCost" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="选填，用于利润测算">
+        <div style="flex:1;min-width:160px;">
+          <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:2px;">标题必须排除</label>
+          <input id="filterExclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
         </div>
         <div>
-          <button class="btn btn-primary" id="btnCompSearch">搜索分析</button>
+          <button class="btn btn-primary" onclick="reanalyzeWithFilters()" style="white-space:nowrap;">重新分析</button>
         </div>
       </div>
-      <div id="searchHint" style="margin-top:8px;font-size:12px;color:#999;">
-        点击后自动打开淘宝搜索结果页 → 等待页面加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」
+      <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">
+        已预设排除词：饰品,头饰,配件,道具,玩具,发饰,簪子,手链,项链,耳环,发绳,发夹,头花,假发 — 可按需增删
       </div>
     </div>
 
-    <div id="compPasteCard" class="card" style="display:none;">
-      <h2>粘贴数据</h2>
+
+
+    <div class="setup-hint" id="searchHint">
+      点击后打开淘宝搜索结果页 → 等待加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」
+    </div>
+  </div>
+
+  <!-- 右侧结果面板 -->
+  <div class="result-panel" id="resultPanel">
+
+    <!-- 空状态 -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">开始你的竞品分析</div>
+      <div class="empty-desc">在左侧输入搜索关键词或粘贴商品链接，点击搜索按钮即可开始</div>
+    </div>
+
+    <!-- 粘贴数据卡片 -->
+    <div class="card" id="compPasteCard" style="display:none;">
+      <div class="card-header"><h3><span class="card-dot"></span>粘贴数据</h3></div>
       <textarea id="compPasteArea" class="paste-area" placeholder="在淘宝搜索页点击「复制到剪贴板」后，回到这里按 Ctrl+V 粘贴 JSON 数据..."></textarea>
-      <div style="margin-top:8px;display:flex;gap:10px;">
+      <div style="margin-top:8px;display:flex;gap:8px;">
         <button class="btn btn-primary" onclick="readFromPaste()">分析数据</button>
         <button class="btn btn-secondary" onclick="readFromClipboard()">自动读取剪贴板</button>
       </div>
     </div>
 
-    <div id="compFilters" class="card" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2 style="margin:0;">数据筛选</h2>
-        <span style="font-size:13px;color:#999;" id="filterSummary"></span>
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-
-        <div style="flex:1;min-width:160px;">
-          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">价格区间（¥）</label>
-          <div style="display:flex;gap:4px;align-items:center;">
-            <input id="filterPriceMin" type="number" placeholder="最低" style="width:50%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;">
-            <span style="color:#999;">-</span>
-            <input id="filterPriceMax" type="number" placeholder="最高" style="width:50%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;">
-          </div>
-        </div>
-
-        <div style="flex:1.2;min-width:180px;">
-          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">标题必须包含</label>
-          <input id="filterInclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;box-sizing:border-box;">
-        </div>
-
-        <div style="flex:1.2;min-width:180px;">
-          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">标题必须排除</label>
-          <input id="filterExclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;box-sizing:border-box;">
-        </div>
-
-        <div>
-          <button class="btn btn-primary" onclick="reanalyzeWithFilters()" style="white-space:nowrap;">重新分析</button>
-        </div>
-      </div>
-      <div style="margin-top:6px;font-size:11px;color:#bbb;">
-        已预设排除词：饰品,头饰,配件,道具,玩具,发饰,簪子,手链,项链,耳环,发绳,发夹,头花,假发 — 可按需增删
-      </div>
+    <!-- 加载中 -->
+    <div class="card" id="compLoading" style="display:none;">
+      <div class="loading"><div class="spinner"></div><div>正在分析数据...</div></div>
     </div>
 
-    <div id="compLoading" class="card" style="display:none;">
-      <div class="loading">
-        <div class="spinner"></div>
-        <div>正在分析数据...</div>
-      </div>
-    </div>
+    <!-- 分析结果 -->
+    <div id="compResult" style="display:none;display:flex;flex-direction:column;gap:18px;">
 
-    <div id="compResult" style="display:none;">
-      <div class="result-header card">
-        <span class="count" id="compResultCount"></span>
-        <span style="font-size:13px;color:#999;">仅分析搜索结果第 1 页</span>
+      <!-- 结果计数条 -->
+      <div class="result-strip">
+        <span style="font-size:13px;color:var(--text-muted);" id="compResultCount"></span>
+        <span style="font-size:12px;color:var(--text-muted);">仅分析搜索结果第 1 页</span>
       </div>
 
       <!-- 诊断总览 -->
-      <div class="diagnostic-grid" id="diagnosticGrid" style="display:none;"></div>
+      <div class="diag-grid" id="diagnosticGrid"></div>
 
       <!-- 改进清单 -->
-      <div class="card" id="improveCard" style="display:none;">
-        <h2 id="improveTitle" style="font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:#ff5000;flex-shrink:0;"></span>
-          改进清单
-        </h2>
+      <div class="card-accent" id="improveCard">
+        <div class="card-header"><h3><span class="card-dot"></span>改进清单</h3></div>
         <div class="improve-list" id="improveList"></div>
       </div>
 
       <!-- 相近竞品对标 -->
-      <div class="peer-card" id="peerCard" style="display:none;margin-bottom:16px;">
-        <h2 style="font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:#ff5000;flex-shrink:0;"></span>
-          相近竞品对标
-        </h2>
+      <div class="card-accent-green" id="peerCard">
+        <div class="card-header"><h3><span class="card-dot"></span>相近竞品对标</h3></div>
         <div id="peerContent"></div>
       </div>
 
       <!-- 详细数据（折叠） -->
-      <div class="detail-toggle" id="detailToggle" onclick="toggleDetail()">
-        <span class="toggle-icon" id="detailToggleIcon">▶</span>
-        <span style="font-size:14px;font-weight:600;color:#666;">详细数据</span>
+      <div class="toggle-bar open" id="detailToggle" onclick="toggleDetail()">
+        <span class="arr" id="detailToggleIcon">▶</span> 详细数据
       </div>
-      <div class="detail-content" id="detailContent" style="display:none;">
-        <div id="cardTitle" class="analysis-card">
-          <div class="card-header">
-            <h3>标题关键词分析</h3>
-            <span class="badge" id="titleBadge"></span>
-          </div>
-          <div class="card-body" id="titleBody"></div>
-          <div class="card-suggestion" id="titleSuggestion"></div>
+      <div class="toggle-content open" id="detailContent">
+        <div id="cardTitle" class="a-card">
+          <div class="a-card-hd"><h4>标题关键词分析</h4><span class="badge" id="titleBadge"></span></div>
+          <div class="a-card-bd" id="titleBody"></div>
+          <div class="a-card-sg" id="titleSuggestion"></div>
         </div>
-        <div id="cardPrice" class="analysis-card">
-          <div class="card-header">
-            <h3>价格竞争力</h3>
-            <span class="badge" id="priceBadge"></span>
-          </div>
+        <div id="cardPrice" class="a-card">
+          <div class="a-card-hd"><h4>价格竞争力</h4><span class="badge" id="priceBadge"></span></div>
           <div class="stat-row" id="priceStats"></div>
-          <div class="card-suggestion" id="priceSuggestion"></div>
+          <div class="a-card-sg" id="priceSuggestion"></div>
         </div>
-        <div id="cardActivity" class="analysis-card">
-          <div class="card-header">
-            <h3>活动与优惠对比</h3>
-            <span class="badge" id="activityBadge"></span>
-          </div>
-          <div class="card-body" id="activityBody"></div>
-          <div class="card-suggestion" id="activitySuggestion"></div>
+        <div id="cardActivity" class="a-card">
+          <div class="a-card-hd"><h4>活动与优惠对比</h4><span class="badge" id="activityBadge"></span></div>
+          <div class="a-card-bd" id="activityBody"></div>
+          <div class="a-card-sg" id="activitySuggestion"></div>
         </div>
-        <div id="cardProfit" class="analysis-card">
-          <div class="card-header">
-            <h3>利润测算</h3>
-            <span class="badge" id="profitBadge"></span>
-          </div>
-          <div class="card-body" id="profitBody"></div>
+        <div id="cardProfit" class="a-card">
+          <div class="a-card-hd"><h4>利润测算</h4><span class="badge" id="profitBadge"></span></div>
+          <div class="a-card-bd" id="profitBody"></div>
         </div>
       </div>
 
       <!-- 原始数据表 -->
-      <div class="card" style="margin-top:12px;">
-        <h2 style="cursor:pointer;" onclick="toggleDataTable()">原始数据 <span style="font-size:12px;color:#999;" id="dataTableToggle">▼ 展开</span></h2>
-        <div id="dataTableWrap" class="data-table-wrap" style="display:none;"></div>
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:18px 22px;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+        <div class="card-header" style="cursor:pointer;margin-bottom:0;" onclick="toggleDataTable()">
+          <h3 style="margin-bottom:0;">原始数据</h3>
+          <span style="font-size:11px;color:var(--text-muted);" id="dataTableToggle">▼ 展开</span>
+        </div>
+        <div id="dataTableWrap" class="data-tbl-wrap" style="display:none;"></div>
       </div>
 
       <!-- 词典管理 -->
-      <div class="card" style="margin-top:12px;" id="dictCard">
-        <h2 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleDictManager()">
-          <span>词典管理 <span style="font-size:12px;color:#999;font-weight:400;" id="dictWordCount"></span></span>
-          <span style="font-size:12px;color:#999;" id="dictToggle">▼ 展开</span>
-        </h2>
-        <div id="dictManager" style="display:none;">
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:18px 22px;box-shadow:var(--shadow-sm);border:1px solid var(--border);">
+        <div class="card-header" style="cursor:pointer;margin-bottom:0;" onclick="toggleDictManager()">
+          <h3 style="margin-bottom:0;">词典管理 <span style="font-size:11px;color:var(--text-muted);font-weight:400;" id="dictWordCount"></span></h3>
+          <span style="font-size:11px;color:var(--text-muted);" id="dictToggle">▼ 展开</span>
+        </div>
+        <div id="dictManager" style="display:none;margin-top:14px;">
           <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <input id="dictAddInput" placeholder="输入新词，回车添加" style="flex:1;padding:6px 10px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;"
-              onkeydown="if(event.key==='Enter')dictAddWord()">
-            <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="dictAddWord()">添加</button>
-            <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="dictReset()">恢复默认</button>
+            <input id="dictAddInput" placeholder="输入新词，回车添加" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;" onkeydown="if(event.key==='Enter')dictAddWord()">
+            <button class="btn btn-primary btn-sm" onclick="dictAddWord()">添加</button>
+            <button class="btn btn-secondary btn-sm" onclick="dictReset()">恢复默认</button>
           </div>
-          <div id="dictTagList" style="display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow-y:auto;"></div>
-          <p style="font-size:11px;color:#999;margin-top:8px;">词典越完整，关键词提取越精准。每个词点一下即可删除。</p>
+          <div id="dictTagList" style="display:flex;flex-wrap:wrap;gap:4px;max-height:160px;overflow-y:auto;"></div>
+          <p style="font-size:10px;color:var(--text-muted);margin-top:8px;">词典越完整，关键词提取越精准。每个词点一下即可删除。</p>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- 明日清单 -->
-  <div id="panel-checklist" class="panel">
-    <div class="card">
-      <h2>待办清单</h2>
-      <p style="font-size:13px;color:#999;margin-bottom:12px;">基于竞品分析结果自动生成，勾选状态自动保存</p>
-      <div id="checklistContainer">
-        <div style="text-align:center;padding:40px;color:#999;">
-          还没有分析数据<br>
-          <span style="font-size:12px;">去「竞品分析」Tab 完成分析后，任务会自动生成</span>
-        </div>
-      </div>
-    </div>
-    <div class="card" style="text-align:center;display:none;" id="checklistProgress">
-      <div style="font-size:14px;margin-bottom:6px;" id="checklistProgressText"></div>
-      <div class="progress-bar">
-        <div class="fill" id="checklistProgressBar" style="width:0;"></div>
-      </div>
-    </div>
-  </div>
-</div>
+    </div><!-- /compResult -->
+  </div><!-- /resultPanel -->
+</div><!-- /main -->
 
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const targetTab = document.querySelector('.tab[onclick*="' + tab + '"]');
-  if (targetTab) targetTab.classList.add('active');
-  const targetPanel = document.getElementById('panel-' + tab);
-  if (targetPanel) targetPanel.classList.add('active');
-}
-
-function clearInput() {
-  document.getElementById('titleInput').value = '';
-  document.getElementById('result').style.display = 'none';
-}
-
-// ===== 标题诊断 =====
-const GOOD_KEYWORDS = [
-  '演出服', '舞蹈服', '古装', '盔甲', '定制', '舞台',
-  '成人', '儿童', '影楼', '摄影', '表演', '比赛', '戏曲'
-];
-
-const BAD_PATTERNS = [/[★▼▲◆■●✦✿✤]/g, /\.{2,}/g, /！！/g];
-
-// 领域词典：默认词表，用户可增删（存储在 localStorage.tb_domain_dict）
-const DOMAIN_DICT_DEFAULT = [
-  // 品类词
-  '演出服', '舞蹈服', '古装', '汉服', '旗袍', '礼服', '婚纱', '铠甲', '战袍',
-  '戏服', '舞台服', '表演服', '合唱服', '练功服', '芭蕾舞服', '拉丁舞服', '爵士舞服',
-  'Cosplay', '服装', '服饰',
-  // 场景词
-  '舞台剧', '舞台', '演出', '表演', '比赛', '影楼', '摄影', '年会', '六一', '艺考',
-  '排练', '走秀', '庆典', '话剧', '戏曲', '舞蹈',
-  // 定制词
-  '定制', '来图', '来样', '批量',
-  // 材质/工艺
-  '刺绣', '缎面', '雪纺', '蕾丝', '钉珠', '印花', '丝绸', '渐变', '重工',
-  '大袖', '齐胸', '襦裙', '马面裙', '金丝绒', '棉麻', '欧根纱',
-  // 人群词
-  '成人', '儿童', '少儿', '幼儿', '男女',
-  // 红楼梦人物
-  '红楼梦', '贾宝玉', '林黛玉', '薛宝钗', '王熙凤', '贾元春', '贾迎春', '贾探春', '贾惜春',
-  '史湘云', '妙玉', '贾母', '刘姥姥', '晴雯', '袭人', '贾琏', '贾政', '王夫人',
-  '秦可卿', '贾赦', '贾珍', '贾蓉', '贾兰', '尤三姐', '尤二姐', '薛蟠', '香菱',
-  // 常见古装角色
-  '花木兰', '白娘子', '许仙', '小青', '梁山伯', '祝英台', '唐僧', '孙悟空',
-  '猪八戒', '沙僧', '诸葛亮', '关羽', '张飞', '赵云', '吕布', '貂蝉', '杨贵妃',
-  '武则天', '西施', '王昭君', '嫦娥', '七仙女', '牛郎', '织女',
-  // 属性词
-  '原版', '复刻', '高定', '仙女', '公主',
-  // 风格/类型
-  '古典', '民族', '现代', '芭蕾', '拉丁', '爵士', '街舞', '宫廷', '民国',
-  '动漫', '影视', '武侠', '唐装',
-  // 补充
-  '新款', '爆款', '现货', '包邮', '高端', '品质',
-];
-
-function loadDomainDict() {
-  try {
-    const saved = localStorage.getItem('tb_domain_dict');
-    if (saved) {
-      const arr = JSON.parse(saved);
-      if (Array.isArray(arr) && arr.length > 0 && arr.every(x => typeof x === 'string')) {
-        return arr;
-      }
-    }
-  } catch (e) { /* ignore corrupt data */ }
-  return [...DOMAIN_DICT_DEFAULT];
-}
-
-function saveDomainDict(dict) {
-  localStorage.setItem('tb_domain_dict', JSON.stringify(dict));
-}
-
-function getDomainDictSorted() {
-  return [...new Set(loadDomainDict())].sort((a, b) => b.length - a.length);
-}
-
-// ===== 词典管理 UI =====
-
-function toggleDictManager() {
-  const mgr = $('dictManager');
-  const toggle = $('dictToggle');
-  if (mgr.style.display === 'none') {
-    mgr.style.display = '';
-    toggle.textContent = '▲ 收起';
-    renderDictTags();
-    updateDictCount();
-  } else {
-    mgr.style.display = 'none';
-    toggle.textContent = '▼ 展开';
-  }
-}
-
-function updateDictCount() {
-  const count = loadDomainDict().length;
-  $('dictWordCount').textContent = count + ' 个词';
-}
-
-function renderDictTags() {
-  const dict = [...new Set(loadDomainDict())].sort((a, b) => a.localeCompare(b, 'zh'));
-  $('dictTagList').innerHTML = dict.map(w =>
-    '<span class="dict-tag" onclick="dictRemoveWord(\'' + escHtml(w).replace(/'/g, "\\'") + '\')" title="点击删除">' + escHtml(w) + ' ×</span>'
-  ).join('');
-}
-
-function dictAddWord() {
-  const input = $('dictAddInput');
-  const word = input.value.trim();
-  if (!word || word.length < 2) return;
-  const dict = loadDomainDict();
-  if (dict.includes(word)) { input.value = ''; return; }
-  dict.push(word);
-  saveDomainDict(dict);
-  renderDictTags();
-  updateDictCount();
-  input.value = '';
-}
-
-function dictRemoveWord(word) {
-  let dict = loadDomainDict();
-  dict = dict.filter(w => w !== word);
-  saveDomainDict(dict);
-  renderDictTags();
-  updateDictCount();
-}
-
-function dictReset() {
-  if (!confirm('确定恢复为默认词典？当前添加的词将被清除。')) return;
-  saveDomainDict([...DOMAIN_DICT_DEFAULT]);
-  renderDictTags();
-  updateDictCount();
-}
-
-function dictAddFromAnalysis(word, el) {
-  const dict = loadDomainDict();
-  if (!dict.includes(word)) {
-    dict.push(word);
-    saveDomainDict(dict);
-    updateDictCount();
-    if (el) {
-      el.style.background = '#e8f5e9';
-      el.style.color = '#2e7d32';
-      el.textContent = el.textContent.replace('+', '✓');
-      el.onclick = null;
-      el.style.cursor = 'default';
-    }
-  }
-}
-
-// 页面初始化时更新词典计数
-updateDictCount();
-
-function analyze() {
-  const title = document.getElementById('titleInput').value.trim();
-  if (!title) return alert('请输入标题');
-
-  let checks = [];
-  let score = 0;
-
-  // 1. 长度
-  const len = title.length;
-  if (len >= 20 && len <= 40) { checks.push({ icon: 'pass', text: '标题长度', detail: len+'字 — 刚好', cls: 'pass' }); score += 20; }
-  else if (len >= 15 && len < 20) { checks.push({ icon: 'tip', text: '标题长度', detail: len+'字 — 偏短，建议补到20字以上', cls: 'tip' }); score += 12; }
-  else if (len > 40 && len <= 50) { checks.push({ icon: 'tip', text: '标题长度', detail: len+'字 — 偏长，手机端可能截断', cls: 'tip' }); score += 15; }
-  else if (len > 50) { checks.push({ icon: 'fail', text: '标题长度', detail: len+'字 — 太长，手机端只显30字', cls: 'fail' }); score += 8; }
-  else { checks.push({ icon: 'fail', text: '标题长度', detail: len+'字 — 太短，信息量不足', cls: 'fail' }); score += 5; }
-
-  // 2. 核心产品词
-  const hasCore = /演出服|舞蹈服|古装|盔甲|服装|服饰/.test(title);
-  if (hasCore) { checks.push({ icon: 'pass', text: '核心产品词', detail: '有', cls: 'pass' }); score += 20; }
-  else { checks.push({ icon: 'fail', text: '核心产品词', detail: '缺少，必须包含"演出服/服装"等品类词', cls: 'fail' }); score += 0; }
-
-  // 3. 属性丰富度
-  const attrCount = (title.match(/古装|舞蹈|儿童|成人|男女|刺绣|旗袍|汉服|戏曲|舞台剧|古典|民族|现代|芭蕾|拉丁|爵士|街舞|合唱|礼服|婚纱|Cosplay|铠甲|战袍|戏曲/g) || []).length;
-  if (attrCount >= 2) { checks.push({ icon: 'pass', text: '属性词丰富度', detail: attrCount+'个属性词', cls: 'pass' }); score += 20; }
-  else if (attrCount === 1) { checks.push({ icon: 'tip', text: '属性词丰富度', detail: '仅1个，建议加风格/材质/场景词', cls: 'tip' }); score += 10; }
-  else { checks.push({ icon: 'fail', text: '属性词丰富度', detail: '缺少属性词，买家搜不到你', cls: 'fail' }); score += 0; }
-
-  // 4. 场景词
-  const hasScene = /舞台|表演|比赛|演出|影楼|摄影|年会|六一|艺考|培训|排练|走秀|庆典/.test(title);
-  if (hasScene) { checks.push({ icon: 'pass', text: '场景/用途词', detail: '有', cls: 'pass' }); score += 15; }
-  else { checks.push({ icon: 'tip', text: '场景/用途词', detail: '缺了，加上"舞台/比赛/影楼"等', cls: 'tip' }); score += 5; }
-
-  // 5. 定制词
-  if (/定制|来图|来样|批量/.test(title)) { checks.push({ icon: 'pass', text: '定制标识', detail: '有，精准匹配定制需求', cls: 'pass' }); score += 10; }
-  else { checks.push({ icon: 'tip', text: '定制标识', detail: '建议加"定制"，演出服买家常搜', cls: 'tip' }); score += 3; }
-
-  // 6. 重复词
-  const words = title.split(/[\s,，、]+/).filter(w => w.length >= 2);
-  const dupes = words.filter((w, i) => words.indexOf(w) !== i);
-  if (dupes.length === 0) { checks.push({ icon: 'pass', text: '无重复词', detail: '通过', cls: 'pass' }); score += 10; }
-  else { checks.push({ icon: 'fail', text: '重复词', detail: '"'+dupes.join('","')+'"重复了', cls: 'fail' }); score += 2; }
-
-  // 7. 特殊符号
-  let hasBadSymbol = false;
-  BAD_PATTERNS.forEach(p => { if (p.test(title)) hasBadSymbol = true; });
-  if (!hasBadSymbol) { checks.push({ icon: 'pass', text: '无违规符号', detail: '通过', cls: 'pass' }); score += 5; }
-  else { checks.push({ icon: 'fail', text: '违规符号', detail: '去掉★▼表情等特殊符号', cls: 'fail' }); score += 0; }
-
-  // 8. 人群词
-  if (/成人|儿童|男|女|小孩|幼儿|少儿/.test(title)) { checks.push({ icon: 'pass', text: '人群/性别词', detail: '有，方便买家筛选', cls: 'pass' }); score += 5; }
-  else { checks.push({ icon: 'tip', text: '人群/性别词', detail: '加"成人/儿童/男/女"等', cls: 'tip' }); score += 1; }
-
-  score = Math.min(score, 100);
-  renderResult(score, checks, title);
-}
-
-function renderResult(score, checks, title) {
-  document.getElementById('result').style.display = 'block';
-
-  const ring = document.getElementById('scoreRing');
-  ring.textContent = score;
-  ring.className = 'score-ring ' + (score >= 70 ? 'good' : score >= 50 ? 'medium' : 'bad');
-
-  document.getElementById('checkList').innerHTML = checks.map(c =>
-    '<li>' +
-      '<span class="icon '+c.cls+'">' + (c.cls==='pass'?'✓':c.cls==='fail'?'✗':'△') + '</span>' +
-      '<span>'+c.text+'</span>' +
-      '<span class="detail">'+c.detail+'</span>' +
-    '</li>'
-  ).join('');
-
-  let suggest = '';
-  if (score >= 80) suggest = '标题整体不错，建议定期检查搜索热词变化，持续优化。';
-  else if (score >= 60) suggest = '标题还行，补齐上面标注的缺口就能提升搜索曝光。';
-  else suggest = '标题需要较大改进，参照右侧"优化技巧"重新组织关键词。';
-
-  document.getElementById('suggestBox').innerHTML =
-    '<div class="card"><h2>优化建议</h2><div class="tip-box">'+suggest+'</div></div>';
-}
-
-// ===== 标题生成 =====
-function generate() {
-  const core = document.getElementById('gen-core').value.trim();
-  const style = document.getElementById('gen-style').value.trim();
-  const material = document.getElementById('gen-material').value.trim();
-  const scene = document.getElementById('gen-scene').value.trim();
-  const audience = document.getElementById('gen-audience').value;
-
-  if (!core && !style) return alert('至少填写核心产品词或角色款式');
-
-  const parts = [];
-  if (style) parts.push(style);
-  if (material) parts.push(material);
-  if (core) parts.push(core);
-  else parts.push('演出服');
-  if (scene) parts.push(scene);
-  if (audience) parts.push(audience);
-  if (!/定制/.test(parts.join(' '))) parts.push('定制');
-
-  const title = parts.join(' ');
-  const box = document.getElementById('genResult');
-  box.style.display = 'block';
-  box.innerHTML = '<strong>生成结果：</strong><br>' + title +
-    '<br><span style="color:#999;font-size:12px;">（共'+title.length+'字）</span>';
-
-  document.getElementById('titleInput').value = title;
-}
-
 // ===== 通用工具 =====
 function $(id) { return document.getElementById(id); }
 
-// ===== 竞品分析 =====
-
-// 存储分析结果，供明日清单使用
-let lastAnalysisResult = null;
-let checklistTasks = JSON.parse(localStorage.getItem('tb_checklist_tasks') || '[]');
-
-// ===== 数据筛选 =====
-let rawProducts = [];
-let filterConfig = {
-  priceMin: 0,
-  priceMax: 0,
-  include: [],
-  exclude: ['饰品', '头饰', '配件', '道具', '玩具', '发饰', '簪子', '手链', '项链', '耳环', '发绳', '发夹', '头花', '假发']
-};
-
-function applyFilters(config) {
-  let filtered = [...rawProducts];
-
-  if (config.priceMin > 0) {
-    filtered = filtered.filter(p => p.price >= config.priceMin);
-  }
-  if (config.priceMax > 0) {
-    filtered = filtered.filter(p => p.price <= config.priceMax);
-  }
-
-  if (config.include.length > 0) {
-    filtered = filtered.filter(p =>
-      config.include.some(kw => p.title.includes(kw))
-    );
-  }
-
-  if (config.exclude.length > 0) {
-    filtered = filtered.filter(p =>
-      !config.exclude.some(kw => p.title.includes(kw))
-    );
-  }
-
-  return filtered;
-}
-
-function reanalyzeWithFilters() {
-  filterConfig.priceMin = parseFloat($('filterPriceMin').value) || 0;
-  filterConfig.priceMax = parseFloat($('filterPriceMax').value) || 0;
-  filterConfig.include = $('filterInclude').value.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
-  filterConfig.exclude = $('filterExclude').value.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
-
-  const myPrice = parseFloat($('compMyPrice').value) || 0;
-  const myCost = parseFloat($('compMyCost').value) || 0;
-
-  const filtered = applyFilters(filterConfig);
-  updateFilterSummary(rawProducts.length, filtered.length);
-
-  $('compResult').style.display = 'none';
-  $('compLoading').style.display = '';
-
-  setTimeout(() => {
-    analyzeAndRender(filtered, myPrice, myCost);
-    $('compLoading').style.display = 'none';
-    $('compResult').style.display = '';
-    $('compResultCount').textContent =
-      '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
-  }, 300);
-}
-
-function updateFilterSummary(rawCount, filteredCount) {
-  const removed = rawCount - filteredCount;
-  if (removed > 0) {
-    $('filterSummary').innerHTML = '原始 <strong>' + rawCount + '</strong> 个，过滤掉 <strong style="color:#e65100;">' + removed + '</strong> 个，剩余 <strong style="color:#2e7d32;">' + filteredCount + '</strong> 个';
-  } else {
-    $('filterSummary').textContent = '共 ' + rawCount + ' 个商品，未过滤';
-  }
-}
-
-function startCompeteSearch() {
-  const keyword = $('compKeyword').value.trim();
-  if (!keyword) return alert('请输入搜索关键词');
-
-  $('compPasteCard').style.display = '';
-  $('compResult').style.display = 'none';
-  $('compPasteArea').value = '';
-  $('compPasteArea').focus();
-
-  const url = 'https://s.taobao.com/search?q=' + encodeURIComponent(keyword);
-  window.open(url, '_blank');
-}
-
-function startProductSearch() {
-  const url = $('compProductUrl').value.trim();
-  if (!url) return alert('请粘贴淘宝商品链接');
-  if (!url.includes('item.taobao.com') && !url.includes('detail.tmall.com')) {
-    return alert('请输入有效的淘宝或天猫商品链接（item.taobao.com 或 detail.tmall.com）');
-  }
-
-  $('compPasteCard').style.display = '';
-  $('compResult').style.display = 'none';
-  $('compPasteArea').value = '';
-  $('compPasteArea').focus();
-
-  window.open(url, '_blank');
-}
+// ===== 搜索模式切换 =====
+document.getElementById('searchModeRow').addEventListener('click', function(e) {
+  var btn = e.target.closest('.setup-mode-btn');
+  if (!btn) return;
+  var mode = btn.dataset.mode;
+  this.querySelectorAll('.setup-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  switchSearchMode(mode);
+});
 
 function switchSearchMode(mode) {
   $('inputGroupKeyword').style.display = mode === 'keyword' ? '' : 'none';
   $('inputGroupProduct').style.display = mode === 'product' ? '' : 'none';
-  const btn = $('btnCompSearch');
-  const hint = $('searchHint');
+  var btn = $('btnCompSearch');
+  var hint = $('searchHint');
   if (mode === 'product') {
     btn.textContent = '打开商品页';
     btn.onclick = startProductSearch;
-    hint.innerHTML = '点击后打开你的商品详情页 → 扩展自动识别标题并拆解关键词 → 点击橙色条「搜索同类竞品」跳转到淘宝搜索 → 搜索页中「复制到剪贴板」→ 回到本页粘贴分析<br><span style="color:#bbb;">工作原理：用你商品的标题关键词去淘宝搜索同类商品，搜到的才是真正的竞品。</span>';
+    hint.innerHTML = '点击后打开你的商品详情页 → 扩展自动识别标题、店铺、价格并拆解关键词 → 点击橙色条「搜索同类竞品」→ 搜索页中「复制到剪贴板」→ 回到本页粘贴分析<br><span style="color:#bbb;">用你商品的标题关键词去淘宝搜索同类商品，搜到的才是真正的竞品。</span>';
   } else {
     btn.textContent = '搜索分析';
     btn.onclick = startCompeteSearch;
-    hint.innerHTML = '点击后自动打开淘宝搜索结果页 → 等待页面加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」';
+    hint.innerHTML = '点击后打开淘宝搜索结果页 → 等待加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」';
   }
 }
 
+// ===== 搜索触发 =====
+function startCompeteSearch() {
+  var keyword = $('compKeyword').value.trim();
+  if (!keyword) return alert('请输入搜索关键词');
+  $('compPasteCard').style.display = '';
+  hideResult();
+  $('compPasteArea').value = '';
+  $('compPasteArea').focus();
+  window.open('https://s.taobao.com/search?q=' + encodeURIComponent(keyword), '_blank');
+}
+
+function startProductSearch() {
+  var url = $('compProductUrl').value.trim();
+  if (!url) return alert('请粘贴淘宝商品链接');
+  if (!url.includes('item.taobao.com') && !url.includes('detail.tmall.com')) {
+    return alert('请输入有效的淘宝或天猫商品链接（item.taobao.com 或 detail.tmall.com）');
+  }
+  $('compPasteCard').style.display = '';
+  hideResult();
+  $('compPasteArea').value = '';
+  $('compPasteArea').focus();
+  window.open(url, '_blank');
+}
+
+function hideResult() {
+  $('compResult').style.display = 'none';
+  $('emptyState').style.display = 'none';
+}
+
+// ===== 粘贴读取 =====
 function readFromPaste() {
-  const raw = $('compPasteArea').value.trim();
+  var raw = $('compPasteArea').value.trim();
   if (!raw) return alert('请先在淘宝搜索页点击「复制到剪贴板」，然后回到这里粘贴 JSON 数据');
   processData(raw);
 }
 
 async function readFromClipboard() {
   try {
-    const text = await navigator.clipboard.readText();
+    var text = await navigator.clipboard.readText();
     if (!text || text.length < 10) {
       alert('剪贴板中没有有效数据，请先在淘宝搜索页点击「复制到剪贴板」');
       return;
@@ -945,18 +785,71 @@ async function readFromClipboard() {
   }
 }
 
-// ===== 数据解析 =====
+// ===== 数据筛选 =====
+var rawProducts = [];
+var filterConfig = {
+  priceMin: 0, priceMax: 0,
+  include: [],
+  exclude: ['饰品','头饰','配件','道具','玩具','发饰','簪子','手链','项链','耳环','发绳','发夹','头花','假发']
+};
+
+function applyFilters(config) {
+  var filtered = rawProducts.slice();
+  if (config.priceMin > 0) filtered = filtered.filter(function(p) { return p.price >= config.priceMin; });
+  if (config.priceMax > 0) filtered = filtered.filter(function(p) { return p.price <= config.priceMax; });
+  if (config.include.length > 0) {
+    filtered = filtered.filter(function(p) { return config.include.some(function(kw) { return p.title.indexOf(kw) >= 0; }); });
+  }
+  if (config.exclude.length > 0) {
+    filtered = filtered.filter(function(p) { return !config.exclude.some(function(kw) { return p.title.indexOf(kw) >= 0; }); });
+  }
+  return filtered;
+}
+
+function updateFilterSummary(rawCount, filteredCount) {
+  var removed = rawCount - filteredCount;
+  if (removed > 0) {
+    $('filterSummary').innerHTML = '原始 <strong>' + rawCount + '</strong> 个，过滤掉 <strong style="color:#e65100;">' + removed + '</strong> 个，剩余 <strong style="color:#2e7d32;">' + filteredCount + '</strong> 个';
+  } else {
+    $('filterSummary').textContent = '共 ' + rawCount + ' 个商品，未过滤';
+  }
+}
+
+function reanalyzeWithFilters() {
+  filterConfig.priceMin = parseFloat($('filterPriceMin').value) || 0;
+  filterConfig.priceMax = parseFloat($('filterPriceMax').value) || 0;
+  filterConfig.include = $('filterInclude').value.split(/[,，、]/).map(function(s) { return s.trim(); }).filter(Boolean);
+  filterConfig.exclude = $('filterExclude').value.split(/[,，、]/).map(function(s) { return s.trim(); }).filter(Boolean);
+
+  var myPrice = (myProductInfo && myProductInfo.price) ? myProductInfo.price : 0;
+  var myCost = parseFloat($('compMyCost').value) || 0;
+
+  var filtered = applyFilters(filterConfig);
+  updateFilterSummary(rawProducts.length, filtered.length);
+
+  $('compResult').style.display = 'none';
+  $('compLoading').style.display = '';
+
+  setTimeout(function() {
+    analyzeAndRender(filtered, myPrice, myCost);
+    $('compLoading').style.display = 'none';
+    $('compResult').style.display = '';
+    $('compResultCount').textContent = '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
+  }, 300);
+}
+
+// ===== 数据解析入口 =====
+var myProductInfo = null;
 
 function processData(raw) {
   $('compPasteCard').style.display = 'none';
   $('compFilters').style.display = '';
   $('compLoading').style.display = '';
   $('compResult').style.display = 'none';
+  $('emptyState').style.display = 'none';
 
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch (e) {
+  var data;
+  try { data = JSON.parse(raw); } catch (e) {
     $('compLoading').style.display = 'none';
     $('compPasteCard').style.display = '';
     return alert('JSON 解析失败，请确认粘贴的是从扩展复制的完整数据');
@@ -968,49 +861,57 @@ function processData(raw) {
     return alert('数据中没有商品列表，请确认已正确复制');
   }
 
-  // 保存原始数据，填入预设排除词
-  rawProducts = data.products.filter(p => p.title && p.price > 0);
+  rawProducts = data.products.filter(function(p) { return p.title && p.price > 0; });
   $('filterExclude').value = filterConfig.exclude.join(',');
 
-  const myPrice = parseFloat($('compMyPrice').value) || 0;
-  const myCost = parseFloat($('compMyCost').value) || 0;
+  // 从剪贴板 JSON 中读取 myProduct（扩展从产品页自动获取）
+  if (data.myProduct && data.myProduct.title) {
+    myProductInfo = data.myProduct;
+    // 产品信息确认提示
+    var infoParts = [];
+    if (myProductInfo.title) infoParts.push('标题：' + myProductInfo.title.substring(0, 15) + (myProductInfo.title.length > 15 ? '…' : ''));
+    if (myProductInfo.shop) infoParts.push('店铺：' + myProductInfo.shop);
+    if (myProductInfo.price > 0) infoParts.push('售价：¥' + myProductInfo.price);
+    if (myProductInfo.sales) infoParts.push('销量：' + myProductInfo.sales);
+    console.log('[竞品分析] 已识别你的商品:', infoParts.join(' | '));
+  }
 
-  const filtered = applyFilters(filterConfig);
+  var myPrice = (myProductInfo && myProductInfo.price) ? myProductInfo.price : 0;
+  var myCost = parseFloat($('compMyCost').value) || 0;
+
+  var filtered = applyFilters(filterConfig);
   updateFilterSummary(rawProducts.length, filtered.length);
 
-  setTimeout(() => {
+  setTimeout(function() {
     analyzeAndRender(filtered, myPrice, myCost);
     $('compLoading').style.display = 'none';
     $('compResult').style.display = '';
+    $('compResult').style.display = 'flex';
+    $('compResult').style.flexDirection = 'column';
+    $('compResult').style.gap = '18px';
     $('compResultCount').textContent = '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
   }, 400);
 }
 
+// ===== 主分析函数 =====
 function analyzeAndRender(products, myPrice, myCost) {
-  const valid = products.filter(p => p.title && p.price > 0);
+  var valid = products.filter(function(p) { return p.title && p.price > 0; });
 
-  const allTitles = valid.map(p => p.title);
-  const keywordFreq = getKeywordFrequency(allTitles);
-  const topKeywords = keywordFreq.slice(0, 15);
+  var allTitles = valid.map(function(p) { return p.title; });
+  var keywordFreq = getKeywordFrequency(allTitles);
+  var topKeywords = keywordFreq.slice(0, 15);
 
-  const prices = valid.map(p => p.price).sort((a, b) => a - b);
-  const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
-  const minPrice = prices[0] || 0;
-  const maxPrice = prices[prices.length - 1] || 0;
+  var prices = valid.map(function(p) { return p.price; }).sort(function(a, b) { return a - b; });
+  var avgPrice = prices.length > 0 ? prices.reduce(function(a, b) { return a + b; }, 0) / prices.length : 0;
+  var minPrice = prices[0] || 0;
+  var maxPrice = prices[prices.length - 1] || 0;
 
-  const activityCount = {};
-  valid.forEach(p => {
-    if (p.activityTags) {
-      p.activityTags.forEach(tag => { activityCount[tag] = (activityCount[tag] || 0) + 1; });
-    }
-    if (p.promo) {
-      const key = '优惠:' + p.promo;
-      activityCount[key] = (activityCount[key] || 0) + 1;
-    }
+  var activityCount = {};
+  valid.forEach(function(p) {
+    if (p.activityTags) { p.activityTags.forEach(function(tag) { activityCount[tag] = (activityCount[tag] || 0) + 1; }); }
+    if (p.promo) { var key = '优惠:' + p.promo; activityCount[key] = (activityCount[key] || 0) + 1; }
   });
-  const sortedActivities = Object.entries(activityCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
+  var sortedActivities = Object.entries(activityCount).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
 
   // 新版三板块
   renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice);
@@ -1021,274 +922,624 @@ function analyzeAndRender(products, myPrice, myCost) {
   renderTitleCard(topKeywords, valid.length);
   renderPriceCard(myPrice, avgPrice, minPrice, maxPrice);
   renderActivityCard(sortedActivities, valid.length);
-  if (myCost > 0 && myPrice > 0) {
-    renderProfitCard(myPrice, myCost, sortedActivities);
-  } else {
-    $('cardProfit').style.display = 'none';
-  }
+  if (myCost > 0 && myPrice > 0) { renderProfitCard(myPrice, myCost, sortedActivities); }
+  else { $('cardProfit').style.display = 'none'; }
 
   renderDataTable(valid);
-
-  // 保存分析结果
-  lastAnalysisResult = {
-    topKeywords, myPrice, avgPrice, minPrice, maxPrice,
-    sortedActivities, valid, totalCount: products.length, myCost
-  };
-
-  generateChecklistTasks(lastAnalysisResult);
 }
 
+// ===== 诊断总览 =====
 function renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
-  const valid = products.filter(p => p.title && p.price > 0);
-  const total = valid.length;
+  var valid = products.filter(function(p) { return p.title && p.price > 0; });
+  var total = valid.length;
   if (total === 0) { $('diagnosticGrid').style.display = 'none'; return; }
 
-  // 价格定位分 (越接近中位价越高)
-  const prices = valid.map(p => p.price).sort((a, b) => a - b);
-  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
-  const priceDiff = myPrice > 0 ? Math.abs(myPrice - p50) / Math.max(p50, 1) : 0;
-  const priceScore = myPrice > 0 ? Math.max(0, 100 - priceDiff * 100) : 0;
+  $('diagnosticGrid').style.display = '';
 
-  // 标题覆盖分 (模拟：基于高频词数量)
-  const significantKeywords = topKeywords.filter(k => k.pct >= 30);
-  const titleScore = Math.min(100, significantKeywords.length * 8);
+  // 1. 价格评分
+  var priceScore;
+  if (myPrice > 0 && avgPrice > 0) {
+    var deviation = Math.abs((myPrice - avgPrice) / avgPrice * 100);
+    if (deviation <= 10) priceScore = 95;
+    else if (deviation <= 20) priceScore = 75;
+    else if (deviation <= 35) priceScore = 50;
+    else priceScore = 25;
+  } else { priceScore = 50; }
 
-  // 活动覆盖分
-  const hiActivities = sortedActivities.filter(([name, cnt]) => cnt / total >= 0.3);
-  const activityScore = Math.min(100, hiActivities.length * 30 + 30);
+  // 2. 标题覆盖评分
+  var myTitle = (myProductInfo && myProductInfo.title) ? myProductInfo.title : '';
+  var topWords = topKeywords.slice(0, 10).map(function(k) { return k.word; });
+  var covered = myTitle ? topWords.filter(function(w) { return myTitle.indexOf(w) >= 0; }).length : 0;
+  var titleScore = myTitle ? Math.min(100, Math.round(covered / Math.max(topWords.length, 1) * 100)) : 50;
+
+  // 3. 活动覆盖评分
+  var topActivities = sortedActivities.slice(0, 5).map(function(a) { return a[0]; });
+  var activityScore = 30;  // 默认假设覆盖不足，后续可精确化
 
   // 综合分
-  const overall = Math.round((priceScore * 0.4 + titleScore * 0.35 + activityScore * 0.25));
+  var overall = Math.round(priceScore * 0.4 + titleScore * 0.35 + activityScore * 0.25);
 
-  // 位置描述
-  let position = '中等偏下';
-  if (overall >= 70) position = '中等偏上';
-  else if (overall >= 50) position = '中等';
-  else if (overall >= 30) position = '中等偏下';
-  else position = '靠后';
+  // SVG 环形图
+  var r = 42, circ = 2 * Math.PI * r;
+  var offset = circ - (overall / 100) * circ;
+  var ringColor = overall >= 70 ? '#27ae60' : overall >= 45 ? '#f5a623' : '#e74c3c';
 
-  // 环形图: circumference = 2*PI*44 ≈ 276.46
-  const circ = 276.46;
-  const offset = circ - (circ * overall / 100);
+  var svg = '<svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="' + r + '" fill="none" stroke="#f0f0f0" stroke-width="7"/><circle cx="48" cy="48" r="' + r + '" fill="none" stroke="' + ringColor + '" stroke-width="7" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/></svg>';
 
-  // 维度条
-  const pricePct = Math.round(priceScore);
-  const titlePct = Math.round(titleScore);
-  const activityPct = Math.round(activityScore);
+  $('diagnosticGrid').innerHTML =
+    '<div class="diag-score">' +
+      '<div class="diag-ring-wrap">' + svg + '<div class="diag-ring-val">' + overall + '</div></div>' +
+      '<div class="diag-ring-desc">竞争力综合评分</div>' +
+    '</div>' +
+    '<div class="diag-dims">' +
+      '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">价格定位</span><span class="diag-dim-val">' + priceScore + ' 分</span></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (priceScore >= 75 ? 'lo' : priceScore >= 40 ? 'md' : 'hi') + '" style="width:' + priceScore + '%;"></div></div></div>' +
+      '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">标题关键词覆盖</span><span class="diag-dim-val">' + titleScore + ' 分 · ' + covered + '/' + topWords.length + '</span></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (titleScore >= 70 ? 'lo' : titleScore >= 40 ? 'md' : 'hi') + '" style="width:' + titleScore + '%;"></div></div></div>' +
+      '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">活动竞争力</span><span class="diag-dim-val">' + activityScore + ' 分</span></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill md" style="width:' + activityScore + '%;"></div></div></div>' +
+    '</div>' +
+    renderFinding(products, myPrice, topKeywords, avgPrice, myTitle, topWords, covered, titleScore, priceScore, sortedActivities, total, valid);
 
-  // 首要行动
-  let firstAction = '', firstActionData = '';
-  if (myPrice > 0 && Math.abs((myPrice - avgPrice) / avgPrice * 100) > 15) {
-    const diff = Math.round((myPrice - avgPrice) / avgPrice * 100);
-    firstAction = '优先调整定价，将售价从 ¥' + myPrice + ' 降至 ¥' + Math.round(avgPrice) + ' 附近';
-    firstActionData =
-      '<div class="finding-stat"><div class="sn">¥' + Math.round(avgPrice) + '</div><div class="sl">同行均价</div></div>' +
-      '<div class="finding-stat"><div class="sn">¥' + myPrice + '</div><div class="sl">你的售价</div></div>' +
-      '<div class="finding-stat"><div class="sn">' + (diff > 0 ? '+' : '') + diff + '%</div><div class="sl">偏离幅度</div></div>';
-  } else if (significantKeywords.length < 5) {
-    firstAction = '标题高频词覆盖不足，建议补充同行常用关键词';
-    firstActionData =
-      '<div class="finding-stat"><div class="sn">' + significantKeywords.length + '个</div><div class="sl">已覆盖高频词</div></div>' +
-      '<div class="finding-stat"><div class="sn">' + topKeywords.length + '个</div><div class="sl">同行高频词</div></div>';
-  } else {
-    firstAction = '竞争力正常，持续关注竞品价格和活动变化';
-    firstActionData = '<div class="finding-stat"><div class="sn">' + overall + '分</div><div class="sl">综合评分</div></div>';
+  function renderFinding(products, myPrice, topKeywords, avgPrice, myTitle, topWords, covered, titleScore, priceScore, sortedActivities, total, valid) {
+    var issues = [];
+    var prices = valid.map(function(p) { return p.price; }).sort(function(a, b) { return a - b; });
+    var p25 = prices[Math.floor(prices.length * 0.25)] || prices[0];
+    var p75 = prices[Math.floor(prices.length * 0.75)] || prices[prices.length - 1];
+
+    // 问题1: 价格偏离
+    if (myPrice > 0 && avgPrice > 0) {
+      var devPct = Math.round((myPrice - avgPrice) / avgPrice * 100);
+      if (Math.abs(devPct) > 10) {
+        var targetRange = '¥' + Math.round(avgPrice * 0.92) + '–' + Math.round(avgPrice * 1.08);
+        var direction = devPct > 0 ? '降' : '提';
+        var reason = devPct > 0
+          ? '同行均价 ¥' + Math.round(avgPrice) + '，75% 竞品定价在 ¥' + p25 + '–' + p75 + '，你高出 ' + devPct + '%'
+          : '同行均价 ¥' + Math.round(avgPrice) + '，75% 竞品定价在 ¥' + p25 + '–' + p75 + '，你低 ' + Math.abs(devPct) + '%';
+        issues.push({
+          severity: Math.abs(devPct) > 25 ? 3 : 2,
+          text: '<strong>' + direction + '价到 ' + targetRange + '</strong> — ' + reason + '。在千牛卖家中心 → 商品管理 → 修改价格即可。',
+          stats: '<div class="diag-stat"><div class="diag-stat-n">¥' + Math.round(avgPrice) + '</div><div class="diag-stat-l">同行均价</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n" style="color:var(--red)">¥' + myPrice + '</div><div class="diag-stat-l">你的售价</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n" style="color:' + (Math.abs(devPct) > 20 ? 'var(--red)' : 'var(--amber)') + '">' + (devPct > 0 ? '+' : '') + devPct + '%</div><div class="diag-stat-l">偏离幅度</div></div>'
+        });
+      }
+    }
+
+    // 问题2: 标题关键词覆盖
+    if (myTitle && topWords.length > 0) {
+      var missing = topKeywords.slice(0, 10).filter(function(k) { return myTitle.indexOf(k.word) < 0; });
+      if (missing.length >= 3) {
+        var top3Missing = missing.slice(0, 3).map(function(k) { return k.word + '(' + k.pct + '%)'; });
+        issues.push({
+          severity: missing.length >= 6 ? 3 : 2,
+          text: '<strong>标题补充：' + missing.slice(0, 3).map(function(k) { return k.word; }).join('、') + '</strong> — 这 ' + missing.length + ' 个词是同行高频词但你未覆盖，覆盖率分别 ' + top3Missing.join('、') + '。在千牛卖家中心 → 商品编辑 → 标题中插入这些词。',
+          stats: '<div class="diag-stat"><div class="diag-stat-n" style="color:var(--amber)">' + missing.length + '</div><div class="diag-stat-l">缺失关键词</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n">' + covered + '/' + topWords.length + '</div><div class="diag-stat-l">已覆盖</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n">' + titleScore + '分</div><div class="diag-stat-l">标题评分</div></div>'
+        });
+      }
+    }
+
+    // 问题3: 同行活动差距
+    if (sortedActivities.length >= 2) {
+      var topActName = sortedActivities[0][0];
+      var topActCov = Math.round(sortedActivities[0][1] / total * 100);
+      if (topActCov >= 30) {
+        issues.push({
+          severity: topActCov >= 60 ? 2 : 1,
+          text: '<strong>开通「' + topActName + '」</strong> — 同行 ' + topActCov + '% 已开通（' + sortedActivities[0][1] + '/' + total + ' 家），你的商品如未开通可能被搜索降权。路径：千牛卖家中心 → 营销中心 → ' + topActName + ' → 报名。',
+          stats: '<div class="diag-stat"><div class="diag-stat-n" style="color:var(--amber)">' + topActCov + '%</div><div class="diag-stat-l">同行覆盖率</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n">' + sortedActivities[0][1] + '家</div><div class="diag-stat-l">已开通</div></div>' +
+            '<div class="diag-stat"><div class="diag-stat-n">' + sortedActivities.length + '种</div><div class="diag-stat-l">活动类型</div></div>'
+        });
+      }
+    }
+
+    issues.sort(function(a, b) { return b.severity - a.severity; });
+    var topIssue = issues[0];
+
+    var actionText, actionStats, actionColor;
+    if (topIssue) {
+      actionText = topIssue.text;
+      actionStats = topIssue.stats;
+      actionColor = topIssue.severity >= 3 ? 'var(--red)' : (topIssue.severity >= 2 ? 'var(--amber)' : 'var(--brand)');
+    } else {
+      actionColor = 'var(--green)';
+      if (myPrice > 0 && myTitle) {
+        actionText = '定价和标题均在同行合理范围内，保持现状即可。定期关注竞品价格变化和新兴关键词趋势。';
+      } else if (myPrice > 0) {
+        actionText = '你的定价 ¥' + myPrice + ' 在同行中合理。建议补充商品标题信息以获取更完整的分析。';
+      } else {
+        actionText = '已完成 ' + total + ' 个竞品的分析。请在左侧输入你的售价和成本，或通过商品链接模式自动获取，以获取个性化诊断。';
+      }
+      actionStats =
+        '<div class="diag-stat"><div class="diag-stat-n">' + total + '</div><div class="diag-stat-l">分析商品数</div></div>' +
+        '<div class="diag-stat"><div class="diag-stat-n">¥' + Math.round(avgPrice) + '</div><div class="diag-stat-l">同行均价</div></div>' +
+        '<div class="diag-stat"><div class="diag-stat-n">' + sortedActivities.length + '</div><div class="diag-stat-l">活动类型</div></div>';
+    }
+
+    var contextNote = '';
+    if (issues.length > 1) {
+      contextNote = '<div style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.6;">另 ' + (issues.length - 1) + ' 项改进建议见下方清单</div>';
+    }
+
+    return '<div class="diag-finding" style="border-left-color:' + actionColor + ';"><div class="diag-finding-tag" style="color:' + actionColor + ';">' + (topIssue ? '立即行动' : '诊断结论') + '</div><div class="diag-finding-text" style="font-size:14px;">' + actionText + '</div><div class="diag-finding-stats">' + actionStats + '</div>' + contextNote + '</div>';
   }
-
-  var html = '';
-
-  // 评分卡
-  html += '<div class="score-card">';
-  html += '<div class="score-ring-wrap">';
-  html += '<svg width="100" height="100" viewBox="0 0 100 100">';
-  html += '<circle cx="50" cy="50" r="44" fill="none" stroke="#f0f0f0" stroke-width="7"/>';
-  html += '<circle cx="50" cy="50" r="44" fill="none" stroke="#ff5000" stroke-width="7"';
-  html += ' stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/>';
-  html += '</svg>';
-  html += '<div class="score-value-num">' + overall + '</div>';
-  html += '</div>';
-  html += '<div class="score-desc">在 ' + total + ' 个竞品中<br>处于' + position + '</div>';
-  html += '</div>';
-
-  // 维度卡
-  html += '<div class="dim-card">';
-  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">价格定位</span><span class="dim-val" style="color:#ef5350">' + (myPrice > 0 ? pricePct + '分' : '未填') + '</span></div><div class="dim-track"><div class="dim-fill high" style="width:' + pricePct + '%"></div></div></div>';
-  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">标题关键词覆盖</span><span class="dim-val" style="color:#ff9800">' + titlePct + '分</span></div><div class="dim-track"><div class="dim-fill med" style="width:' + titlePct + '%"></div></div></div>';
-  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">活动覆盖</span><span class="dim-val" style="color:#66bb6a">' + activityPct + '分</span></div><div class="dim-track"><div class="dim-fill low" style="width:' + activityPct + '%"></div></div></div>';
-  html += '</div>';
-
-  // 首要行动卡
-  html += '<div class="finding-card">';
-  html += '<div class="finding-label">首要行动</div>';
-  html += '<div class="finding-text">' + firstAction + '</div>';
-  html += '<div class="finding-stats">' + firstActionData + '</div>';
-  html += '</div>';
-
-  $('diagnosticGrid').innerHTML = html;
-  $('diagnosticGrid').style.display = '';
 }
 
+// ===== 改进清单 =====
 function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
-  const valid = products.filter(p => p.title && p.price > 0);
-  const total = valid.length;
+  var valid = products.filter(function(p) { return p.title && p.price > 0; });
+  var total = valid.length;
   if (total === 0) { $('improveCard').style.display = 'none'; return; }
+  $('improveCard').style.display = '';
 
-  const prices = valid.map(p => p.price).sort((a, b) => a - b);
-  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
+  var prices = valid.map(function(p) { return p.price; }).sort(function(a, b) { return a - b; });
+  var p50 = prices[Math.floor(prices.length / 2)];
+  var p25 = prices[Math.floor(prices.length * 0.25)] || prices[0];
+  var p75 = prices[Math.floor(prices.length * 0.75)] || prices[prices.length - 1];
+
+  var myTitle = (myProductInfo && myProductInfo.title) ? myProductInfo.title : '';
+  var topWords = topKeywords.slice(0, 10).map(function(k) { return k.word; });
+  var covered = myTitle ? topWords.filter(function(w) { return myTitle.indexOf(w) >= 0; }).length : 0;
+  var titleScore = myTitle ? Math.min(100, Math.round(covered / Math.max(topWords.length, 1) * 100)) : 50;
+  var tmallCount = valid.filter(function(p) { return p.isTmall; }).length;
+
+  // 状态标签: need=建议修改, ok=无需改动, maybe=可选优化, nodata=数据不足
   var items = [];
   var num = 0;
 
-  // 定价建议
+  // ====== 1. 定价竞争力 ======
+  num++;
   if (myPrice > 0 && avgPrice > 0) {
     var diff = Math.round((myPrice - avgPrice) / avgPrice * 100);
-    if (Math.abs(diff) > 15) {
-      num++;
-      var targetLo = Math.round(avgPrice * 0.92);
-      var targetHi = Math.round(avgPrice * 1.08);
-      var desc, evidence;
-      if (diff > 0) {
-        desc = '你的售价 <strong>¥' + myPrice + '</strong>，同行 75% 的商品定价在 <strong>¥' + prices[Math.floor(prices.length * 0.25)] + '–' + prices[Math.floor(prices.length * 0.75)] + '</strong> 区间。建议调至 <strong>¥' + targetLo + '–' + targetHi + '</strong>，接近同行中位价。';
-        evidence = '同行均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 +' + diff + '%';
-      } else {
-        desc = '你的售价 <strong>¥' + myPrice + '</strong> 低于同行均价。建议提价至 <strong>¥' + targetLo + '–' + targetHi + '</strong>，提升利润空间。';
-        evidence = '同行均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 ' + diff + '%';
-      }
+    var absDiff = Math.abs(diff);
+    if (absDiff > 20) {
       items.push({
-        pri: 'high', impact: '高影响', num: num,
-        title: '调整定价 — ' + (diff > 0 ? '降低售价 ' + Math.round(Math.abs(diff) * 0.6) + '%–' + Math.round(Math.abs(diff) * 0.8) + '%' : '提高售价 ' + Math.round(Math.abs(diff) * 0.5) + '%'),
-        desc: desc, evidence: evidence, dotColor: '#ef5350', btn: '复制调价建议', btnClass: 'btn-primary'
+        status: 'need', num: num,
+        title: '定价偏离较大 — 建议' + (diff > 0 ? '降价' : '提价'),
+        desc: '你的 ¥' + myPrice + ' 比同行均价 ¥' + Math.round(avgPrice) + ' ' + (diff > 0 ? '高' : '低') + ' ' + absDiff + '%。同行 75% 定价在 ¥' + p25 + '–' + p75 + '。' +
+          (diff > 0 ? '偏高会降低点击率，建议调至 ¥' + Math.round(avgPrice * 0.92) + '–' + Math.round(avgPrice * 1.05) + '。' : '偏低可能被怀疑质量，可提至 ¥' + Math.round(avgPrice * 0.95) + '–' + Math.round(avgPrice * 1.08) + '。'),
+        data: '均价 ¥' + Math.round(avgPrice) + ' · P25 ¥' + p25 + ' · P50 ¥' + p50 + ' · P75 ¥' + p75,
+        dot: '#ef5350'
+      });
+    } else if (absDiff > 10) {
+      items.push({
+        status: 'maybe', num: num,
+        title: '定价略有偏差 — 建议微调',
+        desc: '你的 ¥' + myPrice + ' 偏离同行均价 ' + absDiff + '%，幅度不大但可优化。建议调至 ¥' + Math.round(avgPrice * 0.95) + '–' + Math.round(avgPrice * 1.05) + ' 以接近市场中位。',
+        data: '均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 ' + (diff > 0 ? '+' : '') + diff + '%',
+        dot: '#ff9800'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '定价合理 — 无需改动',
+        desc: '你的 ¥' + myPrice + ' 偏离同行均价仅 ' + absDiff + '%，处于正常区间。当前定价在 ' + total + ' 个竞品中竞争力良好。',
+        data: '均价 ¥' + Math.round(avgPrice) + ' · 偏离仅 ' + absDiff + '% · ' + total + ' 个竞品',
+        dot: '#66bb6a'
       });
     }
-  }
-
-  // 标题建议
-  var searchKeyword = $('compKeyword').value.trim() || '';
-  var suggested = generateSuggestedTitle(topKeywords, searchKeyword);
-  if (suggested.missingKeywords.length > 0) {
-    num++;
+  } else if (avgPrice > 0) {
     items.push({
-      pri: 'med', impact: '中影响', num: num,
-      title: '补充标题关键词 — 增加 ' + suggested.missingKeywords.length + ' 个高频词',
-      desc: '同行高频但你可能缺失的关键词：<strong>' + suggested.missingKeywords.map(function(k) { return '「' + escHtml(k) + '」'; }).join('、') + '</strong>。',
-      evidence: '同行高频词 ' + topKeywords.length + ' 个 · 建议标题: ' + escHtml(suggested.title),
-      dotColor: '#ff9800', btn: '查看建议标题', btnClass: 'btn-secondary'
+      status: 'nodata', num: num,
+      title: '定价分析 — 缺少你的售价',
+      desc: '同行均价 ¥' + Math.round(avgPrice) + '，价格区间 ¥' + minPrice + '–' + maxPrice + '。在左侧输入你的售价后可对比分析。',
+      data: '同行均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · ' + total + ' 个商品',
+      dot: '#90a4ae'
     });
   }
 
-  // 活动建议
-  var hiActivities = sortedActivities.filter(function(a) { return a[1] / total >= 0.3; });
-  if (hiActivities.length > 0) {
-    num++;
-    var actTexts = hiActivities.map(function(a) { return a[0].replace('优惠:', '') + ' (' + Math.round(a[1] / total * 100) + '%)'; });
+  // ====== 2. 关键词覆盖 ======
+  num++;
+  if (myTitle && topKeywords.length > 0) {
+    var missing = topKeywords.slice(0, 10).filter(function(k) { return myTitle.indexOf(k.word) < 0; });
+    if (missing.length >= 5) {
+      items.push({
+        status: 'need', num: num,
+        title: '关键词覆盖不足 — 建议补充 ' + missing.length + ' 个高频词',
+        desc: '你未覆盖的高频词：<strong>' + missing.slice(0, 5).map(function(k) { return k.word + '(' + k.pct + '%)'; }).join('、') + '</strong>。缺失超过半数同行高频词会严重降低搜索曝光。在千牛编辑标题，把这些词自然嵌入。',
+        data: '已覆盖 ' + covered + '/' + topWords.length + ' 个 · 缺失率 ' + Math.round(missing.length / topWords.length * 100) + '% · 标题得分 ' + titleScore,
+        dot: '#ef5350'
+      });
+    } else if (missing.length >= 2) {
+      items.push({
+        status: 'maybe', num: num,
+        title: '关键词覆盖一般 — 可补充 ' + missing.length + ' 个词',
+        desc: '未覆盖的词：' + missing.map(function(k) { return k.word + '(' + k.pct + '%)'; }).join('、') + '。补充后可增加长尾搜索入口。',
+        data: '已覆盖 ' + covered + '/' + topWords.length + ' 个 · 标题得分 ' + titleScore,
+        dot: '#ff9800'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '关键词覆盖良好 — 无需改动',
+        desc: '已覆盖 ' + covered + '/' + topWords.length + ' 个同行高频词，仅缺 ' + (missing.length || 0) + ' 个非必需词（' + (missing.length > 0 ? missing.map(function(k) { return k.word; }).join('、') : '无') + '）。',
+        data: '覆盖 ' + covered + '/' + topWords.length + ' 个 · 标题得分 ' + titleScore + ' · 高频词数 ' + topKeywords.length,
+        dot: '#66bb6a'
+      });
+    }
+  } else if (topKeywords.length > 0) {
     items.push({
-      pri: 'low', impact: '低影响', num: num,
-      title: '配置活动和优惠',
-      desc: '同行热门活动：<strong>' + actTexts.join('、') + '</strong>。建议优先开通覆盖率高的活动。',
-      evidence: '操作路径：千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动',
-      dotColor: '#66bb6a', btn: '复制操作路径', btnClass: 'btn-secondary'
+      status: 'nodata', num: num,
+      title: '关键词覆盖 — 缺少你的标题',
+      desc: '同行 Top5 高频词：<strong>' + topKeywords.slice(0, 5).map(function(k) { return k.word + '(' + k.pct + '%)'; }).join('、') + '</strong>。通过商品链接模式获取标题后可对比分析。',
+      data: '同行 ' + topKeywords.length + ' 个高频词 · ' + total + ' 个商品',
+      dot: '#90a4ae'
     });
   }
 
-  if (items.length === 0) {
-    $('improveCard').style.display = 'none';
-    return;
-  }
-
-  var html = '';
-  items.forEach(function(item) {
-    html += '<div class="improve-item pri-' + item.pri + '">';
-    html += '<div class="improve-inner">';
-    html += '<div class="improve-rank">' + item.num + '</div>';
-    html += '<div class="improve-body">';
-    html += '<div class="title">' + item.title + ' <span class="impact-badge ' + item.pri + '">' + item.impact + '</span></div>';
-    html += '<div class="desc">' + item.desc + '</div>';
-    html += '<div class="evidence"><span class="ev-dot" style="background:' + item.dotColor + '"></span> ' + escHtml(item.evidence) + '</div>';
-    html += '</div>';
-    html += '<div class="improve-action"><button class="btn ' + item.btnClass + '" onclick="improvAction(\'' + item.pri + '\',\'' + escHtml(item.title) + '\')">' + item.btn + '</button></div>';
-    html += '</div></div>';
-  });
-
-  $('improveList').innerHTML = html;
-  $('improveCard').style.display = '';
-}
-
-function improvAction(pri, title) {
-  if (pri === 'high') {
-    var text = document.querySelector('#improveList .pri-high .desc').textContent;
-    navigator.clipboard.writeText(text).catch(function(){});
-    var btn = document.querySelector('#improveList .pri-high .btn');
-    if (btn) { var orig = btn.textContent; btn.textContent = '已复制 ✓'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
-  } else if (pri === 'med') {
-    var titleEl = document.querySelector('#improveList .pri-med .evidence');
-    if (titleEl) {
-      navigator.clipboard.writeText(titleEl.textContent.replace(/^[^:]*:\s*/, '')).catch(function(){});
-      var btn2 = document.querySelector('#improveList .pri-med .btn');
-      if (btn2) { var orig2 = btn2.textContent; btn2.textContent = '已复制 ✓'; setTimeout(function(){ btn2.textContent = orig2; }, 2000); }
+  // ====== 3. 标题长度 ======
+  num++;
+  if (myTitle) {
+    var titleLen = myTitle.length;
+    if (titleLen < 20) {
+      items.push({
+        status: 'need', num: num,
+        title: '标题过短 — ' + titleLen + ' 字（建议 25-45）',
+        desc: '淘宝标题上限 60 字，你仅用 ' + titleLen + ' 字，浪费了搜索关键词容量。每多一个关键词就多一个被搜到的机会。建议补充属性词（材质/款式）、场景词（年会/比赛）、人群词（成人/儿童）。',
+        data: '标题长度 ' + titleLen + ' 字 · 同行均值约 35 字 · 上限 60 字',
+        dot: '#ef5350'
+      });
+    } else if (titleLen > 55) {
+      items.push({
+        status: 'maybe', num: num,
+        title: '标题偏长 — ' + titleLen + ' 字（上限 60）',
+        desc: '标题接近上限，检查是否有低效词（如"包邮""爆款"等已被淘宝算法忽略的词）可替换为高价值关键词。',
+        data: '标题长度 ' + titleLen + ' 字 · 上限 60 字',
+        dot: '#ff9800'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '标题长度合理 — ' + titleLen + ' 字，无需改动',
+        desc: '长度在 25-45 字最佳区间内，充分利用了标题的搜索权重容量。',
+        data: '标题长度 ' + titleLen + ' 字 · 建议 25-45 字',
+        dot: '#66bb6a'
+      });
     }
   } else {
-    navigator.clipboard.writeText('千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动').catch(function(){});
-    var btn3 = document.querySelector('#improveList .pri-low .btn');
-    if (btn3) { var orig3 = btn3.textContent; btn3.textContent = '已复制 ✓'; setTimeout(function(){ btn3.textContent = orig3; }, 2000); }
+    items.push({
+      status: 'nodata', num: num,
+      title: '标题长度 — 缺少你的标题',
+      desc: '通过商品链接模式获取标题后可自动分析。也可以在左侧手动输入售价和成本后查看其他维度的分析。',
+      data: '同行标题平均约 35 字',
+      dot: '#90a4ae'
+    });
   }
+
+  // ====== 4. 活动配置 ======
+  num++;
+  if (sortedActivities.length >= 2) {
+    var topActName = sortedActivities[0][0];
+    var topActCov = Math.round(sortedActivities[0][1] / total * 100);
+    var allActNames = sortedActivities.slice(0, 5).map(function(a) { return a[0] + '(' + Math.round(a[1] / total * 100) + '%)'; });
+    if (topActCov >= 50) {
+      items.push({
+        status: 'need', num: num,
+        title: '同行活动覆盖高 — 建议开通「' + topActName + '」',
+        desc: '同行热门活动：' + allActNames.join('、') + '。超半数竞品已开通活动，未参加可能被搜索降权。路径：千牛 → 营销中心 → 活动报名。',
+        data: topActName + ' 覆盖率 ' + topActCov + '% · ' + sortedActivities[0][1] + '/' + total + ' 家 · 共 ' + sortedActivities.length + ' 种活动',
+        dot: '#ef5350'
+      });
+    } else {
+      items.push({
+        status: 'maybe', num: num,
+        title: '同行活动较分散 — 可选开通「' + topActName + '」',
+        desc: '同行活动分布：' + allActNames.join('、') + '。无单一活动占绝对优势，可根据利润空间选择性参加。',
+        data: '最高覆盖率 ' + topActCov + '% · 共 ' + sortedActivities.length + ' 种活动',
+        dot: '#ff9800'
+      });
+    }
+  } else {
+    items.push({
+      status: 'ok', num: num,
+      title: '同行活动较少 — 活动竞争不激烈',
+      desc: sortedActivities.length === 0 ? '未检测到同行有明显活动标签，这个关键词下活动不是主要竞争手段。' : '仅 ' + sortedActivities.length + ' 种活动，同行活动参与度低，你的竞争压力较小。',
+      data: '检测到 ' + sortedActivities.length + ' 种活动标签 · ' + total + ' 个商品',
+      dot: '#66bb6a'
+    });
+  }
+
+  // ====== 5. 价格定位区间 ======
+  num++;
+  if (myPrice > 0 && prices.length >= 5) {
+    var posLabel, posStatus, posDesc, posDot;
+    if (myPrice < p25) {
+      posLabel = '低价区'; posStatus = 'ok'; posDot = '#66bb6a';
+      posDesc = '你的定价在同行最低 25% 区间，适合价格敏感型买家。如果定制成本允许，保持低价策略可以获取更多点击。但需确保利润空间——当前每单毛利是否足够覆盖售后成本？';
+    } else if (myPrice > p75) {
+      posLabel = '高价区'; posStatus = 'need'; posDot = '#ef5350';
+      posDesc = '你的定价在同行最高 25% 区间。高价策略需要差异化支撑——你的材质、工艺、服务是否明显优于竞品？如果没有明显差异，高价会导致点击率下降。';
+    } else {
+      posLabel = '中间价位'; posStatus = 'ok'; posDot = '#66bb6a';
+      posDesc = '定价处于市场中间 50% 区间，这是大多数买家的心理价位范围，竞争力和利润空间平衡较好。';
+    }
+    items.push({
+      status: posStatus, num: num,
+      title: '价格定位：' + posLabel + '（' + formatPercent(myPrice, prices) + '）',
+      desc: posDesc,
+      data: '最低 ¥' + minPrice + ' · P25 ¥' + p25 + ' · P50 ¥' + p50 + ' · P75 ¥' + p75 + ' · 最高 ¥' + maxPrice,
+      dot: posDot
+    });
+  } else {
+    items.push({
+      status: 'nodata', num: num,
+      title: '价格定位 — 缺少你的售价',
+      desc: '同行价格分布：最低 ¥' + minPrice + '，P50 ¥' + p50 + '，最高 ¥' + maxPrice + '。输入售价后可定位你在市场中的位置。',
+      data: '最低 ¥' + minPrice + ' · P50 ¥' + p50 + ' · 最高 ¥' + maxPrice + ' · ' + total + ' 个商品',
+      dot: '#90a4ae'
+    });
+  }
+
+  // ====== 6. 销量对标 ======
+  num++;
+  var withSales = valid.filter(function(p) { return p.sales && p.sales.length > 0; });
+  if (withSales.length > 0) {
+    var highSalesPeers = valid.filter(function(p) { return p.sales && p.sales.indexOf('万') >= 0; });
+    if (highSalesPeers.length > 0) {
+      items.push({
+        status: 'maybe', num: num,
+        title: '销量标杆 — ' + highSalesPeers.length + ' 个竞品月销过万',
+        desc: highSalesPeers.length + '/' + total + ' 个竞品销量过万，头部商品「' + escHtml(highSalesPeers[0].title).substring(0, 18) + '…」售价 ¥' + highSalesPeers[0].price + '。销量差距可能源于标题权重、活动参与度、主图质量或店铺等级。',
+        data: '万销量占比 ' + Math.round(highSalesPeers.length / total * 100) + '% · 最高频活动 ' + (sortedActivities[0] ? sortedActivities[0][0] : '无'),
+        dot: '#ff9800'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '销量分布均匀 — 无极端头部垄断',
+        desc: withSales.length + ' 个商品有销量数据，未出现月销过万的绝对头部。市场分散说明新进入者仍有空间。',
+        data: withSales.length + '/' + total + ' 有销量数据',
+        dot: '#66bb6a'
+      });
+    }
+  } else {
+    items.push({
+      status: 'nodata', num: num,
+      title: '销量对标 — 未提取到销量数据',
+      desc: '当前数据中未包含销量信息。这可能是因为淘宝搜索结果页的 DOM 变化导致提取失败，或该关键词下的商品未显示销量。',
+      data: total + ' 个商品 · 无销量数据',
+      dot: '#90a4ae'
+    });
+  }
+
+  // ====== 7. 竞争结构（天猫 vs 淘宝） ======
+  num++;
+  if (tmallCount > 0) {
+    var tmallPct = Math.round(tmallCount / total * 100);
+    var isMyTmall = myProductInfo && myProductInfo.title && myProductInfo.shop ? (function() {
+      // 简单启发式：天猫店名通常较短且不含特殊字符
+      return false; // 保守处理，不猜测
+    })() : null;
+    if (tmallPct >= 60) {
+      items.push({
+        status: 'maybe', num: num,
+        title: '天猫主导 — ' + tmallPct + '% 为天猫店',
+        desc: '搜索结果中天猫占比超六成，天猫在搜索权重上有先天优势。如果你是淘宝 C 店，需要在价格（低 ' + Math.round((1 - (tmallCount > 0 ? 1 : 0)) * 100) + '% 以上）或定制差异化上建立壁垒。',
+        data: '天猫 ' + tmallCount + ' 家 · 淘宝 ' + (total - tmallCount) + ' 家 · 天猫占比 ' + tmallPct + '%',
+        dot: '#ff9800'
+      });
+    } else if (tmallPct <= 30) {
+      items.push({
+        status: 'ok', num: num,
+        title: 'C 店占优 — 天猫仅 ' + tmallPct + '%',
+        desc: 'C 店占 ' + (100 - tmallPct) + '%，说明这个类目天猫渗透率低，C 店仍有较大空间。无需过分担心天猫的品牌优势。',
+        data: '天猫 ' + tmallCount + ' 家 · 淘宝 ' + (total - tmallCount) + ' 家',
+        dot: '#66bb6a'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '结构均衡 — 天猫淘宝各半',
+        desc: '天猫 ' + tmallPct + '% / 淘宝 ' + (100 - tmallPct) + '%，竞争结构健康，两种店铺类型各有获客机会。',
+        data: '天猫 ' + tmallCount + ' 家 · 淘宝 ' + (total - tmallCount) + ' 家',
+        dot: '#66bb6a'
+      });
+    }
+  } else {
+    items.push({
+      status: 'ok', num: num,
+      title: '全部为淘宝店 — 无天猫竞争',
+      desc: '全部 ' + total + ' 个商品均为淘宝 C 店，这个关键词下没有天猫店铺竞争。对 C 店卖家有利。',
+      data: total + ' 个商品 · 0 个天猫',
+      dot: '#66bb6a'
+    });
+  }
+
+  // ====== 8. 运费险与利润 ======
+  num++;
+  if (myCost > 0 && myPrice > 0) {
+    var grossMargin = Math.round((myPrice - myCost) / myPrice * 100);
+    var insuranceCost = (myPrice * 0.015);
+    var netProfit = myPrice - myCost - insuranceCost;
+    var netMargin = Math.round(netProfit / myPrice * 100);
+    if (grossMargin < 20) {
+      items.push({
+        status: 'need', num: num,
+        title: '利润率偏低 — ' + grossMargin + '% 毛利，建议优化成本',
+        desc: '毛利率 ' + grossMargin + '%，扣除运费险约 ¥' + insuranceCost.toFixed(1) + ' 后净利仅 ¥' + netProfit.toFixed(0) + '（' + netMargin + '%）。演出服类目退货率偏高，低毛利难以承受售后损耗。考虑优化供应链或适当提价。',
+        data: '售价 ¥' + myPrice + ' · 成本 ¥' + myCost + ' · 毛利 ¥' + (myPrice - myCost).toFixed(0) + ' · 净利 ¥' + netProfit.toFixed(0),
+        dot: '#ef5350'
+      });
+    } else {
+      items.push({
+        status: 'ok', num: num,
+        title: '利润空间健康 — ' + grossMargin + '% 毛利率，无需改动',
+        desc: '毛利率 ' + grossMargin + '%，扣除运费险 ¥' + insuranceCost.toFixed(1) + ' 后净利 ¥' + netProfit.toFixed(0) + '（' + netMargin + '%），能覆盖售后和退货损耗。',
+        data: '售价 ¥' + myPrice + ' · 成本 ¥' + myCost + ' · 净利 ¥' + netProfit.toFixed(0) + ' · 净利率 ' + netMargin + '%',
+        dot: '#66bb6a'
+      });
+    }
+  } else {
+    items.push({
+      status: 'nodata', num: num,
+      title: '利润测算 — 缺少成本数据',
+      desc: '在左侧输入你的成本价（¥），可自动计算毛利率、运费险和净利。演出服建议毛利率不低于 25% 以覆盖退货损耗。',
+      data: '同行均价 ¥' + Math.round(avgPrice) + ' · 输入成本后可计算利润',
+      dot: '#90a4ae'
+    });
+  }
+
+  // ====== 渲染 ======
+  var statusLabels = { need: '建议修改', ok: '无需改动', maybe: '可选优化', nodata: '数据不足' };
+  var statusPri = { need: 'hi', ok: 'lo', maybe: 'md', nodata: 'nodata' };
+
+  // 新增 CSS class for nodata
+  var html = '';
+  items.forEach(function(item) {
+    var pri = statusPri[item.status] || 'lo';
+    html += '<div class="improve-item p-' + pri + '">' +
+      '<div class="improve-rank" style="color:' + item.dot + ';">' + item.num + '</div>' +
+      '<div class="improve-body">' +
+        '<div class="title"><span class="imp-badge ' + pri + '">' + statusLabels[item.status] + '</span>' + item.title + '</div>' +
+        '<div class="desc">' + item.desc + '</div>' +
+        '<span class="evidence"><span class="ev-dot" style="background:' + item.dot + ';"></span>' + escHtml(item.data) + '</span>' +
+      '</div>' +
+    '</div>';
+  });
+  $('improveList').innerHTML = html;
 }
 
+function formatPercent(value, sortedArr) {
+  // 计算 value 在 sortedArr 中的百分位
+  var below = 0;
+  for (var i = 0; i < sortedArr.length; i++) {
+    if (sortedArr[i] < value) below++;
+  }
+  return '高于' + Math.round(below / sortedArr.length * 100) + '%竞品';
+}
+
+function improvAction(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    alert('已复制 ✓');
+  }).catch(function() {
+    alert('复制失败，请手动复制');
+  });
+}
+
+// ===== 相近竞品对标 =====
 function renderPeerComparison(products, myPrice) {
   var valid = products.filter(function(p) { return p.title && p.price > 0; });
-  if (!myPrice || valid.length === 0) { $('peerCard').style.display = 'none'; return; }
+  if (valid.length === 0) { $('peerCard').style.display = 'none'; return; }
 
-  // 找价格 ±15% 范围内的竞品
-  var lo = myPrice * 0.85, hi = myPrice * 1.15;
-  var peers = valid.filter(function(p) { return p.price >= lo && p.price <= hi; });
-  if (peers.length < 2) {
-    lo = myPrice * 0.75; hi = myPrice * 1.25;
-    peers = valid.filter(function(p) { return p.price >= lo && p.price <= hi; });
+  var myShop = myProductInfo ? myProductInfo.shop : '';
+  var myTitle = myProductInfo ? myProductInfo.title : '';
+
+  // 排除自家店铺的商品
+  var peers = valid;
+  if (myShop) {
+    var shopLower = myShop.toLowerCase();
+    peers = valid.filter(function(p) {
+      return !p.shop || p.shop.toLowerCase().indexOf(shopLower) < 0;
+    });
   }
+
   if (peers.length === 0) { $('peerCard').style.display = 'none'; return; }
 
-  // 取前 3 个，按价格接近度排序
-  peers.sort(function(a, b) { return Math.abs(a.price - myPrice) - Math.abs(b.price - myPrice); });
-  peers = peers.slice(0, 3);
+  // 竞品评分排序：综合价格接近度 + 销量 + 数据完整度
+  function scorePeer(p) {
+    var s = 0;
+    // 价格接近度（价格越接近得分越高）
+    if (myPrice > 0 && p.price > 0) {
+      var priceDiff = Math.abs(p.price - myPrice) / myPrice;
+      if (priceDiff <= 0.15) s += 30;
+      else if (priceDiff <= 0.30) s += 20;
+      else if (priceDiff <= 0.50) s += 10;
+    }
+    // 有销量数据加分
+    if (p.sales) s += 15;
+    // 有活动数据加分
+    if (p.activityTags && p.activityTags.length > 0) s += 10;
+    // 有优惠数据加分
+    if (p.promo) s += 5;
+    // 天猫加权（作为标杆参考）
+    if (p.isTmall) s += 5;
+    return s;
+  }
+
+  var scored = peers.map(function(p) { return { product: p, score: scorePeer(p) }; });
+  scored.sort(function(a, b) { return b.score - a.score; });
+
+  // 优先选 3 个得分最高且包含天猫+淘宝多样性
+  var selected = [];
+  var hasTmall = false, hasTaobao = false;
+  for (var i = 0; i < scored.length && selected.length < 3; i++) {
+    var candidate = scored[i].product;
+    // 如果还没选中天猫且这是天猫，优先选
+    if (!hasTmall && candidate.isTmall && selected.length < 3) {
+      selected.push(candidate); hasTmall = true;
+    } else if (!hasTaobao && !candidate.isTmall && selected.length < 3) {
+      selected.push(candidate); hasTaobao = true;
+    } else if (selected.length < 3) {
+      // 确保不重复
+      if (selected.indexOf(candidate) < 0) selected.push(candidate);
+    }
+  }
+  // 如果还没选满，从剩余中补
+  for (var j = 0; j < scored.length && selected.length < 3; j++) {
+    if (selected.indexOf(scored[j].product) < 0) selected.push(scored[j].product);
+  }
+
+  // 优先用 myProductInfo 的数据，fallback 到手动输入的 myPrice
+  var myInfoTitle = myTitle || '（未获取到商品标题，请通过商品链接模式获取）';
+  var displayPrice = myPrice > 0 ? myPrice : (myProductInfo && myProductInfo.price > 0 ? myProductInfo.price : 0);
+  var myInfoPrice = displayPrice > 0 ? '¥' + displayPrice : '（未获取到售价）';
+  var myInfoShop = myShop || '（未获取到店铺信息）';
 
   var html = '<table class="peer-table"><thead><tr>';
-  html += '<th style="width:90px;"></th>';
-  html += '<th style="color:#ff5000;">你的商品 <span style="font-size:11px;font-weight:400;">¥' + myPrice + '</span></th>';
-  peers.forEach(function(p, i) {
-    html += '<th>竞品 #' + (i + 1) + ' <span style="font-size:11px;font-weight:400;">¥' + p.price + '</span></th>';
+  html += '<th style="width:80px;"></th>';
+  html += '<th style="color:var(--brand);">我的商品 <span style="font-size:10px;font-weight:400;">' + myInfoPrice + '</span></th>';
+  selected.forEach(function(p, i) {
+    html += '<th>竞品 #' + (i + 1) + ' <span style="font-size:10px;font-weight:400;">¥' + p.price + '</span></th>';
   });
   html += '</tr></thead><tbody>';
 
-  // 标题行
+  // 标题
   html += '<tr>';
-  html += '<td style="font-weight:600;color:#333;">标题</td>';
-  html += '<td class="my-col title-col">—</td>';
-  peers.forEach(function(p) {
-    html += '<td class="title-col">' + escHtml(p.title).substring(0, 45) + (p.title.length > 45 ? '...' : '') + '</td>';
+  html += '<td style="font-weight:600;">标题</td>';
+  html += '<td class="me-col tc">' + escHtml(myInfoTitle).substring(0, 50) + (myInfoTitle.length > 50 ? '...' : '') + '</td>';
+  selected.forEach(function(p) {
+    html += '<td class="tc">' + escHtml(p.title).substring(0, 50) + (p.title.length > 50 ? '...' : '') + '</td>';
   });
   html += '</tr>';
 
-  // 销量行
+  // 售价
   html += '<tr>';
-  html += '<td style="font-weight:600;color:#333;">销量</td>';
-  html += '<td class="my-col">—</td>';
-  peers.forEach(function(p) {
-    html += '<td>' + (p.sales || '-') + '</td>';
+  html += '<td style="font-weight:600;">售价</td>';
+  html += '<td class="me-col">' + (displayPrice > 0 ? '¥' + displayPrice : '—') + '</td>';
+  selected.forEach(function(p) {
+    var diff = myPrice > 0 ? Math.round((p.price - myPrice) / myPrice * 100) : 0;
+    var diffText = myPrice > 0 ? (diff >= 0 ? ' +' + diff + '%' : ' ' + diff + '%') : '';
+    var diffColor = Math.abs(diff) > 20 ? 'var(--red)' : (Math.abs(diff) > 10 ? 'var(--amber)' : 'var(--green)');
+    html += '<td>¥' + p.price + (myPrice > 0 ? ' <span style="font-size:10px;color:' + diffColor + ';">' + diffText + '</span>' : '') + '</td>';
   });
   html += '</tr>';
 
-  // 店铺行
+  // 销量
+  var mySales = (myProductInfo && myProductInfo.sales) ? myProductInfo.sales : '';
   html += '<tr>';
-  html += '<td style="font-weight:600;color:#333;">店铺</td>';
-  html += '<td class="my-col">—</td>';
-  peers.forEach(function(p) {
-    html += '<td>' + escHtml(p.shop || '-') + (p.isTmall ? ' <span style="font-size:11px;color:#ff5000;">天猫</span>' : '') + '</td>';
+  html += '<td style="font-weight:600;">销量</td>';
+  html += '<td class="me-col">' + (mySales || '—') + '</td>';
+  selected.forEach(function(p) { html += '<td>' + (p.sales || '-') + '</td>'; });
+  html += '</tr>';
+
+  // 店铺
+  html += '<tr>';
+  html += '<td style="font-weight:600;">店铺</td>';
+  html += '<td class="me-col">' + escHtml(myInfoShop) + '</td>';
+  selected.forEach(function(p) {
+    html += '<td>' + escHtml(p.shop || '-') + (p.isTmall ? ' <span style="font-size:10px;color:var(--brand);">天猫</span>' : '') + '</td>';
   });
   html += '</tr>';
 
-  // 活动行
+  // 活动
   html += '<tr>';
-  html += '<td style="font-weight:600;color:#333;">活动/优惠</td>';
-  html += '<td class="my-col">—</td>';
-  peers.forEach(function(p) {
+  html += '<td style="font-weight:600;">活动</td>';
+  var myActs = [].concat((myProductInfo && myProductInfo.activityTags) || [], (myProductInfo && myProductInfo.promo) ? [myProductInfo.promo] : []);
+  html += '<td class="me-col">' + (myActs.length > 0 ? escHtml(myActs.join(' / ')) : '—') + '</td>';
+  selected.forEach(function(p) {
     var acts = [].concat(p.activityTags || [], p.promo ? [p.promo] : []);
     html += '<td>' + (acts.length > 0 ? escHtml(acts.join(' / ')) : '无') + '</td>';
   });
@@ -1299,346 +1550,23 @@ function renderPeerComparison(products, myPrice) {
   $('peerCard').style.display = '';
 }
 
-function getKeywordFrequency(titles) {
-  const freq = {};
-  const stopWords = new Set(['的', '和', '与', '及', '之', '是', '在', '有', '为', '等', '了', '不', '也', '都', '就', '还', '要', '会', '可', '个', '这', '那', '我', '你', '他', '她', '它', '们', 'a', 'the', 'is', 'for', 'and', '没有', '可以', '什么', '一个', '这个', '自己', '我们', '他们', '还是', '不是', '已经']);
-
-  titles.forEach(title => {
-    const clean = title.replace(/[\s,，、/｜|+·\-—–★▼▲◆■●✦✿✤.!！？?]+/g, '');
-    const found = [];
-
-    // Step 1: 词典匹配 — 在清洗后的标题中查找已知领域词汇
-    const dictMatches = [];
-    for (const word of getDomainDictSorted()) {
-      let idx = clean.indexOf(word);
-      while (idx >= 0) {
-        dictMatches.push({ word, start: idx, end: idx + word.length });
-        idx = clean.indexOf(word, idx + 1);
-      }
-    }
-    dictMatches.sort((a, b) => a.start - b.start || b.word.length - a.word.length);
-
-    // 选择不重叠的词典匹配（贪心，长词优先）
-    const selected = [];
-    for (const m of dictMatches) {
-      if (selected.some(s => s.start <= m.start && s.end >= m.end)) continue;
-      for (let i = selected.length - 1; i >= 0; i--) {
-        if (m.start <= selected[i].start && m.end >= selected[i].end) {
-          selected.splice(i, 1);
-        }
-      }
-      selected.push(m);
-    }
-    selected.sort((a, b) => a.start - b.start);
-    selected.forEach(s => found.push(s.word));
-
-    // Step 2: 在词典未覆盖的位置用 2-3 字 n-gram 填补
-    const covered = selected.map(s => ({ start: s.start, end: s.end }));
-    for (let len = 2; len <= 3; len++) {
-      for (let i = 0; i <= clean.length - len; i++) {
-        const gram = clean.substring(i, i + len);
-        if (/[^一-龥a-zA-Z0-9]/.test(gram)) continue;
-        if (stopWords.has(gram)) continue;
-        if (covered.some(c => i < c.end && i + len > c.start)) continue;
-        found.push(gram);
-        covered.push({ start: i, end: i + len });
-      }
-    }
-
-    // 每个标题内同一个词只计一次
-    const uniqueWords = [...new Set(found.filter(w => w.length >= 2 && !/^\d+$/.test(w)))];
-    uniqueWords.forEach(w => {
-      freq[w] = (freq[w] || 0) + 1;
-    });
-  });
-
-  // 按频率排序
-  const entries = Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
-    .map(([word, count]) => ({ word, count, pct: Math.round(count / titles.length * 100) }));
-
-  // 去重：排除被更长且高频的词完全包含的碎片（如"楼梦"被"红楼梦"包含）
-  const filtered = [];
-  for (const entry of entries) {
-    if (filtered.some(f => f.word !== entry.word && f.word.includes(entry.word))) continue;
-    filtered.push(entry);
-    if (filtered.length >= 20) break;
-  }
-
-  return filtered;
-}
-
-// ===== 行动方案生成 =====
-
-function generateSuggestedTitle(topKeywords, searchKeyword) {
-  // 取同行高频词（占比 >= 20%，优先长词），排除纯数字
-  const rawWords = topKeywords
-    .filter(k => k.pct >= 20 && k.word.length >= 2 && !/^\d+$/.test(k.word))
-    .sort((a, b) => (b.word.length >= 3 ? 1 : 0) - (a.word.length >= 3 ? 1 : 0) || b.pct - a.pct)
-    .map(k => k.word);
-
-  // 加上用户搜索词
-  if (searchKeyword) {
-    const kwParts = searchKeyword.split(/[\s,，、]+/).filter(w => w.length >= 2 && !rawWords.includes(w));
-    rawWords.push(...kwParts);
-  }
-
-  let all = [...new Set(rawWords)];
-
-  // 过滤碎片词：如果某个词被另一个更长的词完全包含则去掉
-  all = all.filter(w => !all.some(other => other !== w && other.includes(w) && other.length > w.length));
-
-  // 分类（复用 DOMAIN_DICT 的分类逻辑）
-  const isDictMatch = (w, patterns) => patterns.some(p => w.includes(p) || p.includes(w));
-
-  const CORE_PATTERNS = ['演出服', '舞蹈服', '古装', '汉服', '旗袍', '礼服', '戏服', '铠甲', '战袍', '表演服', '舞台服', '合唱服', '练功服', '服装', '服饰'];
-  const STYLE_PATTERNS = ['红楼梦', '宝玉', '黛玉', '宝钗', '熙凤', '花木兰', '白娘子', '许仙', '小青', '古典', '民族', '现代', '芭蕾', '拉丁', '爵士', '街舞', 'Cosplay', '仙女', '公主', '武侠', '宫廷', '民国', '动漫', '影视', '戏曲', '舞台剧', '唐装', '汉服', '旗袍'];
-  const MATERIAL_PATTERNS = ['刺绣', '缎面', '雪纺', '蕾丝', '钉珠', '印花', '丝绸', '渐变', '重工', '大袖', '齐胸', '襦裙', '马面', '金丝绒', '棉麻', '欧根纱', '高定', '原版', '复刻'];
-  const SCENE_PATTERNS = ['舞台', '演出', '表演', '比赛', '影楼', '摄影', '年会', '六一', '艺考', '排练', '走秀', '庆典', '话剧', '戏曲', '舞蹈', '舞台剧'];
-  const CROWD_PATTERNS = ['成人', '儿童', '少儿', '幼儿', '男女', '小孩'];
-
-  const core = all.filter(w => isDictMatch(w, CORE_PATTERNS));
-  const style = all.filter(w => isDictMatch(w, STYLE_PATTERNS) && !core.includes(w));
-  const material = all.filter(w => isDictMatch(w, MATERIAL_PATTERNS) && !core.includes(w) && !style.includes(w));
-  const scene = all.filter(w => isDictMatch(w, SCENE_PATTERNS) && !core.includes(w) && !style.includes(w) && !material.includes(w));
-  const crowd = all.filter(w => isDictMatch(w, CROWD_PATTERNS));
-  const rest = all.filter(w => !core.includes(w) && !style.includes(w) && !material.includes(w) && !scene.includes(w) && !crowd.includes(w));
-
-  // 构建标题：核心词 + 风格/角色 + 材质/工艺 + 场景 + 人群 + 定制（连续拼接，无空格）
-  const parts = [];
-
-  if (core.length > 0) parts.push(...core.slice(0, 2));
-  else parts.push('演出服');
-
-  if (style.length > 0) parts.push(...style.slice(0, 3));
-
-  if (material.length > 0) parts.push(...material.slice(0, 2));
-
-  if (scene.length > 0) parts.push(...scene.slice(0, 2));
-
-  if (crowd.length > 0) parts.push(...crowd.slice(0, 1));
-
-  // 定制标识
-  if (!parts.some(w => w.includes('定制'))) parts.push('定制');
-
-  // 去重（同一词不重复出现）
-  const final = [];
-  for (const w of parts) {
-    if (!final.includes(w)) final.push(w);
-  }
-
-  // 拼接为连续文本
-  let title = final.join('');
-
-  // 长度不够时用 rest 补位
-  if (title.length < 20 && rest.length > 0) {
-    const padWords = rest.filter(w => !final.includes(w)).slice(0, 3);
-    for (const w of padWords) {
-      if (!final.includes(w)) {
-        final.push(w);
-        title = final.join('');
-        if (title.length >= 20) break;
-      }
-    }
-  }
-
-  // 计算哪些同行高频词未被覆盖
-  const missingKeywords = all.filter(w => !final.some(f => f.includes(w) || w.includes(f))).slice(0, 5);
-
-  return { title, missingKeywords, hotWords: all.slice(0, 10) };
-}
-
-
-
-// ===== 四张分析卡片渲染 =====
-
-function renderTitleCard(keywords, total) {
-  const significant = keywords.filter(k => k.pct >= 30);
-  const badgeEl = $('titleBadge');
-
-  let html = '';
-  if (significant.length === 0) {
-    html = '<p>数据量不足，无法分析高频关键词</p>';
-    badgeEl.textContent = '数据不足';
-    badgeEl.className = 'badge';
+// ===== 折叠面板 =====
+function toggleDetail() {
+  var content = $('detailContent');
+  var toggle = $('detailToggle');
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
+    toggle.classList.remove('open');
   } else {
-    html = '<p style="margin-bottom:8px;">同行高频词（出现占比 ≥ 30%）：</p>';
-    significant.forEach(k => {
-      html += '<span class="keyword-tag">' + escHtml(k.word) + '（' + k.pct + '%）</span>';
-    });
-    badgeEl.textContent = significant.length + ' 个高频词';
-    badgeEl.className = 'badge warn';
-  }
-
-  $('titleBody').innerHTML = html;
-  $('titleSuggestion').innerHTML = '<strong>操作：</strong>检查你的标题是否覆盖了上述高频词。缺少的词建议补充到标题中。';
-}
-
-function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
-  const diff = (myPrice > 0 && avgPrice > 0) ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
-  const absDiff = Math.abs(diff);
-
-  let level, badgeClass;
-  if (avgPrice === 0 && myPrice === 0) {
-    level = '无数据';
-    badgeClass = '';
-  } else if (avgPrice === 0) {
-    level = '数据不足';
-    badgeClass = 'warn';
-  } else if (myPrice === 0) {
-    level = '未填写价格';
-    badgeClass = '';
-  } else if (absDiff <= 10) {
-    level = '正常';
-    badgeClass = 'ok';
-  } else if (absDiff <= 30) {
-    level = '注意';
-    badgeClass = 'warn';
-  } else {
-    level = '需调整';
-    badgeClass = 'action';
-  }
-
-  $('priceBadge').textContent = level;
-  $('priceBadge').className = 'badge ' + badgeClass;
-
-  $('priceStats').innerHTML =
-    '<div class="stat-item"><span style="color:#888;">你的价格</span><strong>' + (myPrice > 0 ? '¥' + myPrice : '未填') + '</strong></div>' +
-    '<div class="stat-item"><span style="color:#888;">同行均价</span><strong>¥' + avgPrice.toFixed(0) + '</strong></div>' +
-    '<div class="stat-item"><span style="color:#888;">价格区间</span><strong>¥' + minPrice + ' - ¥' + maxPrice + '</strong></div>' +
-    (myPrice > 0 ? '<div class="stat-item"><span style="color:#888;">偏离</span><strong style="color:' + (diff > 0 ? '#e65100' : '#2e7d32') + '">' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '%</strong></div>' : '');
-
-  let suggestion = '';
-  if (avgPrice === 0) {
-    suggestion = '<strong>提示：</strong>未能提取到有效的价格数据，请确认搜索结果页面中的数据是否已正确复制。';
-  } else if (myPrice > 0 && absDiff > 30) {
-    suggestion = diff > 0
-      ? '<strong>建议：</strong>你的价格明显高于同行。考虑突出定制差异，或增加入门款 SKU。'
-      : '<strong>建议：</strong>你的价格明显低于同行。检查利润空间是否充足，考虑适当提价。';
-  } else if (myPrice > 0 && absDiff > 10) {
-    suggestion = diff > 0
-      ? '<strong>提示：</strong>价格略高于同行均价。确保你的定制服务和产品质量能支撑这个溢价。'
-      : '<strong>提示：</strong>价格略低于同行。微幅低价的策略可以吸引价格敏感买家，注意控制好利润。';
-  } else if (myPrice > 0) {
-    suggestion = '<strong>结论：</strong>你的价格在同行正常范围内，无需调整。';
-  }
-  $('priceSuggestion').innerHTML = suggestion;
-}
-
-function renderActivityCard(sortedActivities, total) {
-  if (sortedActivities.length === 0) {
-    $('activityBody').innerHTML = '<p>未检测到竞品有明显的活动/优惠标识</p>';
-    $('activityBadge').textContent = '无数据';
-    $('activityBadge').className = 'badge';
-    $('activitySuggestion').innerHTML = '';
-    return;
-  }
-
-  const topActivities = sortedActivities.filter(([, count]) => count >= total * 0.2);
-
-  let html = '<p style="margin-bottom:8px;">同行中常见的活动和优惠（同行使用占比）：</p>';
-  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-  sortedActivities.slice(0, 8).forEach(([name, count]) => {
-    const pct = Math.round(count / total * 100);
-    html += '<span class="keyword-tag">' + escHtml(name.replace('优惠:', '')) + ' <span style="opacity:.7;">' + pct + '%</span></span>';
-  });
-  html += '</div>';
-
-  $('activityBody').innerHTML = html;
-  $('activityBadge').textContent = topActivities.length > 0 ? '建议跟进' : '参考';
-  $('activityBadge').className = 'badge ' + (topActivities.length > 0 ? 'action' : 'warn');
-
-  let suggestion = '<strong>操作：</strong>';
-  if (topActivities.length > 0) {
-    suggestion += '去千牛卖家中心搜索对应活动名称，查看你是否可以报名参与。常见入口：千牛 → 营销中心 → 店铺优惠券/满减活动。';
-  } else {
-    suggestion += '竞品活动信息不多，可自行选择合适的营销工具。';
-  }
-  $('activitySuggestion').innerHTML = suggestion;
-}
-
-function renderProfitCard(myPrice, myCost, sortedActivities) {
-  $('cardProfit').style.display = '';
-
-  const baseProfit = myPrice - myCost;
-  const baseMargin = (baseProfit / myPrice * 100);
-
-  const discountAmount = 15;
-  let profitWithDiscount = baseProfit;
-  let priceWithDiscount = myPrice;
-
-  if (myPrice >= 200) {
-    priceWithDiscount = myPrice - discountAmount;
-    profitWithDiscount = priceWithDiscount - myCost;
-  }
-
-  const couponAmount = 3;
-  const profitWithCoupon = baseProfit - couponAmount;
-
-  $('profitBody').innerHTML =
-    '<div class="stat-row">' +
-      '<div class="stat-item"><span style="color:#888;">不参与活动</span><strong>利润 ¥' + baseProfit.toFixed(0) + '（' + baseMargin.toFixed(0) + '%）</strong></div>' +
-      (myPrice >= 200
-        ? '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>利润 ¥' + profitWithDiscount.toFixed(0) + '（' + (profitWithDiscount / priceWithDiscount * 100).toFixed(0) + '%）</strong></div>'
-        : '<div class="stat-item"><span style="color:#888;">满200减' + discountAmount + '</span><strong>单件不满200，需凑单</strong></div>') +
-      '<div class="stat-item"><span style="color:#888;">含' + couponAmount + '元优惠券</span><strong>利润 ¥' + profitWithCoupon.toFixed(0) + '（' + (myPrice > couponAmount ? (profitWithCoupon / (myPrice - couponAmount) * 100).toFixed(0) : '--') + '%）</strong></div>' +
-    '</div>';
-
-  const badgeEl = $('profitBadge');
-  if (baseMargin >= 30) {
-    badgeEl.textContent = '利润充裕';
-    badgeEl.className = 'badge ok';
-  } else if (baseMargin >= 15) {
-    badgeEl.textContent = '利润适中';
-    badgeEl.className = 'badge warn';
-  } else {
-    badgeEl.textContent = '利润较薄';
-    badgeEl.className = 'badge action';
+    content.classList.add('open');
+    toggle.classList.add('open');
   }
 }
 
 // ===== 原始数据表 =====
-
-function renderDataTable(valid) {
-  let html = '<table class="data-table"><thead><tr>' +
-    '<th>#</th><th>标题</th><th>价格</th><th>销量</th><th>店铺</th><th>天猫</th><th>活动/优惠</th>' +
-    '</tr></thead><tbody>';
-
-  valid.forEach((p, i) => {
-    html += '<tr>' +
-      '<td>' + (i + 1) + '</td>' +
-      '<td title="' + escHtml(p.title) + '">' + escHtml(p.title).substring(0, 50) + (p.title.length > 50 ? '...' : '') + '</td>' +
-      '<td>¥' + p.price + '</td>' +
-      '<td>' + (p.sales || '-') + '</td>' +
-      '<td>' + escHtml(p.shop || '-') + '</td>' +
-      '<td>' + (p.isTmall ? '是' : '') + '</td>' +
-      '<td>' + escHtml([...(p.activityTags || []), p.promo || ''].filter(Boolean).join(' / ')) + '</td>' +
-      '</tr>';
-  });
-
-  html += '</tbody></table>';
-  $('dataTableWrap').innerHTML = html;
-}
-
-function escHtml(s) {
-  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function toggleDetail() {
-  const content = $("detailContent");
-  const toggle = $("detailToggle");
-  if (content.style.display === "none") {
-    content.style.display = "";
-    toggle.classList.add("open");
-  } else {
-    content.style.display = "none";
-    toggle.classList.remove("open");
-  }
-}
-
 function toggleDataTable() {
-  const wrap = $('dataTableWrap');
-  const toggle = $('dataTableToggle');
+  var wrap = $('dataTableWrap');
+  var toggle = $('dataTableToggle');
   if (wrap.style.display === 'none') {
     wrap.style.display = '';
     toggle.textContent = '▲ 收起';
@@ -1648,172 +1576,323 @@ function toggleDataTable() {
   }
 }
 
-// ===== 明日清单 =====
+function renderDataTable(valid) {
+  var html = '<table class="data-tbl"><thead><tr><th>#</th><th>标题</th><th>价格</th><th>销量</th><th>店铺</th><th>类型</th><th>活动/优惠</th></tr></thead><tbody>';
+  valid.forEach(function(p) {
+    html += '<tr>' +
+      '<td>' + p.index + '</td>' +
+      '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(p.title) + '">' + escHtml(p.title) + '</td>' +
+      '<td>¥' + p.price + '</td>' +
+      '<td>' + (p.sales || '-') + '</td>' +
+      '<td>' + escHtml(p.shop || '-') + '</td>' +
+      '<td>' + (p.isTmall ? '天猫' : '淘宝') + '</td>' +
+      '<td>' + escHtml([].concat(p.activityTags || [], p.promo ? [p.promo] : []).join(' / ') || '-') + '</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  $('dataTableWrap').innerHTML = html;
+}
 
-function generateChecklistTasks(result) {
-  if (!result || !result.valid) return;
-
-  const tasks = [];
-  const seen = new Set();
-
-  // 规则1: 高频词参考
-  const topWords = result.topKeywords.slice(0, 10).map(k => k.word).join('、');
-  const taskKey1 = 'check_title_keywords';
-  if (!seen.has(taskKey1) && result.topKeywords.length >= 3) {
-    seen.add(taskKey1);
-    tasks.push({
-      id: taskKey1,
-      text: '检查标题是否包含同行高频词：' + topWords,
-      source: '同行 ' + result.topKeywords.length + ' 个高频词',
-      done: false
-    });
+// ===== 四张分析卡片 =====
+function renderTitleCard(topKeywords, total) {
+  var badgeEl = $('titleBadge');
+  if (topKeywords.length >= 8) {
+    badgeEl.textContent = '关键词丰富';
+    badgeEl.className = 'badge ok';
+  } else if (topKeywords.length >= 4) {
+    badgeEl.textContent = '关键词一般';
+    badgeEl.className = 'badge warn';
+  } else {
+    badgeEl.textContent = '关键词偏少';
+    badgeEl.className = 'badge act';
   }
 
-  // 规则2: 价格偏离
-  if (result.myPrice > 0 && result.avgPrice > 0) {
-    const diff = Math.abs((result.myPrice - result.avgPrice) / result.avgPrice * 100);
-    if (diff > 30) {
-      const taskKey2 = 'adjust_price';
-      if (!seen.has(taskKey2)) {
-        seen.add(taskKey2);
-        tasks.push({
-          id: taskKey2,
-          text: '考虑调整定价（当前 ¥' + result.myPrice + '，同行均价 ¥' + result.avgPrice.toFixed(0) + '，偏离 ' + diff.toFixed(0) + '%）',
-          source: '价格偏离同行 ' + diff.toFixed(0) + '%',
-          done: false
-        });
-      }
-    }
-  }
-
-  // 规则3: 活动跟进
-  if (result.sortedActivities && result.sortedActivities.length > 0) {
-    result.sortedActivities.slice(0, 5).forEach(([name, count]) => {
-      const pct = Math.round(count / result.valid.length * 100);
-      if (pct >= 30) {
-        const cleanName = name.replace('优惠:', '');
-        const taskId = 'activity_' + cleanName;
-        if (!seen.has(taskId)) {
-          seen.add(taskId);
-          tasks.push({
-            id: taskId,
-            text: '设置「' + cleanName + '」活动（去千牛搜索"' + cleanName + '"查看报名方式）',
-            source: '同行 ' + pct + '% 使用',
-            done: false
-          });
-        }
-      }
-    });
-  }
-
-  // 规则4: 运费险
-  const hasShipping = result.sortedActivities.some(([name]) => /运费|运费险/.test(name));
-  if (hasShipping) {
-    const taskKey = 'open_shipping_insurance';
-    if (!seen.has(taskKey)) {
-      seen.add(taskKey);
-      const entry = result.sortedActivities.find(([name]) => /运费|运费险/.test(name));
-      const pct = Math.round(entry[1] / result.valid.length * 100);
-      tasks.push({
-        id: taskKey,
-        text: '开通运费险',
-        source: '同行 ' + pct + '% 支持',
-        done: false
-      });
-    }
-  }
-
-  // 合并已有任务的 done 状态
-  const existingMap = {};
-  checklistTasks.forEach(t => { existingMap[t.id] = t.done; });
-  tasks.forEach(t => {
-    if (existingMap.hasOwnProperty(t.id)) {
-      t.done = existingMap[t.id];
-    }
+  var html = '同行标题中最高频的关键词（基于 ' + total + ' 个商品分析）：<br><br>';
+  topKeywords.slice(0, 15).forEach(function(k) {
+    html += '<span class="kw-tag">' + escHtml(k.word) + ' <span style="opacity:.6;">' + k.pct + '%</span></span> ';
   });
 
-  checklistTasks = tasks;
-  saveChecklist();
-  renderChecklist();
+  $('titleBody').innerHTML = html;
+  var missing = topKeywords.filter(function(k) { return k.pct > 25; }).slice(0, 5).map(function(k) { return k.word; });
+  if (missing.length > 0) {
+    $('titleSuggestion').innerHTML = '<strong>优化方向：</strong>如果标题中缺少这些词，考虑加入：' + missing.join('、');
+    $('titleSuggestion').style.display = '';
+  } else {
+    $('titleSuggestion').style.display = 'none';
+  }
 }
 
-function saveChecklist() {
-  localStorage.setItem('tb_checklist_tasks', JSON.stringify(checklistTasks));
-}
+function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
+  var badgeEl = $('priceBadge');
+  $('cardPrice').style.display = '';
 
-function renderChecklist() {
-  const container = $('checklistContainer');
-  const progressDiv = $('checklistProgress');
-
-  if (!checklistTasks || checklistTasks.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">还没有分析数据<br><span style="font-size:12px;">去「竞品分析」Tab 完成分析后，任务会自动生成</span></div>';
-    progressDiv.style.display = 'none';
-    return;
+  if (myPrice > 0 && avgPrice > 0) {
+    var diff = (myPrice - avgPrice) / avgPrice * 100;
+    var absDiff = Math.abs(diff);
+    if (absDiff < 10) { badgeEl.textContent = '定价合理'; badgeEl.className = 'badge ok'; }
+    else if (absDiff < 25) { badgeEl.textContent = '需关注'; badgeEl.className = 'badge warn'; }
+    else { badgeEl.textContent = '偏离较大'; badgeEl.className = 'badge act'; }
+  } else {
+    badgeEl.textContent = '待输入价格';
+    badgeEl.className = 'badge warn';
   }
 
-  let html = '';
-  checklistTasks.forEach((task, i) => {
-    html += '<div class="checklist-item' + (task.done ? ' done' : '') + '">' +
-      '<input type="checkbox" ' + (task.done ? 'checked' : '') + ' onchange="toggleTask(' + i + ')">' +
-      '<span>' + escHtml(task.text) + '</span>' +
-      '<span class="source">' + escHtml(task.source) + '</span>' +
-      '</div>';
-  });
-  container.innerHTML = html;
+  $('priceStats').innerHTML =
+    '<div class="stat-it"><span style="color:var(--text-muted);">你的价格</span><strong>' + (myPrice > 0 ? '¥' + myPrice : '未填') + '</strong></div>' +
+    '<div class="stat-it"><span style="color:var(--text-muted);">同行均价</span><strong>¥' + (avgPrice > 0 ? avgPrice.toFixed(0) : '—') + '</strong></div>' +
+    '<div class="stat-it"><span style="color:var(--text-muted);">价格区间</span><strong>¥' + minPrice + ' - ¥' + maxPrice + '</strong></div>' +
+    (myPrice > 0 && avgPrice > 0 ? '<div class="stat-it"><span style="color:var(--text-muted);">偏离</span><strong style="color:' + (diff > 0 ? '#e65100' : '#2e7d32') + '">' + (diff > 0 ? '+' : '') + diff.toFixed(0) + '%</strong></div>' : '');
 
-  const doneCount = checklistTasks.filter(t => t.done).length;
-  const total = checklistTasks.length;
-  const pct = Math.round(doneCount / total * 100);
-
-  progressDiv.style.display = '';
-  $('checklistProgressText').textContent = '已完成 ' + doneCount + ' / ' + total + ' 项';
-  $('checklistProgressBar').style.width = pct + '%';
+  var suggestion = '';
+  if (avgPrice === 0) {
+    suggestion = '<strong>提示：</strong>未能提取到有效的价格数据。';
+  } else if (myPrice > 0 && absDiff > 30) {
+    suggestion = diff > 0
+      ? '<strong>建议：</strong>你的价格明显高于同行。考虑突出定制差异，或增加入门款 SKU。'
+      : '<strong>建议：</strong>你的价格明显低于同行。检查利润空间是否充足，考虑适当提价。';
+  } else if (myPrice > 0 && absDiff > 10) {
+    suggestion = diff > 0
+      ? '<strong>提示：</strong>价格略高于同行均价。确保定制服务和产品质量能支撑溢价。'
+      : '<strong>提示：</strong>价格略低于同行。微幅低价可吸引价格敏感买家，注意控制利润。';
+  } else if (myPrice > 0) {
+    suggestion = '<strong>提示：</strong>定价接近同行均价，竞争力良好。';
+  }
+  $('priceSuggestion').innerHTML = suggestion;
 }
 
-function toggleTask(index) {
-  checklistTasks[index].done = !checklistTasks[index].done;
-  saveChecklist();
-  renderChecklist();
+function renderActivityCard(sortedActivities, total) {
+  var badgeEl = $('activityBadge');
+  if (sortedActivities.length >= 6) { badgeEl.textContent = '活动丰富'; badgeEl.className = 'badge ok'; }
+  else if (sortedActivities.length >= 3) { badgeEl.textContent = '有部分活动'; badgeEl.className = 'badge warn'; }
+  else { badgeEl.textContent = '活动较少'; badgeEl.className = 'badge act'; }
+
+  var html = '统计 ' + total + ' 个商品的活动标签：<br><br>';
+  sortedActivities.forEach(function(a) {
+    var pct = Math.round(a[1] / total * 100);
+    html += '<div style="margin-bottom:6px;"><span style="font-weight:600;">' + escHtml(a[0]) + '</span> <span style="color:var(--text-muted);">— ' + a[1] + ' 个商品（' + pct + '%）</span></div>';
+  });
+  $('activityBody').innerHTML = html;
+
+  if (sortedActivities.length > 0) {
+    var top = sortedActivities[0];
+    $('activitySuggestion').innerHTML = '<strong>建议：</strong>同行最常用「' + escHtml(top[0]) + '」（' + Math.round(top[1] / total * 100) + '% 覆盖率），建议去千牛开通。';
+  } else {
+    $('activitySuggestion').innerHTML = '';
+  }
+}
+
+function renderProfitCard(myPrice, myCost, sortedActivities) {
+  $('cardProfit').style.display = '';
+  var badgeEl = $('profitBadge');
+
+  var baseMargin = Math.round((myPrice - myCost) / myPrice * 100);
+
+  // 简易运费险估算
+  var insuranceCost = myPrice * 0.015;
+  var netProfit = myPrice - myCost - insuranceCost;
+  var netMargin = Math.round(netProfit / myPrice * 100);
+
+  if (netMargin >= 30) { badgeEl.textContent = '利润健康'; badgeEl.className = 'badge ok'; }
+  else if (netMargin >= 15) { badgeEl.textContent = '利润一般'; badgeEl.className = 'badge warn'; }
+  else { badgeEl.textContent = '利润偏低'; badgeEl.className = 'badge act'; }
+
+  $('profitBody').innerHTML =
+    '<div class="stat-row">' +
+      '<div class="stat-it"><span style="color:var(--text-muted);">毛利率</span><strong>' + baseMargin + '%</strong></div>' +
+      '<div class="stat-it"><span style="color:var(--text-muted);">单件毛利</span><strong>¥' + (myPrice - myCost).toFixed(0) + '</strong></div>' +
+      '<div class="stat-it"><span style="color:var(--text-muted);">估算运费险</span><strong>-¥' + insuranceCost.toFixed(1) + '</strong></div>' +
+      '<div class="stat-it"><span style="color:var(--text-muted);">预估净利</span><strong style="color:' + (netMargin >= 20 ? 'var(--green)' : 'var(--red)') + '">¥' + netProfit.toFixed(0) + '（' + netMargin + '%）</strong></div>' +
+    '</div>' +
+    '<p style="font-size:11px;color:var(--text-muted);margin-top:6px;">毛利率 = (售价 - 成本) / 售价。运费险按售价 1.5% 估算（0.5元/单约等于 0.3%，但演出服退货率较高，建议按 1.5% 预留）。实际费用因类目和店铺而异。</p>';
+}
+
+// ===== 关键词统计 =====
+function getKeywordFrequency(titles) {
+  var freq = {};
+  var stopWords = new Set(['的','和','与','及','之','是','在','有','为','等','了','不','也','都','就','还','要','会','可','个','这','那','我','你','他','她','它','们','a','the','is','for','and','没有','可以','什么','一个','这个','自己','我们','他们','还是','不是','已经']);
+
+  titles.forEach(function(title) {
+    var clean = title.replace(/[\s,，、/｜|+·\-—–★▼▲◆■●✦✿✤.!！？?]+/g, '');
+    var found = [];
+
+    // 词典匹配
+    var dictMatches = [];
+    var dict = getDomainDictSorted();
+    for (var di = 0; di < dict.length; di++) {
+      var word = dict[di];
+      var idx = clean.indexOf(word);
+      while (idx >= 0) {
+        dictMatches.push({ word: word, start: idx, end: idx + word.length });
+        idx = clean.indexOf(word, idx + 1);
+      }
+    }
+    dictMatches.sort(function(a, b) { return a.start - b.start || b.word.length - a.word.length; });
+
+    // 贪心选择不重叠的词典匹配
+    var selected = [];
+    for (var mi = 0; mi < dictMatches.length; mi++) {
+      var m = dictMatches[mi];
+      if (selected.some(function(s) { return s.start <= m.start && s.end >= m.end; })) continue;
+      for (var si = selected.length - 1; si >= 0; si--) {
+        if (m.start <= selected[si].start && m.end >= selected[si].end) { selected.splice(si, 1); }
+      }
+      selected.push(m);
+    }
+    selected.sort(function(a, b) { return a.start - b.start; });
+    selected.forEach(function(s) { found.push(s.word); });
+
+    // N-gram 补充
+    for (var len = 2; len <= 3; len++) {
+      for (var i = 0; i <= clean.length - len; i++) {
+        var gram = clean.substring(i, i + len);
+        if (/[^一-龥a-zA-Z0-9]/.test(gram)) continue;
+        if (stopWords.has(gram)) continue;
+        if (selected.some(function(s) { return i < s.end && i + len > s.start; })) continue;
+        found.push(gram);
+      }
+    }
+
+    // 每个标题内去重
+    var uniqueWords = [];
+    var seen = {};
+    found.forEach(function(w) {
+      if (w.length >= 2 && !/^\d+$/.test(w) && !seen[w]) { uniqueWords.push(w); seen[w] = true; }
+    });
+    uniqueWords.forEach(function(w) { freq[w] = (freq[w] || 0) + 1; });
+  });
+
+  var entries = Object.entries(freq)
+    .sort(function(a, b) { return b[1] - a[1]; })
+    .map(function(e) { return { word: e[0], count: e[1], pct: Math.round(e[1] / titles.length * 100) }; });
+
+  // 去碎片词
+  var filtered = [];
+  for (var ei = 0; ei < entries.length; ei++) {
+    var entry = entries[ei];
+    if (filtered.some(function(f) { return f.word !== entry.word && f.word.indexOf(entry.word) >= 0; })) continue;
+    filtered.push(entry);
+    if (filtered.length >= 20) break;
+  }
+  return filtered;
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ===== 领域词典管理 =====
+var DOMAIN_DICT_DEFAULT = [
+  '演出服','舞蹈服','古装','汉服','旗袍','礼服','婚纱','铠甲','战袍','戏服','舞台服','表演服','合唱服','练功服','芭蕾舞服','拉丁舞服','爵士舞服','Cosplay','服装','服饰',
+  '舞台剧','舞台','演出','表演','比赛','影楼','摄影','年会','六一','艺考','排练','走秀','庆典','话剧','戏曲','舞蹈',
+  '定制','来图','来样','批量',
+  '刺绣','缎面','雪纺','蕾丝','钉珠','印花','丝绸','渐变','重工','大袖','齐胸','襦裙','马面裙','金丝绒','棉麻','欧根纱',
+  '成人','儿童','少儿','幼儿','男女',
+  '红楼梦','贾宝玉','林黛玉','薛宝钗','王熙凤','贾元春','贾迎春','贾探春','贾惜春','史湘云','妙玉','贾母','刘姥姥','晴雯','袭人','贾琏','贾政','王夫人','秦可卿','贾赦','贾珍','贾蓉','贾兰','尤三姐','尤二姐','薛蟠','香菱',
+  '花木兰','白娘子','许仙','小青','梁山伯','祝英台','唐僧','孙悟空','猪八戒','沙僧','诸葛亮','关羽','张飞','赵云','吕布','貂蝉','杨贵妃','武则天','西施','王昭君','嫦娥','七仙女','牛郎','织女',
+  '原版','复刻','高定','仙女','公主',
+  '古典','民族','现代','芭蕾','拉丁','爵士','街舞','宫廷','民国','动漫','影视','武侠','唐装',
+  '新款','爆款','现货','包邮','高端','品质'
+];
+
+function loadDomainDict() {
+  try {
+    var saved = localStorage.getItem('tb_domain_dict');
+    return saved ? JSON.parse(saved) : DOMAIN_DICT_DEFAULT.slice();
+  } catch (_) { return DOMAIN_DICT_DEFAULT.slice(); }
+}
+
+function saveDomainDict(dict) { localStorage.setItem('tb_domain_dict', JSON.stringify(dict)); }
+
+function getDomainDictSorted() {
+  var dict = loadDomainDict();
+  dict.sort(function(a, b) { return b.length - a.length || a.localeCompare(b); });
+  return dict;
+}
+
+function updateDictCount() {
+  var dict = loadDomainDict();
+  $('dictWordCount').textContent = '(' + dict.length + ' 词)';
+}
+
+function toggleDictManager() {
+  var el = $('dictManager');
+  var toggle = $('dictToggle');
+  if (el.style.display === 'none') {
+    el.style.display = '';
+    toggle.textContent = '▲ 收起';
+    updateDictCount();
+    renderDictTags();
+  } else {
+    el.style.display = 'none';
+    toggle.textContent = '▼ 展开';
+  }
+}
+
+function renderDictTags() {
+  var dict = loadDomainDict();
+  var html = '';
+  dict.forEach(function(w) {
+    html += '<span class="dict-tag" onclick="dictDeleteWord(\'' + escHtml(w).replace(/'/g, "\\'") + '\')" title="点击删除">' + escHtml(w) + ' ×</span>';
+  });
+  $('dictTagList').innerHTML = html || '<span style="color:var(--text-muted);font-size:12px;">词典为空</span>';
+}
+
+function dictAddWord() {
+  var input = $('dictAddInput');
+  var word = input.value.trim();
+  if (!word) return;
+  if (word.length < 2) return alert('至少2个字');
+  var dict = loadDomainDict();
+  if (dict.indexOf(word) >= 0) { input.value = ''; return; }
+  dict.push(word);
+  saveDomainDict(dict);
+  input.value = '';
+  updateDictCount();
+  renderDictTags();
+}
+
+function dictDeleteWord(word) {
+  var dict = loadDomainDict();
+  var idx = dict.indexOf(word);
+  if (idx >= 0) { dict.splice(idx, 1); }
+  saveDomainDict(dict);
+  updateDictCount();
+  renderDictTags();
+}
+
+function dictReset() {
+  if (!confirm('确定恢复默认词典？你添加的词将被清除。')) return;
+  saveDomainDict(DOMAIN_DICT_DEFAULT.slice());
+  updateDictCount();
+  renderDictTags();
 }
 
 // ===== 初始化 =====
+document.addEventListener('DOMContentLoaded', function() {
+  // 搜索按钮初始绑定
+  $('btnCompSearch').onclick = startCompeteSearch;
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 搜索按钮初始绑定（搜索模式切换时动态更新）
-  const btnCompSearch = $('btnCompSearch');
-  if (btnCompSearch) {
-    btnCompSearch.onclick = startCompeteSearch;
-  }
-
-  // paste textarea 监听：粘贴后高亮按钮
-  const pasteArea = $('compPasteArea');
+  // paste textarea 粘贴监听
+  var pasteArea = $('compPasteArea');
   if (pasteArea) {
-    pasteArea.addEventListener('input', () => {
-      const btn = document.querySelector('#compPasteCard .btn-primary');
+    pasteArea.addEventListener('input', function() {
+      var btn = document.querySelector('#compPasteCard .btn-primary');
       if (btn && pasteArea.value.trim()) {
-        btn.style.background = '#ff5000';
-        btn.style.color = '#fff';
+        btn.style.background = '#ff5000'; btn.style.color = '#fff';
       }
     });
   }
 
   // 恢复成本价
-  const savedCost = localStorage.getItem('tb_my_cost');
-  if (savedCost && $('compMyCost')) {
-    $('compMyCost').value = savedCost;
-  }
+  var savedCost = localStorage.getItem('tb_my_cost');
+  if (savedCost && $('compMyCost')) { $('compMyCost').value = savedCost; }
 
-  // 恢复明日清单
-  if (checklistTasks.length > 0) {
-    renderChecklist();
-  }
+  updateDictCount();
 });
 
 // 保存成本价
-document.addEventListener('change', (e) => {
-  if (e.target.id === 'compMyCost') {
-    localStorage.setItem('tb_my_cost', e.target.value);
-  }
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'compMyCost') { localStorage.setItem('tb_my_cost', e.target.value); }
 });
 </script>
 </body>

@@ -12,6 +12,13 @@ function detectPageType() {
   return 'unknown';
 }
 
+// ===== 从 URL 提取商品 ID =====
+
+function getItemId(url) {
+  var match = url.match(/[?&]id=(\d+)/);
+  return match ? match[1] : '';
+}
+
 // ===== 搜索页提取（已有逻辑） =====
 
 function extractProducts() {
@@ -98,34 +105,47 @@ function extractSingleProduct(cardLink, index) {
     shop,
     isTmall,
     activityTags,
-    promo
+    promo,
+    itemId: getItemId(cardLink.href)
   };
 }
 
 // ===== 商品详情页：提取标题 → 拆解关键词 → 跳转搜索 =====
 
 function getProductTitle() {
-  // 淘宝/天猫商品页 title 格式: "商品标题-淘宝网" 或 "商品标题 - 天猫"
-  const pageTitle = (document.title || '').trim();
+  // 方式 1: meta og:title（最稳定）
+  var ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle && ogTitle.content && ogTitle.content.trim().length > 3) {
+    return ogTitle.content.trim();
+  }
 
-  const patterns = [
+  // 方式 2: document.title 解析
+  var pageTitle = (document.title || '').trim();
+  var patterns = [
     /^(.+?)\s*[-–—|]\s*淘宝[网]?\s*[-–—|]?\s*天猫\s*$/,
     /^(.+?)\s*[-–—|]\s*淘宝[网]?\s*$/i,
     /^(.+?)\s*[-–—|]\s*天猫\s*$/i,
     /^(.+?)\s*[-–—|].+$/  // generic: "xxx - yyy"
   ];
-
-  for (const p of patterns) {
-    const m = pageTitle.match(p);
+  for (var pi = 0; pi < patterns.length; pi++) {
+    var m = pageTitle.match(patterns[pi]);
     if (m && m[1].trim().length > 3) return m[1].trim();
   }
 
-  // Fallback: try heading elements
-  const headings = document.querySelectorAll('h1, h2, h3, [class*="title"], [class*="Title"]');
-  for (const h of headings) {
-    const text = h.textContent.trim();
-    if (text.length > 5 && text.length < 200 && !/^(参数|详情|评价|推荐|相关|店铺|分类|规格|图文|视频|问答)/.test(text)) {
-      return text;
+  // 方式 3: 页面内标题元素
+  var hSelectors = [
+    '[data-spm="1000983"]', '.tb-main-title', '.tb-detail-hd h3',
+    'h1[data-spm]', '[class*="ItemTitle"]', '[class*="itemTitle"]',
+    'h1', 'h2'
+  ];
+  for (var hi = 0; hi < hSelectors.length; hi++) {
+    var el = document.querySelector(hSelectors[hi]);
+    if (el) {
+      var text = el.textContent.trim();
+      if (text.length > 5 && text.length < 200 &&
+          !/^(参数|详情|评价|推荐|相关|店铺|分类|规格|图文|视频|问答|商品|宝贝)/.test(text)) {
+        return text;
+      }
     }
   }
 
@@ -223,7 +243,144 @@ function extractKeywords(title) {
   return combined.slice(0, 8);
 }
 
+function getProductShop() {
+  // 方式 1: meta 标签
+  var metaShop = document.querySelector('meta[property="og:product:nick"], meta[name="microshop-shop-name"]');
+  if (metaShop && metaShop.content && metaShop.content.trim().length > 0) {
+    return metaShop.content.trim();
+  }
+
+  // 方式 2: 页面中所有指向店铺的链接（不依赖 CSS class）
+  var allLinks = document.querySelectorAll("a[href*='shop']");
+  for (var ai = 0; ai < allLinks.length; ai++) {
+    var text = allLinks[ai].textContent.trim();
+    if (text.length > 1 && text.length < 30 && !/^(店铺|首页|全部|分类|宝贝|新品|微淘|动态|会员|联系|描述|评价|推荐)/.test(text)) {
+      return text;
+    }
+  }
+
+  // 方式 3: CSS 选择器（可能因 CSS Modules 失效）
+  var selectors = [
+    '.tb-shop-name', '.J_ShopName', '[data-spm="shop"]',
+    'a[class*="name"][href*="shop"]',
+    '[class*="shopName"]', '[class*="ShopName"]', '[class*="shop-name"]',
+    '[class*="seller"][class*="name"]',
+    '.slogo-shopname', '[data-spm*="shop"] span'
+  ];
+  for (var si = 0; si < selectors.length; si++) {
+    var el = document.querySelector(selectors[si]);
+    if (el) {
+      var t = el.textContent.trim();
+      if (t.length > 0 && t.length < 50 && !/^(店铺|首页|全部|分类|宝贝|新品|微淘|动态|会员|联系)/.test(t)) {
+        return t;
+      }
+    }
+  }
+
+  // 方式 4: 全文搜索 "店铺" 关键词后的文字
+  var bodyText = document.body.textContent;
+  var shopLabelIdx = bodyText.search(/[店铺][名名称]|掌柜/);
+  if (shopLabelIdx >= 0) {
+    var after = bodyText.substring(shopLabelIdx + 2).trim();
+    var match = after.match(/^[：: ]*([一-龥a-zA-Z0-9_-]{2,20})/);
+    if (match && !/^(店铺|首页|全部|分类|宝贝|新品)/.test(match[1])) {
+      return match[1];
+    }
+  }
+
+  // 方式 5: 从 URL 中猜店铺名（Tmall 二级域名）
+  var hostMatch = location.hostname.match(/^([a-z0-9]+).(taobao|tmall).com$/);
+  if (hostMatch && hostMatch[1] && hostMatch[1].length > 1 && !/^(item|detail|s|www|shop)$/.test(hostMatch[1])) {
+    return hostMatch[1];
+  }
+
+  return '';
+}
+
+function getProductPrice() {
+  // 方式 1: meta 标签（最稳定）
+  var metaPrice = document.querySelector('meta[property="product:price:amount"], meta[property="og:price:amount"]');
+  if (metaPrice && metaPrice.content) {
+    var val = parseFloat(metaPrice.content);
+    if (val > 0) return val;
+  }
+
+  // 方式 2: JSON-LD 结构化数据
+  var ldJson = document.querySelector('script[type="application/ld+json"]');
+  if (ldJson) {
+    try {
+      var ld = JSON.parse(ldJson.textContent);
+      if (ld.offers && ld.offers.price) {
+        var p = parseFloat(ld.offers.price);
+        if (p > 0) return p;
+      }
+    } catch (_) {}
+  }
+
+  // 方式 3: 价格 DOM 元素
+  var selectors = [
+    '#J_StrPrice .tb-rmb-num', '.tb-rmb-num',
+    '[class*="priceValue"]', '[class*="PriceValue"]',
+    '[class*="currentPrice"]', '[class*="CurrentPrice"]',
+    '[class*="priceNum"]', '[class*="PriceNum"]',
+    'em[class*="price"]', 'span[class*="price"]',
+    '.tm-price', '.tm-promo-price',
+    '[data-spm="price"]'
+  ];
+  for (var si = 0; si < selectors.length; si++) {
+    var el = document.querySelector(selectors[si]);
+    if (el) {
+      var text = el.textContent.replace(/[^0-9.]/g, '').trim();
+      var val = parseFloat(text);
+      if (val > 0) return val;
+    }
+  }
+
+  // 方式 4: 尝试从所有包含 ¥ 的元素中提取（放宽约束）
+  var allElements = document.querySelectorAll('*');
+  for (var ai = 0; ai < allElements.length; ai++) {
+    var t = allElements[ai].textContent.trim();
+    var match = t.match(/^[¥￥]\s*([\d,.]+)\s*$/);
+    if (match) {
+      var num = parseFloat(match[1].replace(/,/g, ''));
+      if (num > 1 && num < 999999) return num;
+    }
+  }
+
+  return 0;
+}
+
+function getProductSales() {
+  // 尝试提取月销量
+  var selectors = [
+    '[class*="sellCount"]', '[class*="SellCount"]',
+    '[class*="saleCount"]', '[class*="SaleCount"]',
+    '[class*="monthSell"]', '[class*="MonthSell"]',
+    'em[class*="sale"]', 'span[class*="sale"]',
+    '[data-spm="sales"]'
+  ];
+  for (var si = 0; si < selectors.length; si++) {
+    var el = document.querySelector(selectors[si]);
+    if (el) {
+      var text = el.textContent.trim();
+      // 匹配 "月销 100+" 或 "100+人付款" 等
+      var match = text.match(/([\d,.]+[万]?\+?)/);
+      if (match) return match[1].replace(/,/g, '');
+    }
+  }
+  return '';
+}
+
 function showProductPageBar(title, keywords) {
+  var shop = getProductShop();
+  var price = getProductPrice();
+  var sales = getProductSales();
+
+  // 存储当前产品信息（价格可能后续被用户手动修改）
+  var itemId = getItemId(location.href);
+  var currentProduct = { title: title, shop: shop, price: price, sales: sales, itemId: itemId };
+  chrome.storage.local.set({ myProduct: currentProduct });
+  console.log('[竞品助手] 产品信息已存储:', currentProduct);
   const bar = document.createElement('div');
   bar.id = '__tb_extract_bar__';
   bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;' +
@@ -233,7 +390,7 @@ function showProductPageBar(title, keywords) {
 
   const titleRow = document.createElement('div');
   titleRow.style.cssText = 'text-align:center;max-width:800px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-  titleRow.textContent = '已识别：' + title;
+  titleRow.textContent = '已识别：' + title + (shop ? ' | 店铺：' + shop : '') + (price > 0 ? ' | 售价：¥' + price : ' | 售价未识别') + (sales ? ' | 销量：' + sales : '');
 
   // Active keywords (can be toggled off)
   const activeKeywords = new Set(keywords);
@@ -339,6 +496,36 @@ function showProductPageBar(title, keywords) {
   btnRow.appendChild(searchBtn);
   btnRow.appendChild(closeBtn);
   bar.appendChild(titleRow);
+
+  // 如果价格未识别，显示手动输入框
+  if (price <= 0) {
+    var priceRow = document.createElement('div');
+    priceRow.style.cssText = 'display:flex;gap:8px;align-items:center;justify-content:center;';
+    var priceLabel = document.createElement('span');
+    priceLabel.textContent = '手动输入售价：¥';
+    priceLabel.style.cssText = 'font-size:13px;opacity:.85;';
+    var priceInput = document.createElement('input');
+    priceInput.type = 'number';
+    priceInput.placeholder = '输入你的售价';
+    priceInput.style.cssText = 'padding:4px 10px;border:none;border-radius:4px;font-size:13px;width:120px;';
+    priceInput.onchange = function() {
+      var val = parseFloat(priceInput.value);
+      if (val > 0) {
+        currentProduct.price = val;
+        chrome.storage.local.set({ myProduct: currentProduct });
+        priceInput.style.background = '#e8f5e9';
+        priceInput.style.color = '#2e7d32';
+      }
+    };
+    var priceNote = document.createElement('span');
+    priceNote.textContent = '（输入后自动保存）';
+    priceNote.style.cssText = 'font-size:11px;opacity:.6;';
+    priceRow.appendChild(priceLabel);
+    priceRow.appendChild(priceInput);
+    priceRow.appendChild(priceNote);
+    bar.appendChild(priceRow);
+  }
+
   bar.appendChild(keywordRow);
   bar.appendChild(addRow);
   bar.appendChild(btnRow);
@@ -367,7 +554,46 @@ function showExtractionBar(products, sourceLabel) {
   btn.onclick = async () => {
     if (products.length > 0) {
       const source = detectPageType() === 'search' ? 'taobao-search' : 'taobao-similar';
-      const json = JSON.stringify({ source, url: location.href, count: products.length, products });
+      const jsonObj = { source, url: location.href, count: products.length, products };
+      try {
+        const stored = await chrome.storage.local.get("myProduct");
+        if (stored.myProduct) {
+          // 用商品 ID 精确匹配（不会出错）
+          var myItemId = (stored.myProduct.itemId || "");
+          var matchIdx = myItemId ? products.findIndex(function(p) { return p.itemId === myItemId; }) : -1;
+          // 兜底: 店铺名匹配
+          if (matchIdx < 0) {
+            var myShop = (stored.myProduct.shop || "").trim();
+            if (myShop) {
+              matchIdx = products.findIndex(function(p) { return p.shop && p.shop.trim() === myShop; });
+              if (matchIdx < 0) {
+                matchIdx = products.findIndex(function(p) { return p.shop && (p.shop.indexOf(myShop) >= 0 || myShop.indexOf(p.shop) >= 0); });
+              }
+            }
+          }
+          if (matchIdx >= 0) {
+            var matched = products[matchIdx];
+            jsonObj.myProduct = {
+              title: matched.title,
+              shop: matched.shop,
+              price: matched.price,
+              sales: matched.sales,
+              isTmall: matched.isTmall,
+              activityTags: matched.activityTags || [],
+              promo: matched.promo || "",
+              matched: true
+            };
+            products.splice(matchIdx, 1);
+            jsonObj.count = products.length;
+            console.log("[竞品助手] 匹配到你的商品并已从竞品列表移除:", matched.title, "¥" + matched.price, matched.sales);
+          } else {
+            jsonObj.myProduct = stored.myProduct;
+            console.log("[竞品助手] 未在搜索结果中匹配到你的商品，使用产品页数据");
+          }
+          chrome.storage.local.remove("myProduct");
+        }
+      } catch (_) {}
+      const json = JSON.stringify(jsonObj);
       try {
         await navigator.clipboard.writeText(json);
         text.textContent = '已复制 ' + products.length + ' 个商品到剪贴板，请返回工具页面';
