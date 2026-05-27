@@ -1,13 +1,21 @@
 {
   "manifest_version": 3,
   "name": "淘宝竞品分析助手",
-  "version": "1.0",
-  "description": "提取淘宝搜索结果页商品数据，配合竞品分析工具使用",
+  "version": "1.1",
+  "description": "提取淘宝搜索结果页和商品详情页数据，配合竞品分析工具使用",
   "permissions": ["clipboardWrite"],
-  "host_permissions": ["https://s.taobao.com/*"],
+  "host_permissions": [
+    "https://s.taobao.com/*",
+    "https://item.taobao.com/*",
+    "https://detail.tmall.com/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://s.taobao.com/search*"],
+      "matches": [
+        "https://s.taobao.com/search*",
+        "https://item.taobao.com/item*",
+        "https://detail.tmall.com/item*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

@@ -103,6 +103,36 @@ textarea:focus { outline: none; border-color: #ff5000; }
 .checklist-item input[type="checkbox"] { width:18px;height:18px;cursor:pointer;accent-color:#ff5000; }
 .checklist-item.done span { text-decoration:line-through;color:#bbb; }
 .checklist-item .source { font-size:11px;color:#999;margin-left:auto; }
+
+/* 行动方案卡片 */
+.action-plan { background:#fff;border-radius:10px;padding:24px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.action-plan h2 { font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+.action-item { display:flex;gap:14px;padding:14px 16px;border-radius:8px;margin-bottom:10px;border:1.5px solid #f0f0f0; }
+.action-item.priority-1 { border-left:4px solid #e53935;background:#fff5f5; }
+.action-item.priority-2 { border-left:4px solid #ff6d00;background:#fff8f0; }
+.action-item.priority-3 { border-left:4px solid #ff8f00;background:#fffbf0; }
+.action-item.priority-4 { border-left:4px solid #42a5f5;background:#f5faff; }
+.action-num { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px; }
+.priority-1 .action-num { background:#e53935; }
+.priority-2 .action-num { background:#ff6d00; }
+.priority-3 .action-num { background:#ff8f00; }
+.priority-4 .action-num { background:#42a5f5; }
+.action-content { flex:1;min-width:0; }
+.action-content h3 { font-size:14px;margin:0 0 6px 0; }
+.action-content p { font-size:13px;color:#555;margin:0 0 4px 0;line-height:1.7; }
+.action-content .suggested-title { display:block;background:#fff;border:1.5px dashed #ff5000;border-radius:6px;padding:10px 14px;font-size:14px;color:#333;margin:8px 0;word-break:break-all; }
+.action-content .meta { font-size:12px;color:#999; }
+.action-content .tag-row { display:flex;gap:6px;flex-wrap:wrap;margin:6px 0; }
+.action-content .tag-missing { display:inline-block;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:4px;font-size:12px; }
+.action-content .tag-ok { display:inline-block;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:4px;font-size:12px; }
+.action-content .tag-new { display:inline-block;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:1px dashed #ff9800;transition:all .2s;user-select:none; }
+.action-content .tag-new:hover { background:#ffe0b2; }
+.dict-tag { display:inline-block;background:#f5f5f5;color:#555;padding:3px 10px;border-radius:4px;font-size:12px;cursor:pointer;user-select:none;transition:all .15s; }
+.dict-tag:hover { background:#ffebee;color:#c62828; }
+.action-footer { display:flex;gap:8px;margin-top:10px;flex-wrap:wrap; }
+.action-footer .btn { font-size:12px;padding:6px 14px; }
+.btn-copy { background:#ff5000;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;padding:6px 14px;font-weight:500; }
+.btn-copy:hover { background:#e64800; }
 </style>
 </head>
 <body>
@@ -206,11 +236,34 @@ textarea:focus { outline: none; border-color: #ff5000; }
   <div id="panel-compete" class="panel">
     <div class="card">
       <h2>搜索并分析竞品</h2>
+
+      <!-- 搜索模式切换 -->
+      <div style="margin-bottom:12px;">
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:24px;">
+          <input type="radio" name="searchMode" value="keyword" checked onchange="switchSearchMode('keyword')">
+          <span style="font-size:14px;">关键词搜索</span>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="searchMode" value="product" onchange="switchSearchMode('product')">
+          <span style="font-size:14px;">商品链接搜索 <span style="font-size:11px;color:#ff5000;">更精准</span></span>
+        </label>
+      </div>
+
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div style="flex:1;min-width:180px;">
+
+        <!-- 关键词输入 (关键词模式) -->
+        <div id="inputGroupKeyword" style="flex:1;min-width:180px;">
           <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">搜索关键词</label>
           <input id="compKeyword" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：古装演出服 定制">
         </div>
+
+        <!-- 商品链接输入 (商品链接模式) -->
+        <div id="inputGroupProduct" style="flex:2;min-width:300px;display:none;">
+          <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的商品链接</label>
+          <input id="compProductUrl" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="粘贴你自己的淘宝/天猫商品链接...">
+        </div>
+
+        <!-- 共享：价格和成本 -->
         <div style="flex:1;min-width:150px;">
           <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">我的售价（¥）</label>
           <input id="compMyPrice" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="如：168">
@@ -220,10 +273,10 @@ textarea:focus { outline: none; border-color: #ff5000; }
           <input id="compMyCost" type="number" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:14px;" placeholder="选填，用于利润测算">
         </div>
         <div>
-          <button class="btn btn-primary" onclick="startCompeteSearch()">搜索分析</button>
+          <button class="btn btn-primary" id="btnCompSearch">搜索分析</button>
         </div>
       </div>
-      <div style="margin-top:8px;font-size:12px;color:#999;">
+      <div id="searchHint" style="margin-top:8px;font-size:12px;color:#999;">
         点击后自动打开淘宝搜索结果页 → 等待页面加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」
       </div>
     </div>
@@ -234,6 +287,41 @@ textarea:focus { outline: none; border-color: #ff5000; }
       <div style="margin-top:8px;display:flex;gap:10px;">
         <button class="btn btn-primary" onclick="readFromPaste()">分析数据</button>
         <button class="btn btn-secondary" onclick="readFromClipboard()">自动读取剪贴板</button>
+      </div>
+    </div>
+
+    <div id="compFilters" class="card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="margin:0;">数据筛选</h2>
+        <span style="font-size:13px;color:#999;" id="filterSummary"></span>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+        <div style="flex:1;min-width:160px;">
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">价格区间（¥）</label>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <input id="filterPriceMin" type="number" placeholder="最低" style="width:50%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;">
+            <span style="color:#999;">-</span>
+            <input id="filterPriceMax" type="number" placeholder="最高" style="width:50%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;">
+          </div>
+        </div>
+
+        <div style="flex:1.2;min-width:180px;">
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">标题必须包含</label>
+          <input id="filterInclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;box-sizing:border-box;">
+        </div>
+
+        <div style="flex:1.2;min-width:180px;">
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">标题必须排除</label>
+          <input id="filterExclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;box-sizing:border-box;">
+        </div>
+
+        <div>
+          <button class="btn btn-primary" onclick="reanalyzeWithFilters()" style="white-space:nowrap;">重新分析</button>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:#bbb;">
+        已预设排除词：饰品,头饰,配件,道具,玩具,发饰,簪子,手链,项链,耳环,发绳,发夹,头花,假发 — 可按需增删
       </div>
     </div>
 
@@ -248,6 +336,11 @@ textarea:focus { outline: none; border-color: #ff5000; }
       <div class="result-header card">
         <span class="count" id="compResultCount"></span>
         <span style="font-size:13px;color:#999;">仅分析搜索结果第 1 页</span>
+      </div>
+
+      <div id="actionPlanCard" class="action-plan" style="display:none;">
+        <h2>行动方案 <span style="font-size:12px;color:#999;font-weight:400;">— 已按优先级排序，从上到下执行</span></h2>
+        <div id="actionPlanContent"></div>
       </div>
 
       <div class="analysis-cards">
@@ -290,6 +383,24 @@ textarea:focus { outline: none; border-color: #ff5000; }
       <div class="card" style="margin-top:12px;">
         <h2 style="cursor:pointer;" onclick="toggleDataTable()">原始数据 <span style="font-size:12px;color:#999;" id="dataTableToggle">▼ 展开</span></h2>
         <div id="dataTableWrap" class="data-table-wrap" style="display:none;"></div>
+      </div>
+
+      <!-- 词典管理 -->
+      <div class="card" style="margin-top:12px;" id="dictCard">
+        <h2 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleDictManager()">
+          <span>词典管理 <span style="font-size:12px;color:#999;font-weight:400;" id="dictWordCount"></span></span>
+          <span style="font-size:12px;color:#999;" id="dictToggle">▼ 展开</span>
+        </h2>
+        <div id="dictManager" style="display:none;">
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <input id="dictAddInput" placeholder="输入新词，回车添加" style="flex:1;padding:6px 10px;border:1.5px solid #e0e0e0;border-radius:4px;font-size:13px;"
+              onkeydown="if(event.key==='Enter')dictAddWord()">
+            <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="dictAddWord()">添加</button>
+            <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="dictReset()">恢复默认</button>
+          </div>
+          <div id="dictTagList" style="display:flex;flex-wrap:wrap;gap:4px;max-height:200px;overflow-y:auto;"></div>
+          <p style="font-size:11px;color:#999;margin-top:8px;">词典越完整，关键词提取越精准。每个词点一下即可删除。</p>
+        </div>
       </div>
     </div>
   </div>
@@ -337,6 +448,135 @@ const GOOD_KEYWORDS = [
 ];
 
 const BAD_PATTERNS = [/[★▼▲◆■●✦✿✤]/g, /\.{2,}/g, /！！/g];
+
+// 领域词典：默认词表，用户可增删（存储在 localStorage.tb_domain_dict）
+const DOMAIN_DICT_DEFAULT = [
+  // 品类词
+  '演出服', '舞蹈服', '古装', '汉服', '旗袍', '礼服', '婚纱', '铠甲', '战袍',
+  '戏服', '舞台服', '表演服', '合唱服', '练功服', '芭蕾舞服', '拉丁舞服', '爵士舞服',
+  'Cosplay', '服装', '服饰',
+  // 场景词
+  '舞台剧', '舞台', '演出', '表演', '比赛', '影楼', '摄影', '年会', '六一', '艺考',
+  '排练', '走秀', '庆典', '话剧', '戏曲', '舞蹈',
+  // 定制词
+  '定制', '来图', '来样', '批量',
+  // 材质/工艺
+  '刺绣', '缎面', '雪纺', '蕾丝', '钉珠', '印花', '丝绸', '渐变', '重工',
+  '大袖', '齐胸', '襦裙', '马面裙', '金丝绒', '棉麻', '欧根纱',
+  // 人群词
+  '成人', '儿童', '少儿', '幼儿', '男女',
+  // 红楼梦人物
+  '红楼梦', '贾宝玉', '林黛玉', '薛宝钗', '王熙凤', '贾元春', '贾迎春', '贾探春', '贾惜春',
+  '史湘云', '妙玉', '贾母', '刘姥姥', '晴雯', '袭人', '贾琏', '贾政', '王夫人',
+  '秦可卿', '贾赦', '贾珍', '贾蓉', '贾兰', '尤三姐', '尤二姐', '薛蟠', '香菱',
+  // 常见古装角色
+  '花木兰', '白娘子', '许仙', '小青', '梁山伯', '祝英台', '唐僧', '孙悟空',
+  '猪八戒', '沙僧', '诸葛亮', '关羽', '张飞', '赵云', '吕布', '貂蝉', '杨贵妃',
+  '武则天', '西施', '王昭君', '嫦娥', '七仙女', '牛郎', '织女',
+  // 属性词
+  '原版', '复刻', '高定', '仙女', '公主',
+  // 风格/类型
+  '古典', '民族', '现代', '芭蕾', '拉丁', '爵士', '街舞', '宫廷', '民国',
+  '动漫', '影视', '武侠', '唐装',
+  // 补充
+  '新款', '爆款', '现货', '包邮', '高端', '品质',
+];
+
+function loadDomainDict() {
+  try {
+    const saved = localStorage.getItem('tb_domain_dict');
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr) && arr.length > 0 && arr.every(x => typeof x === 'string')) {
+        return arr;
+      }
+    }
+  } catch (e) { /* ignore corrupt data */ }
+  return [...DOMAIN_DICT_DEFAULT];
+}
+
+function saveDomainDict(dict) {
+  localStorage.setItem('tb_domain_dict', JSON.stringify(dict));
+}
+
+function getDomainDictSorted() {
+  return [...new Set(loadDomainDict())].sort((a, b) => b.length - a.length);
+}
+
+// ===== 词典管理 UI =====
+
+function toggleDictManager() {
+  const mgr = $('dictManager');
+  const toggle = $('dictToggle');
+  if (mgr.style.display === 'none') {
+    mgr.style.display = '';
+    toggle.textContent = '▲ 收起';
+    renderDictTags();
+    updateDictCount();
+  } else {
+    mgr.style.display = 'none';
+    toggle.textContent = '▼ 展开';
+  }
+}
+
+function updateDictCount() {
+  const count = loadDomainDict().length;
+  $('dictWordCount').textContent = count + ' 个词';
+}
+
+function renderDictTags() {
+  const dict = [...new Set(loadDomainDict())].sort((a, b) => a.localeCompare(b, 'zh'));
+  $('dictTagList').innerHTML = dict.map(w =>
+    '<span class="dict-tag" onclick="dictRemoveWord(\'' + escHtml(w).replace(/'/g, "\\'") + '\')" title="点击删除">' + escHtml(w) + ' ×</span>'
+  ).join('');
+}
+
+function dictAddWord() {
+  const input = $('dictAddInput');
+  const word = input.value.trim();
+  if (!word || word.length < 2) return;
+  const dict = loadDomainDict();
+  if (dict.includes(word)) { input.value = ''; return; }
+  dict.push(word);
+  saveDomainDict(dict);
+  renderDictTags();
+  updateDictCount();
+  input.value = '';
+}
+
+function dictRemoveWord(word) {
+  let dict = loadDomainDict();
+  dict = dict.filter(w => w !== word);
+  saveDomainDict(dict);
+  renderDictTags();
+  updateDictCount();
+}
+
+function dictReset() {
+  if (!confirm('确定恢复为默认词典？当前添加的词将被清除。')) return;
+  saveDomainDict([...DOMAIN_DICT_DEFAULT]);
+  renderDictTags();
+  updateDictCount();
+}
+
+function dictAddFromAnalysis(word, el) {
+  const dict = loadDomainDict();
+  if (!dict.includes(word)) {
+    dict.push(word);
+    saveDomainDict(dict);
+    updateDictCount();
+    if (el) {
+      el.style.background = '#e8f5e9';
+      el.style.color = '#2e7d32';
+      el.textContent = el.textContent.replace('+', '✓');
+      el.onclick = null;
+      el.style.cursor = 'default';
+    }
+  }
+}
+
+// 页面初始化时更新词典计数
+updateDictCount();
 
 function analyze() {
   const title = document.getElementById('titleInput').value.trim();
@@ -454,6 +694,73 @@ function $(id) { return document.getElementById(id); }
 let lastAnalysisResult = null;
 let checklistTasks = JSON.parse(localStorage.getItem('tb_checklist_tasks') || '[]');
 
+// ===== 数据筛选 =====
+let rawProducts = [];
+let filterConfig = {
+  priceMin: 0,
+  priceMax: 0,
+  include: [],
+  exclude: ['饰品', '头饰', '配件', '道具', '玩具', '发饰', '簪子', '手链', '项链', '耳环', '发绳', '发夹', '头花', '假发']
+};
+
+function applyFilters(config) {
+  let filtered = [...rawProducts];
+
+  if (config.priceMin > 0) {
+    filtered = filtered.filter(p => p.price >= config.priceMin);
+  }
+  if (config.priceMax > 0) {
+    filtered = filtered.filter(p => p.price <= config.priceMax);
+  }
+
+  if (config.include.length > 0) {
+    filtered = filtered.filter(p =>
+      config.include.some(kw => p.title.includes(kw))
+    );
+  }
+
+  if (config.exclude.length > 0) {
+    filtered = filtered.filter(p =>
+      !config.exclude.some(kw => p.title.includes(kw))
+    );
+  }
+
+  return filtered;
+}
+
+function reanalyzeWithFilters() {
+  filterConfig.priceMin = parseFloat($('filterPriceMin').value) || 0;
+  filterConfig.priceMax = parseFloat($('filterPriceMax').value) || 0;
+  filterConfig.include = $('filterInclude').value.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+  filterConfig.exclude = $('filterExclude').value.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+
+  const myPrice = parseFloat($('compMyPrice').value) || 0;
+  const myCost = parseFloat($('compMyCost').value) || 0;
+
+  const filtered = applyFilters(filterConfig);
+  updateFilterSummary(rawProducts.length, filtered.length);
+
+  $('compResult').style.display = 'none';
+  $('compLoading').style.display = '';
+
+  setTimeout(() => {
+    analyzeAndRender(filtered, myPrice, myCost);
+    $('compLoading').style.display = 'none';
+    $('compResult').style.display = '';
+    $('compResultCount').textContent =
+      '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
+  }, 300);
+}
+
+function updateFilterSummary(rawCount, filteredCount) {
+  const removed = rawCount - filteredCount;
+  if (removed > 0) {
+    $('filterSummary').innerHTML = '原始 <strong>' + rawCount + '</strong> 个，过滤掉 <strong style="color:#e65100;">' + removed + '</strong> 个，剩余 <strong style="color:#2e7d32;">' + filteredCount + '</strong> 个';
+  } else {
+    $('filterSummary').textContent = '共 ' + rawCount + ' 个商品，未过滤';
+  }
+}
+
 function startCompeteSearch() {
   const keyword = $('compKeyword').value.trim();
   if (!keyword) return alert('请输入搜索关键词');
@@ -465,6 +772,37 @@ function startCompeteSearch() {
 
   const url = 'https://s.taobao.com/search?q=' + encodeURIComponent(keyword);
   window.open(url, '_blank');
+}
+
+function startProductSearch() {
+  const url = $('compProductUrl').value.trim();
+  if (!url) return alert('请粘贴淘宝商品链接');
+  if (!url.includes('item.taobao.com') && !url.includes('detail.tmall.com')) {
+    return alert('请输入有效的淘宝或天猫商品链接（item.taobao.com 或 detail.tmall.com）');
+  }
+
+  $('compPasteCard').style.display = '';
+  $('compResult').style.display = 'none';
+  $('compPasteArea').value = '';
+  $('compPasteArea').focus();
+
+  window.open(url, '_blank');
+}
+
+function switchSearchMode(mode) {
+  $('inputGroupKeyword').style.display = mode === 'keyword' ? '' : 'none';
+  $('inputGroupProduct').style.display = mode === 'product' ? '' : 'none';
+  const btn = $('btnCompSearch');
+  const hint = $('searchHint');
+  if (mode === 'product') {
+    btn.textContent = '打开商品页';
+    btn.onclick = startProductSearch;
+    hint.innerHTML = '点击后打开你的商品详情页 → 扩展自动识别标题并拆解关键词 → 点击橙色条「搜索同类竞品」跳转到淘宝搜索 → 搜索页中「复制到剪贴板」→ 回到本页粘贴分析<br><span style="color:#bbb;">工作原理：用你商品的标题关键词去淘宝搜索同类商品，搜到的才是真正的竞品。</span>';
+  } else {
+    btn.textContent = '搜索分析';
+    btn.onclick = startCompeteSearch;
+    hint.innerHTML = '点击后自动打开淘宝搜索结果页 → 等待页面加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」';
+  }
 }
 
 function readFromPaste() {
@@ -491,6 +829,7 @@ async function readFromClipboard() {
 
 function processData(raw) {
   $('compPasteCard').style.display = 'none';
+  $('compFilters').style.display = '';
   $('compLoading').style.display = '';
   $('compResult').style.display = 'none';
 
@@ -509,14 +848,21 @@ function processData(raw) {
     return alert('数据中没有商品列表，请确认已正确复制');
   }
 
+  // 保存原始数据，填入预设排除词
+  rawProducts = data.products.filter(p => p.title && p.price > 0);
+  $('filterExclude').value = filterConfig.exclude.join(',');
+
   const myPrice = parseFloat($('compMyPrice').value) || 0;
   const myCost = parseFloat($('compMyCost').value) || 0;
 
+  const filtered = applyFilters(filterConfig);
+  updateFilterSummary(rawProducts.length, filtered.length);
+
   setTimeout(() => {
-    analyzeAndRender(data.products, myPrice, myCost);
+    analyzeAndRender(filtered, myPrice, myCost);
     $('compLoading').style.display = 'none';
     $('compResult').style.display = '';
-    $('compResultCount').textContent = '已分析 ' + data.products.length + ' 个商品';
+    $('compResultCount').textContent = '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
   }, 400);
 }
 
@@ -552,7 +898,10 @@ function analyzeAndRender(products, myPrice, myCost) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
-  // 渲染四张卡片
+  // 渲染行动方案（置于顶部）
+  renderActionPlan(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice);
+
+  // 渲染四张详细卡片
   renderTitleCard(topKeywords, valid.length);
   renderPriceCard(myPrice, avgPrice, minPrice, maxPrice);
   renderActivityCard(sortedActivities, valid.length);
@@ -577,29 +926,339 @@ function analyzeAndRender(products, myPrice, myCost) {
 
 function getKeywordFrequency(titles) {
   const freq = {};
-  const stopWords = ['的', '和', '与', '及', '之', 'a', 'the', 'is', 'for', 'and'];
+  const stopWords = new Set(['的', '和', '与', '及', '之', '是', '在', '有', '为', '等', '了', '不', '也', '都', '就', '还', '要', '会', '可', '个', '这', '那', '我', '你', '他', '她', '它', '们', 'a', 'the', 'is', 'for', 'and', '没有', '可以', '什么', '一个', '这个', '自己', '我们', '他们', '还是', '不是', '已经']);
 
   titles.forEach(title => {
-    const words = title.split(/[\s,，、/｜|]+/).filter(w => w.length >= 2);
-    const segments = [];
-    for (let i = 0; i < title.length - 1; i++) {
-      for (let len = 2; len <= 4; len++) {
-        const seg = title.substring(i, i + len);
-        if (!/[^一-龥a-zA-Z0-9]/.test(seg)) {
-          segments.push(seg);
-        }
+    const clean = title.replace(/[\s,，、/｜|+·\-—–★▼▲◆■●✦✿✤.!！？?]+/g, '');
+    const found = [];
+
+    // Step 1: 词典匹配 — 在清洗后的标题中查找已知领域词汇
+    const dictMatches = [];
+    for (const word of getDomainDictSorted()) {
+      let idx = clean.indexOf(word);
+      while (idx >= 0) {
+        dictMatches.push({ word, start: idx, end: idx + word.length });
+        idx = clean.indexOf(word, idx + 1);
       }
     }
-    const allWords = [...new Set([...words, ...segments])];
-    allWords.forEach(w => {
-      if (stopWords.includes(w) || w.length < 2) return;
+    dictMatches.sort((a, b) => a.start - b.start || b.word.length - a.word.length);
+
+    // 选择不重叠的词典匹配（贪心，长词优先）
+    const selected = [];
+    for (const m of dictMatches) {
+      if (selected.some(s => s.start <= m.start && s.end >= m.end)) continue;
+      for (let i = selected.length - 1; i >= 0; i--) {
+        if (m.start <= selected[i].start && m.end >= selected[i].end) {
+          selected.splice(i, 1);
+        }
+      }
+      selected.push(m);
+    }
+    selected.sort((a, b) => a.start - b.start);
+    selected.forEach(s => found.push(s.word));
+
+    // Step 2: 在词典未覆盖的位置用 2-3 字 n-gram 填补
+    const covered = selected.map(s => ({ start: s.start, end: s.end }));
+    for (let len = 2; len <= 3; len++) {
+      for (let i = 0; i <= clean.length - len; i++) {
+        const gram = clean.substring(i, i + len);
+        if (/[^一-龥a-zA-Z0-9]/.test(gram)) continue;
+        if (stopWords.has(gram)) continue;
+        if (covered.some(c => i < c.end && i + len > c.start)) continue;
+        found.push(gram);
+        covered.push({ start: i, end: i + len });
+      }
+    }
+
+    // 每个标题内同一个词只计一次
+    const uniqueWords = [...new Set(found.filter(w => w.length >= 2 && !/^\d+$/.test(w)))];
+    uniqueWords.forEach(w => {
       freq[w] = (freq[w] || 0) + 1;
     });
   });
 
-  return Object.entries(freq)
+  // 按频率排序
+  const entries = Object.entries(freq)
     .sort((a, b) => b[1] - a[1])
     .map(([word, count]) => ({ word, count, pct: Math.round(count / titles.length * 100) }));
+
+  // 去重：排除被更长且高频的词完全包含的碎片（如"楼梦"被"红楼梦"包含）
+  const filtered = [];
+  for (const entry of entries) {
+    if (filtered.some(f => f.word !== entry.word && f.word.includes(entry.word))) continue;
+    filtered.push(entry);
+    if (filtered.length >= 20) break;
+  }
+
+  return filtered;
+}
+
+// ===== 行动方案生成 =====
+
+function generateSuggestedTitle(topKeywords, searchKeyword) {
+  // 取同行高频词（占比 >= 20%，优先长词），排除纯数字
+  const rawWords = topKeywords
+    .filter(k => k.pct >= 20 && k.word.length >= 2 && !/^\d+$/.test(k.word))
+    .sort((a, b) => (b.word.length >= 3 ? 1 : 0) - (a.word.length >= 3 ? 1 : 0) || b.pct - a.pct)
+    .map(k => k.word);
+
+  // 加上用户搜索词
+  if (searchKeyword) {
+    const kwParts = searchKeyword.split(/[\s,，、]+/).filter(w => w.length >= 2 && !rawWords.includes(w));
+    rawWords.push(...kwParts);
+  }
+
+  let all = [...new Set(rawWords)];
+
+  // 过滤碎片词：如果某个词被另一个更长的词完全包含则去掉
+  all = all.filter(w => !all.some(other => other !== w && other.includes(w) && other.length > w.length));
+
+  // 分类（复用 DOMAIN_DICT 的分类逻辑）
+  const isDictMatch = (w, patterns) => patterns.some(p => w.includes(p) || p.includes(w));
+
+  const CORE_PATTERNS = ['演出服', '舞蹈服', '古装', '汉服', '旗袍', '礼服', '戏服', '铠甲', '战袍', '表演服', '舞台服', '合唱服', '练功服', '服装', '服饰'];
+  const STYLE_PATTERNS = ['红楼梦', '宝玉', '黛玉', '宝钗', '熙凤', '花木兰', '白娘子', '许仙', '小青', '古典', '民族', '现代', '芭蕾', '拉丁', '爵士', '街舞', 'Cosplay', '仙女', '公主', '武侠', '宫廷', '民国', '动漫', '影视', '戏曲', '舞台剧', '唐装', '汉服', '旗袍'];
+  const MATERIAL_PATTERNS = ['刺绣', '缎面', '雪纺', '蕾丝', '钉珠', '印花', '丝绸', '渐变', '重工', '大袖', '齐胸', '襦裙', '马面', '金丝绒', '棉麻', '欧根纱', '高定', '原版', '复刻'];
+  const SCENE_PATTERNS = ['舞台', '演出', '表演', '比赛', '影楼', '摄影', '年会', '六一', '艺考', '排练', '走秀', '庆典', '话剧', '戏曲', '舞蹈', '舞台剧'];
+  const CROWD_PATTERNS = ['成人', '儿童', '少儿', '幼儿', '男女', '小孩'];
+
+  const core = all.filter(w => isDictMatch(w, CORE_PATTERNS));
+  const style = all.filter(w => isDictMatch(w, STYLE_PATTERNS) && !core.includes(w));
+  const material = all.filter(w => isDictMatch(w, MATERIAL_PATTERNS) && !core.includes(w) && !style.includes(w));
+  const scene = all.filter(w => isDictMatch(w, SCENE_PATTERNS) && !core.includes(w) && !style.includes(w) && !material.includes(w));
+  const crowd = all.filter(w => isDictMatch(w, CROWD_PATTERNS));
+  const rest = all.filter(w => !core.includes(w) && !style.includes(w) && !material.includes(w) && !scene.includes(w) && !crowd.includes(w));
+
+  // 构建标题：核心词 + 风格/角色 + 材质/工艺 + 场景 + 人群 + 定制（连续拼接，无空格）
+  const parts = [];
+
+  if (core.length > 0) parts.push(...core.slice(0, 2));
+  else parts.push('演出服');
+
+  if (style.length > 0) parts.push(...style.slice(0, 3));
+
+  if (material.length > 0) parts.push(...material.slice(0, 2));
+
+  if (scene.length > 0) parts.push(...scene.slice(0, 2));
+
+  if (crowd.length > 0) parts.push(...crowd.slice(0, 1));
+
+  // 定制标识
+  if (!parts.some(w => w.includes('定制'))) parts.push('定制');
+
+  // 去重（同一词不重复出现）
+  const final = [];
+  for (const w of parts) {
+    if (!final.includes(w)) final.push(w);
+  }
+
+  // 拼接为连续文本
+  let title = final.join('');
+
+  // 长度不够时用 rest 补位
+  if (title.length < 20 && rest.length > 0) {
+    const padWords = rest.filter(w => !final.includes(w)).slice(0, 3);
+    for (const w of padWords) {
+      if (!final.includes(w)) {
+        final.push(w);
+        title = final.join('');
+        if (title.length >= 20) break;
+      }
+    }
+  }
+
+  // 计算哪些同行高频词未被覆盖
+  const missingKeywords = all.filter(w => !final.some(f => f.includes(w) || w.includes(f))).slice(0, 5);
+
+  return { title, missingKeywords, hotWords: all.slice(0, 10) };
+}
+
+function renderActionPlan(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
+  const valid = products.filter(p => p.title && p.price > 0);
+  const total = valid.length;
+  if (total === 0) {
+    $('actionPlanCard').style.display = 'none';
+    return;
+  }
+
+  const searchKeyword = $('compKeyword').value.trim() || '';
+  const { title: suggestedTitle, missingKeywords, hotWords } = generateSuggestedTitle(topKeywords, searchKeyword);
+
+  // 价格分位数
+  const prices = valid.map(p => p.price).sort((a, b) => a - b);
+  const p25 = prices[Math.floor(prices.length * 0.25)] || 0;
+  const p75 = prices[Math.floor(prices.length * 0.75)] || 0;
+  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
+  const priceDiff = myPrice > 0 ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
+
+  // 活动统计
+  const hiActivities = sortedActivities
+    .filter(([, cnt]) => cnt / total >= 0.3)
+    .map(([name, cnt]) => ({ name: name.replace('优惠:', ''), pct: Math.round(cnt / total * 100) }));
+
+  let html = '';
+
+  // === 优先级1: 标题优化 ===
+  html += '<div class="action-item priority-1">';
+  html += '<div class="action-num">1</div>';
+  html += '<div class="action-content">';
+  html += '<h3>优化标题</h3>';
+  html += '<p>同行高频词（' + total + ' 个商品统计）：</p>';
+  html += '<div class="tag-row">';
+  topKeywords.slice(0, 8).forEach(k => {
+    html += '<span class="tag-ok">' + escHtml(k.word) + ' ' + k.pct + '%</span>';
+  });
+  html += '</div>';
+
+  // 发现新词：同行高频但词典中未收录
+  const currentDict = new Set(loadDomainDict());
+  const newWords = topKeywords.filter(k => k.pct >= 30 && k.word.length >= 2 && !currentDict.has(k.word));
+  if (newWords.length > 0) {
+    html += '<div class="tag-row" style="margin-top:8px;">';
+    html += '<span style="font-size:12px;color:#e65100;">新词发现：</span>';
+    newWords.slice(0, 6).forEach(k => {
+      html += '<span class="tag-new" onclick="dictAddFromAnalysis(\'' + escHtml(k.word).replace(/'/g, "\\'") + '\', this)" title="点击加入词典">' + escHtml(k.word) + ' ' + k.pct + '% +</span>';
+    });
+    html += '</div>';
+  }
+
+  html += '<p style="margin-top:8px;">建议标题：</p>';
+  html += '<div class="suggested-title" id="suggestedTitleText">' + escHtml(suggestedTitle) + '</div>';
+  html += '<span class="meta">共 ' + suggestedTitle.length + ' 字（目标 20-40 字为佳）</span>';
+
+  if (missingKeywords.length > 0) {
+    html += '<div class="tag-row" style="margin-top:6px;">';
+    html += '<span style="font-size:12px;color:#999;">未覆盖：</span>';
+    missingKeywords.forEach(k => {
+      html += '<span class="tag-missing">' + escHtml(k) + '</span>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="action-footer">';
+  html += '<button class="btn-copy" onclick="copySuggestedTitle()">复制标题</button>';
+  html += '<button class="btn btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="switchTab(\'analyze\');document.getElementById(\'titleInput\').value=document.getElementById(\'suggestedTitleText\').textContent;">去诊断评分</button>';
+  html += '</div>';
+
+  html += '</div></div>';
+
+  // === 优先级2: 定价建议 ===
+  if (myPrice > 0 && Math.abs(priceDiff) > 15) {
+    html += '<div class="action-item priority-2">';
+    html += '<div class="action-num">2</div>';
+    html += '<div class="action-content">';
+    html += '<h3>调整定价</h3>';
+
+    const targetPrice = Math.round(avgPrice * (priceDiff > 0 ? 1.05 : 0.95));
+    html += '<p>你的价格 <strong>¥' + myPrice + '</strong>，同行均价 <strong>¥' + Math.round(avgPrice) + '</strong>，中位价 <strong>¥' + p50 + '</strong></p>';
+    html += '<p>同行价格区间：¥' + minPrice + ' ~ ¥' + maxPrice + '，75% 的商品在 ¥' + p25 + ' ~ ¥' + p75 + '</p>';
+
+    if (priceDiff > 0) {
+      html += '<p style="margin-top:6px;">';
+      html += '<strong style="color:#c62828;">你的价格偏高 ' + Math.round(priceDiff) + '%</strong>。有两种策略可选：<br>';
+      html += '① <strong>降至 ¥' + targetPrice + '</strong>（接近同行均价），更容易获得点击<br>';
+      html += '② <strong>维持当前价</strong>，但在详情页顶部突出定制流程、面料工艺等差异化价值';
+      html += '</p>';
+    } else {
+      html += '<p style="margin-top:6px;">';
+      html += '<strong style="color:#c62828;">你的价格偏低 ' + Math.round(Math.abs(priceDiff)) + '%</strong>。<br>';
+      html += '建议提价至 <strong>¥' + targetPrice + ' ~ ¥' + Math.round(p75) + '</strong>，同行大部分在这个区间';
+      html += '</p>';
+    }
+
+    if (myCost > 0) {
+      const margin = (targetPrice - myCost) / targetPrice * 100;
+      html += '<p class="meta">按介入价 ¥' + targetPrice + ' 计算，利润率约 ' + Math.round(margin) + '%</p>';
+    }
+
+    html += '</div></div>';
+  }
+
+  // === 优先级3: 活动配置 ===
+  if (hiActivities.length > 0) {
+    const actNum = myPrice > 0 && Math.abs(priceDiff) > 15 ? 3 : 2;
+    html += '<div class="action-item priority-3">';
+    html += '<div class="action-num">' + actNum + '</div>';
+    html += '<div class="action-content">';
+    html += '<h3>配置活动和优惠</h3>';
+    html += '<p>同行中普遍使用的活动：</p>';
+
+    hiActivities.forEach(act => {
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;">';
+      html += '<span>• ' + escHtml(act.name) + '</span>';
+      html += '<span style="color:#e65100;">' + act.pct + '% 同行使用</span>';
+      html += '</div>';
+    });
+
+    html += '<p class="meta" style="margin-top:8px;">操作路径：千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动</p>';
+    html += '</div></div>';
+  }
+
+  // === 优先级4: 销量标杆 ===
+  const actCount = hiActivities.length > 0 ? 1 : 0;
+  const priceCount = (myPrice > 0 && Math.abs(priceDiff) > 15) ? 1 : 0;
+  const lastNum = 2 + priceCount + actCount;
+
+  const topSales = valid.filter(p => p.sales).sort((a, b) => {
+    const na = parseFloat(a.sales) || 0;
+    const nb = parseFloat(b.sales) || 0;
+    return nb - na;
+  }).slice(0, 5);
+
+  if (topSales.length > 0) {
+    const maxSales = parseFloat(topSales[0].sales) || 0;
+    const isLowSales = maxSales < 50; // 最高销量不足50，数据参考价值有限
+
+    html += '<div class="action-item priority-4">';
+    html += '<div class="action-num">' + lastNum + '</div>';
+    html += '<div class="action-content">';
+    html += '<h3>竞品参考</h3>';
+
+    if (isLowSales) {
+      html += '<p class="meta" style="margin-bottom:8px;">该品类搜索结果销量普遍较低，价格和标题参考价值大于销量数据。</p>';
+    }
+
+    topSales.forEach((p, i) => {
+      const isOwn = myPrice > 0 && Math.abs(p.price - myPrice) < 0.5;
+      html += '<div style="display:flex;align-items:center;padding:3px 0;font-size:13px;gap:8px;">';
+      html += '<span style="color:#999;width:20px;">#' + (i + 1) + '</span>';
+      html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(p.title) + '">' + escHtml(p.title).substring(0, 35) + '</span>';
+      if (p.shop) {
+        html += '<span style="color:#999;font-size:11px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;" title="' + escHtml(p.shop) + '">' + escHtml(p.shop) + '</span>';
+      }
+      html += '<span style="white-space:nowrap;font-weight:500;">¥' + p.price + '</span>';
+      html += '<span style="color:#999;white-space:nowrap;font-size:12px;">' + (p.sales || '-') + '</span>';
+      if (isOwn) {
+        html += '<span style="background:#fff3e0;color:#e65100;padding:0 6px;border-radius:3px;font-size:11px;white-space:nowrap;">你的</span>';
+      }
+      html += '</div>';
+    });
+
+    html += '<p class="meta" style="margin-top:6px;">点击店铺名可在淘宝搜索该店铺。标注"你的"为自己的商品，仅供参考不参与对比。</p>';
+    html += '</div></div>';
+  }
+
+  $('actionPlanContent').innerHTML = html;
+  $('actionPlanCard').style.display = '';
+}
+
+function copySuggestedTitle() {
+  const title = $('suggestedTitleText').textContent;
+  navigator.clipboard.writeText(title).then(() => {
+    const btn = document.querySelector('#actionPlanCard .btn-copy');
+    if (btn) {
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => { btn.textContent = '复制标题'; }, 2000);
+    }
+  }).catch(() => {
+    // file:// fallback
+    $('compKeyword').value = title;
+    const btn = document.querySelector('#actionPlanCard .btn-copy');
+    if (btn) {
+      btn.textContent = '已填入搜索框';
+      setTimeout(() => { btn.textContent = '复制标题'; }, 2000);
+    }
+  });
 }
 
 // ===== 四张分析卡片渲染 =====
@@ -919,6 +1578,12 @@ function toggleTask(index) {
 // ===== 初始化 =====
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 搜索按钮初始绑定（搜索模式切换时动态更新）
+  const btnCompSearch = $('btnCompSearch');
+  if (btnCompSearch) {
+    btnCompSearch.onclick = startCompeteSearch;
+  }
+
   // paste textarea 监听：粘贴后高亮按钮
   const pasteArea = $('compPasteArea');
   if (pasteArea) {
