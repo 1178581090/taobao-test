@@ -1134,6 +1134,110 @@ function renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgP
   $('diagnosticGrid').style.display = '';
 }
 
+function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
+  const valid = products.filter(p => p.title && p.price > 0);
+  const total = valid.length;
+  if (total === 0) { $('improveCard').style.display = 'none'; return; }
+
+  const prices = valid.map(p => p.price).sort((a, b) => a - b);
+  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
+  var items = [];
+  var num = 0;
+
+  // 定价建议
+  if (myPrice > 0 && avgPrice > 0) {
+    var diff = Math.round((myPrice - avgPrice) / avgPrice * 100);
+    if (Math.abs(diff) > 15) {
+      num++;
+      var targetLo = Math.round(avgPrice * 0.92);
+      var targetHi = Math.round(avgPrice * 1.08);
+      var desc, evidence;
+      if (diff > 0) {
+        desc = '你的售价 <strong>¥' + myPrice + '</strong>，同行 75% 的商品定价在 <strong>¥' + prices[Math.floor(prices.length * 0.25)] + '–' + prices[Math.floor(prices.length * 0.75)] + '</strong> 区间。建议调至 <strong>¥' + targetLo + '–' + targetHi + '</strong>，接近同行中位价。';
+        evidence = '同行均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 +' + diff + '%';
+      } else {
+        desc = '你的售价 <strong>¥' + myPrice + '</strong> 低于同行均价。建议提价至 <strong>¥' + targetLo + '–' + targetHi + '</strong>，提升利润空间。';
+        evidence = '同行均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 ' + diff + '%';
+      }
+      items.push({
+        pri: 'high', impact: '高影响', num: num,
+        title: '调整定价 — ' + (diff > 0 ? '降低售价 ' + Math.round(Math.abs(diff) * 0.6) + '%–' + Math.round(Math.abs(diff) * 0.8) + '%' : '提高售价 ' + Math.round(Math.abs(diff) * 0.5) + '%'),
+        desc: desc, evidence: evidence, dotColor: '#ef5350', btn: '复制调价建议', btnClass: 'btn-primary'
+      });
+    }
+  }
+
+  // 标题建议
+  var searchKeyword = $('compKeyword').value.trim() || '';
+  var suggested = generateSuggestedTitle(topKeywords, searchKeyword);
+  if (suggested.missingKeywords.length > 0) {
+    num++;
+    items.push({
+      pri: 'med', impact: '中影响', num: num,
+      title: '补充标题关键词 — 增加 ' + suggested.missingKeywords.length + ' 个高频词',
+      desc: '同行高频但你可能缺失的关键词：<strong>' + suggested.missingKeywords.map(function(k) { return '「' + escHtml(k) + '」'; }).join('、') + '</strong>。',
+      evidence: '同行高频词 ' + topKeywords.length + ' 个 · 建议标题: ' + escHtml(suggested.title),
+      dotColor: '#ff9800', btn: '查看建议标题', btnClass: 'btn-secondary'
+    });
+  }
+
+  // 活动建议
+  var hiActivities = sortedActivities.filter(function(a) { return a[1] / total >= 0.3; });
+  if (hiActivities.length > 0) {
+    num++;
+    var actTexts = hiActivities.map(function(a) { return a[0].replace('优惠:', '') + ' (' + Math.round(a[1] / total * 100) + '%)'; });
+    items.push({
+      pri: 'low', impact: '低影响', num: num,
+      title: '配置活动和优惠',
+      desc: '同行热门活动：<strong>' + actTexts.join('、') + '</strong>。建议优先开通覆盖率高的活动。',
+      evidence: '操作路径：千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动',
+      dotColor: '#66bb6a', btn: '复制操作路径', btnClass: 'btn-secondary'
+    });
+  }
+
+  if (items.length === 0) {
+    $('improveCard').style.display = 'none';
+    return;
+  }
+
+  var html = '';
+  items.forEach(function(item) {
+    html += '<div class="improve-item pri-' + item.pri + '">';
+    html += '<div class="improve-inner">';
+    html += '<div class="improve-rank">' + item.num + '</div>';
+    html += '<div class="improve-body">';
+    html += '<div class="title">' + item.title + ' <span class="impact-badge ' + item.pri + '">' + item.impact + '</span></div>';
+    html += '<div class="desc">' + item.desc + '</div>';
+    html += '<div class="evidence"><span class="ev-dot" style="background:' + item.dotColor + '"></span> ' + escHtml(item.evidence) + '</div>';
+    html += '</div>';
+    html += '<div class="improve-action"><button class="btn ' + item.btnClass + '" onclick="improvAction(\'' + item.pri + '\',\'' + escHtml(item.title) + '\')">' + item.btn + '</button></div>';
+    html += '</div></div>';
+  });
+
+  $('improveList').innerHTML = html;
+  $('improveCard').style.display = '';
+}
+
+function improvAction(pri, title) {
+  if (pri === 'high') {
+    var text = document.querySelector('#improveList .pri-high .desc').textContent;
+    navigator.clipboard.writeText(text).catch(function(){});
+    var btn = document.querySelector('#improveList .pri-high .btn');
+    if (btn) { var orig = btn.textContent; btn.textContent = '已复制 ✓'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+  } else if (pri === 'med') {
+    var titleEl = document.querySelector('#improveList .pri-med .evidence');
+    if (titleEl) {
+      navigator.clipboard.writeText(titleEl.textContent.replace(/^[^:]*:\s*/, '')).catch(function(){});
+      var btn2 = document.querySelector('#improveList .pri-med .btn');
+      if (btn2) { var orig2 = btn2.textContent; btn2.textContent = '已复制 ✓'; setTimeout(function(){ btn2.textContent = orig2; }, 2000); }
+    }
+  } else {
+    navigator.clipboard.writeText('千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动').catch(function(){});
+    var btn3 = document.querySelector('#improveList .pri-low .btn');
+    if (btn3) { var orig3 = btn3.textContent; btn3.textContent = '已复制 ✓'; setTimeout(function(){ btn3.textContent = orig3; }, 2000); }
+  }
+}
+
 function getKeywordFrequency(titles) {
   const freq = {};
   const stopWords = new Set(['的', '和', '与', '及', '之', '是', '在', '有', '为', '等', '了', '不', '也', '都', '就', '还', '要', '会', '可', '个', '这', '那', '我', '你', '他', '她', '它', '们', 'a', 'the', 'is', 'for', 'and', '没有', '可以', '什么', '一个', '这个', '自己', '我们', '他们', '还是', '不是', '已经']);
