@@ -57,23 +57,51 @@ if [ -n "$UNTRACKED" ]; then
   echo ""
 fi
 
-# ===== 3. 提交并推送 (需要参数) =====
+# ===== 3. 更新开发日志 =====
+if [ -n "$1" ]; then
+  TODAY=$(date +%Y-%m-%d)
+  COMMIT_MSG="$1"
+
+  # 去掉 convential commit 前缀 (如 "feat: " → "")
+  ENTRY_TITLE=$(echo "$COMMIT_MSG" | sed 's/^[a-z]*: //')
+
+  if grep -q "^## $TODAY" CHANGELOG.md 2>/dev/null; then
+    # 今天已有标题：在标题行后插入新条目
+    awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
+      { sub(/\r$/, "") }
+      /^## / && $0 == "## "today && !done { print; print entry; done=1; next }
+      { print }
+    ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+  else
+    # 今天还没有标题：在第一个日期标题前插入
+    if grep -q "^## 20" CHANGELOG.md 2>/dev/null; then
+      awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
+        { sub(/\r$/, "") }
+        !done && /^## 20[0-9][0-9]-/ { print "## "today; print ""; print entry; print ""; done=1 }
+        { print }
+      ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+    else
+      printf '\n## %s\n\n- %s\n' "$TODAY" "$ENTRY_TITLE" >> CHANGELOG.md
+    fi
+  fi
+
+  echo "===== 3. 已更新 CHANGELOG.md ====="
+fi
+
+# ===== 4. 提交并推送 =====
 if [ -z "$1" ]; then
   echo "===== 未提供提交信息 ====="
   echo "确认变更无误后运行: ./finish-phase.sh \"<提交信息>\""
-  echo "然后让 Claude 更新 CHANGELOG.md。"
   exit 0
 fi
 
-COMMIT_MSG="$1"
-echo "===== 3. 提交: $COMMIT_MSG ====="
+echo "===== 4. 提交: $COMMIT_MSG ====="
 git add -A
 git commit -m "$COMMIT_MSG"
 
 echo ""
-echo "===== 4. 推送到远程 ====="
+echo "===== 5. 推送到远程 ====="
 git push origin master
 
 echo ""
 echo "===== 收尾完成 ====="
-echo "代码已推送。请让 Claude 根据本次变更更新 CHANGELOG.md。"
