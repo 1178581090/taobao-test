@@ -1448,193 +1448,7 @@ function generateSuggestedTitle(topKeywords, searchKeyword) {
   return { title, missingKeywords, hotWords: all.slice(0, 10) };
 }
 
-function renderActionPlan(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
-  const valid = products.filter(p => p.title && p.price > 0);
-  const total = valid.length;
-  if (total === 0) {
-    $('actionPlanCard').style.display = 'none';
-    return;
-  }
 
-  const searchKeyword = $('compKeyword').value.trim() || '';
-  const { title: suggestedTitle, missingKeywords, hotWords } = generateSuggestedTitle(topKeywords, searchKeyword);
-
-  // 价格分位数
-  const prices = valid.map(p => p.price).sort((a, b) => a - b);
-  const p25 = prices[Math.floor(prices.length * 0.25)] || 0;
-  const p75 = prices[Math.floor(prices.length * 0.75)] || 0;
-  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
-  const priceDiff = myPrice > 0 ? ((myPrice - avgPrice) / avgPrice * 100) : 0;
-
-  // 活动统计
-  const hiActivities = sortedActivities
-    .filter(([, cnt]) => cnt / total >= 0.3)
-    .map(([name, cnt]) => ({ name: name.replace('优惠:', ''), pct: Math.round(cnt / total * 100) }));
-
-  let html = '';
-
-  // === 优先级1: 标题优化 ===
-  html += '<div class="action-item priority-1">';
-  html += '<div class="action-num">1</div>';
-  html += '<div class="action-content">';
-  html += '<h3>优化标题</h3>';
-  html += '<p>同行高频词（' + total + ' 个商品统计）：</p>';
-  html += '<div class="tag-row">';
-  topKeywords.slice(0, 8).forEach(k => {
-    html += '<span class="tag-ok">' + escHtml(k.word) + ' ' + k.pct + '%</span>';
-  });
-  html += '</div>';
-
-  // 发现新词：同行高频但词典中未收录
-  const currentDict = new Set(loadDomainDict());
-  const newWords = topKeywords.filter(k => k.pct >= 30 && k.word.length >= 2 && !currentDict.has(k.word));
-  if (newWords.length > 0) {
-    html += '<div class="tag-row" style="margin-top:8px;">';
-    html += '<span style="font-size:12px;color:#e65100;">新词发现：</span>';
-    newWords.slice(0, 6).forEach(k => {
-      html += '<span class="tag-new" onclick="dictAddFromAnalysis(\'' + escHtml(k.word).replace(/'/g, "\\'") + '\', this)" title="点击加入词典">' + escHtml(k.word) + ' ' + k.pct + '% +</span>';
-    });
-    html += '</div>';
-  }
-
-  html += '<p style="margin-top:8px;">建议标题：</p>';
-  html += '<div class="suggested-title" id="suggestedTitleText">' + escHtml(suggestedTitle) + '</div>';
-  html += '<span class="meta">共 ' + suggestedTitle.length + ' 字（目标 20-40 字为佳）</span>';
-
-  if (missingKeywords.length > 0) {
-    html += '<div class="tag-row" style="margin-top:6px;">';
-    html += '<span style="font-size:12px;color:#999;">未覆盖：</span>';
-    missingKeywords.forEach(k => {
-      html += '<span class="tag-missing">' + escHtml(k) + '</span>';
-    });
-    html += '</div>';
-  }
-
-  html += '<div class="action-footer">';
-  html += '<button class="btn-copy" onclick="copySuggestedTitle()">复制标题</button>';
-  html += '<button class="btn btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="switchTab(\'analyze\');document.getElementById(\'titleInput\').value=document.getElementById(\'suggestedTitleText\').textContent;">去诊断评分</button>';
-  html += '</div>';
-
-  html += '</div></div>';
-
-  // === 优先级2: 定价建议 ===
-  if (myPrice > 0 && Math.abs(priceDiff) > 15) {
-    html += '<div class="action-item priority-2">';
-    html += '<div class="action-num">2</div>';
-    html += '<div class="action-content">';
-    html += '<h3>调整定价</h3>';
-
-    const targetPrice = Math.round(avgPrice * (priceDiff > 0 ? 1.05 : 0.95));
-    html += '<p>你的价格 <strong>¥' + myPrice + '</strong>，同行均价 <strong>¥' + Math.round(avgPrice) + '</strong>，中位价 <strong>¥' + p50 + '</strong></p>';
-    html += '<p>同行价格区间：¥' + minPrice + ' ~ ¥' + maxPrice + '，75% 的商品在 ¥' + p25 + ' ~ ¥' + p75 + '</p>';
-
-    if (priceDiff > 0) {
-      html += '<p style="margin-top:6px;">';
-      html += '<strong style="color:#c62828;">你的价格偏高 ' + Math.round(priceDiff) + '%</strong>。有两种策略可选：<br>';
-      html += '① <strong>降至 ¥' + targetPrice + '</strong>（接近同行均价），更容易获得点击<br>';
-      html += '② <strong>维持当前价</strong>，但在详情页顶部突出定制流程、面料工艺等差异化价值';
-      html += '</p>';
-    } else {
-      html += '<p style="margin-top:6px;">';
-      html += '<strong style="color:#c62828;">你的价格偏低 ' + Math.round(Math.abs(priceDiff)) + '%</strong>。<br>';
-      html += '建议提价至 <strong>¥' + targetPrice + ' ~ ¥' + Math.round(p75) + '</strong>，同行大部分在这个区间';
-      html += '</p>';
-    }
-
-    if (myCost > 0) {
-      const margin = (targetPrice - myCost) / targetPrice * 100;
-      html += '<p class="meta">按介入价 ¥' + targetPrice + ' 计算，利润率约 ' + Math.round(margin) + '%</p>';
-    }
-
-    html += '</div></div>';
-  }
-
-  // === 优先级3: 活动配置 ===
-  if (hiActivities.length > 0) {
-    const actNum = myPrice > 0 && Math.abs(priceDiff) > 15 ? 3 : 2;
-    html += '<div class="action-item priority-3">';
-    html += '<div class="action-num">' + actNum + '</div>';
-    html += '<div class="action-content">';
-    html += '<h3>配置活动和优惠</h3>';
-    html += '<p>同行中普遍使用的活动：</p>';
-
-    hiActivities.forEach(act => {
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;">';
-      html += '<span>• ' + escHtml(act.name) + '</span>';
-      html += '<span style="color:#e65100;">' + act.pct + '% 同行使用</span>';
-      html += '</div>';
-    });
-
-    html += '<p class="meta" style="margin-top:8px;">操作路径：千牛卖家中心 → 营销中心 → 店铺优惠券/满减活动</p>';
-    html += '</div></div>';
-  }
-
-  // === 优先级4: 销量标杆 ===
-  const actCount = hiActivities.length > 0 ? 1 : 0;
-  const priceCount = (myPrice > 0 && Math.abs(priceDiff) > 15) ? 1 : 0;
-  const lastNum = 2 + priceCount + actCount;
-
-  const topSales = valid.filter(p => p.sales).sort((a, b) => {
-    const na = parseFloat(a.sales) || 0;
-    const nb = parseFloat(b.sales) || 0;
-    return nb - na;
-  }).slice(0, 5);
-
-  if (topSales.length > 0) {
-    const maxSales = parseFloat(topSales[0].sales) || 0;
-    const isLowSales = maxSales < 50; // 最高销量不足50，数据参考价值有限
-
-    html += '<div class="action-item priority-4">';
-    html += '<div class="action-num">' + lastNum + '</div>';
-    html += '<div class="action-content">';
-    html += '<h3>竞品参考</h3>';
-
-    if (isLowSales) {
-      html += '<p class="meta" style="margin-bottom:8px;">该品类搜索结果销量普遍较低，价格和标题参考价值大于销量数据。</p>';
-    }
-
-    topSales.forEach((p, i) => {
-      const isOwn = myPrice > 0 && Math.abs(p.price - myPrice) < 0.5;
-      html += '<div style="display:flex;align-items:center;padding:3px 0;font-size:13px;gap:8px;">';
-      html += '<span style="color:#999;width:20px;">#' + (i + 1) + '</span>';
-      html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(p.title) + '">' + escHtml(p.title).substring(0, 35) + '</span>';
-      if (p.shop) {
-        html += '<span style="color:#999;font-size:11px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;" title="' + escHtml(p.shop) + '">' + escHtml(p.shop) + '</span>';
-      }
-      html += '<span style="white-space:nowrap;font-weight:500;">¥' + p.price + '</span>';
-      html += '<span style="color:#999;white-space:nowrap;font-size:12px;">' + (p.sales || '-') + '</span>';
-      if (isOwn) {
-        html += '<span style="background:#fff3e0;color:#e65100;padding:0 6px;border-radius:3px;font-size:11px;white-space:nowrap;">你的</span>';
-      }
-      html += '</div>';
-    });
-
-    html += '<p class="meta" style="margin-top:6px;">点击店铺名可在淘宝搜索该店铺。标注"你的"为自己的商品，仅供参考不参与对比。</p>';
-    html += '</div></div>';
-  }
-
-  $('actionPlanContent').innerHTML = html;
-  $('actionPlanCard').style.display = '';
-}
-
-function copySuggestedTitle() {
-  const title = $('suggestedTitleText').textContent;
-  navigator.clipboard.writeText(title).then(() => {
-    const btn = document.querySelector('#actionPlanCard .btn-copy');
-    if (btn) {
-      btn.textContent = '已复制 ✓';
-      setTimeout(() => { btn.textContent = '复制标题'; }, 2000);
-    }
-  }).catch(() => {
-    // file:// fallback
-    $('compKeyword').value = title;
-    const btn = document.querySelector('#actionPlanCard .btn-copy');
-    if (btn) {
-      btn.textContent = '已填入搜索框';
-      setTimeout(() => { btn.textContent = '复制标题'; }, 2000);
-    }
-  });
-}
 
 // ===== 四张分析卡片渲染 =====
 
@@ -1808,6 +1622,18 @@ function renderDataTable(valid) {
 
 function escHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function toggleDetail() {
+  const content = $("detailContent");
+  const toggle = $("detailToggle");
+  if (content.style.display === "none") {
+    content.style.display = "";
+    toggle.classList.add("open");
+  } else {
+    content.style.display = "none";
+    toggle.classList.remove("open");
+  }
 }
 
 function toggleDataTable() {
