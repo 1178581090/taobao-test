@@ -989,39 +989,35 @@ function processData(raw) {
 function analyzeAndRender(products, myPrice, myCost) {
   const valid = products.filter(p => p.title && p.price > 0);
 
-  // 标题关键词分析
   const allTitles = valid.map(p => p.title);
   const keywordFreq = getKeywordFrequency(allTitles);
   const topKeywords = keywordFreq.slice(0, 15);
 
-  // 价格分析
   const prices = valid.map(p => p.price).sort((a, b) => a - b);
   const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
   const minPrice = prices[0] || 0;
   const maxPrice = prices[prices.length - 1] || 0;
 
-  // 活动分析
   const activityCount = {};
   valid.forEach(p => {
     if (p.activityTags) {
-      p.activityTags.forEach(tag => {
-        activityCount[tag] = (activityCount[tag] || 0) + 1;
-      });
+      p.activityTags.forEach(tag => { activityCount[tag] = (activityCount[tag] || 0) + 1; });
     }
     if (p.promo) {
       const key = '优惠:' + p.promo;
       activityCount[key] = (activityCount[key] || 0) + 1;
     }
   });
-
   const sortedActivities = Object.entries(activityCount)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
-  // 渲染行动方案（置于顶部）
-  renderActionPlan(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice);
+  // 新版三板块
+  renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice);
+  renderImprovements(products, myPrice, myCost, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice);
+  renderPeerComparison(products, myPrice);
 
-  // 渲染四张详细卡片
+  // 详细数据（折叠区内）
   renderTitleCard(topKeywords, valid.length);
   renderPriceCard(myPrice, avgPrice, minPrice, maxPrice);
   renderActivityCard(sortedActivities, valid.length);
@@ -1031,7 +1027,6 @@ function analyzeAndRender(products, myPrice, myCost) {
     $('cardProfit').style.display = 'none';
   }
 
-  // 渲染数据表
   renderDataTable(valid);
 
   // 保存分析结果
@@ -1040,7 +1035,6 @@ function analyzeAndRender(products, myPrice, myCost) {
     sortedActivities, valid, totalCount: products.length, myCost
   };
 
-  // 生成明日清单
   generateChecklistTasks(lastAnalysisResult);
 }
 
