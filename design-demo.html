@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竞品分析 · 设计演示（亮色版）</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f5;
+  --card-bg: #fff;
+  --card-hover: #fafafa;
+  --border: #e8e8e8;
+  --border-light: #f0f0f0;
+
+  --accent: #ff5000;
+  --accent-light: #fff3e0;
+  --accent-soft: #fff8f5;
+  --accent-dark: #e64800;
+
+  --text: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --text-inverse: #fff;
+
+  --green: #2e7d32;
+  --green-bg: #e8f5e9;
+  --green-border: #a5d6a7;
+  --yellow: #e65100;
+  --yellow-bg: #fff3e0;
+  --yellow-border: #ffcc80;
+  --red: #c62828;
+  --red-bg: #ffebee;
+  --red-border: #ef9a9a;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+
+  --shadow: 0 1px 4px rgba(0,0,0,.06);
+  --shadow-hover: 0 2px 12px rgba(0,0,0,.1);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding: 24px;
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+/* ===== Section Header ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.section-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.section-header .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ===== 1. Diagnostic Overview ===== */
+.diagnostic {
+  display: grid;
+  grid-template-columns: 200px 1fr 300px;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Score */
+.score-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.score-ring-wrap {
+  position: relative;
+  width: 110px; height: 110px;
+  margin-bottom: 10px;
+}
+.score-ring-wrap svg { transform: rotate(-90deg); display: block; }
+.score-value {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 38px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  line-height: 1;
+}
+.score-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Dimension Bars */
+.dimension-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+}
+.dim-item { display: flex; flex-direction: column; gap: 5px; }
+.dim-head { display: flex; justify-content: space-between; align-items: baseline; }
+.dim-name { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.dim-val  { font-size: 13px; font-weight: 600; }
+.dim-bar {
+  height: 8px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dim-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .5s ease;
+}
+.dim-bar-fill.price    { width: 72%; background: #ef5350; }
+.dim-bar-fill.title    { width: 55%; background: #ff9800; }
+.dim-bar-fill.activity { width: 30%; background: #66bb6a; }
+
+/* Finding */
+.finding-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 4px solid var(--accent);
+}
+.finding-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.finding-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.finding-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.finding-stat {
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  text-align: center;
+  min-width: 72px;
+}
+.finding-stat .sn {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  line-height: 1.2;
+}
+.finding-stat .sl {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ===== 2. Improvements ===== */
+.improvements { margin-bottom: 24px; }
+.improve-list { display: flex; flex-direction: column; gap: 10px; }
+
+.improve-item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.improve-item:hover { box-shadow: var(--shadow-hover); }
+
+.improve-inner {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  align-items: stretch;
+}
+
+.improve-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border-light);
+}
+.priority-high .improve-rank { color: var(--red); }
+.priority-med  .improve-rank { color: var(--yellow); }
+.priority-low  .improve-rank { color: var(--green); }
+
+.improve-body { padding: 18px 20px; }
+.improve-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.improve-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+.improve-evidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: #fafafa;
+  border: 1px solid var(--border-light);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+.improve-evidence .ev-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.improve-action {
+  padding: 18px 20px 18px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+  font-family: var(--font-sans);
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: #f0f0f0; color: var(--text-secondary); }
+.btn-secondary:hover { background: #e4e4e4; color: var(--text); }
+
+/* Impact Badge */
+.impact-badge {
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.impact-high { background: var(--red-bg); color: var(--red); }
+.impact-med  { background: var(--yellow-bg); color: var(--yellow); }
+.impact-low  { background: var(--green-bg); color: var(--green); }
+
+/* ===== 3. Landscape ===== */
+.landscape { margin-bottom: 24px; }
+
+.landscape-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.landscape-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+.landscape-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+/* Scatter */
+.scatter-plot {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-left: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  margin-left: 44px;
+  margin-bottom: 26px;
+}
+.scatter-plot .y-label {
+  position: absolute;
+  left: -38px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.scatter-plot .x-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.scatter-dot {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #ccc;
+  transform: translate(-50%, 50%);
+}
+.scatter-dot.my-dot {
+  width: 14px; height: 14px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255,80,0,.2);
+  z-index: 2;
+}
+.scatter-dot.my-dot::after {
+  content: '你';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Top table */
+.compact-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.compact-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border-light);
+}
+.compact-table td {
+  padding: 9px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.compact-table tr:last-child td { border-bottom: none; }
+.compact-table .cp { font-weight: 600; color: var(--text); }
+.compact-table .cs { font-family: var(--font-mono); }
+.compact-table .my-row { background: var(--accent-soft); }
+.compact-table .my-row td { color: var(--accent); }
+.compact-table .my-row .cp { color: var(--accent); }
+
+/* ===== 4. Detail (Collapsible) ===== */
+.detail-section { margin-bottom: 24px; }
+
+.detail-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  user-select: none;
+  transition: background .15s;
+}
+.detail-toggle:hover { background: var(--card-hover); }
+.detail-toggle .toggle-icon {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: transform .2s;
+  display: inline-block;
+}
+.detail-toggle.open .toggle-icon { transform: rotate(90deg); }
+.detail-toggle .toggle-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.detail-content {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.detail-content.hidden { display: none; }
+
+.analysis-mini {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid #e0e0e0;
+}
+.analysis-mini h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.analysis-mini .stat-mini-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.analysis-mini .stat-mini {
+  background: #fafafa;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.analysis-mini .stat-mini strong {
+  display: block;
+  font-size: 16px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  margin-top: 1px;
+}
+.analysis-mini .suggestion {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+
+.tag-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #fafafa;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.tag.hot { background: var(--accent-light); border-color: #ffcc80; color: var(--yellow); }
+
+.data-table-wrap {
+  grid-column: 1 / -1;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.data-table-wrap h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 7px 10px;
+  border-bottom: 2px solid var(--border-light);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-table tr:hover td { background: #fafafa; }
+.data-table .cp { font-weight: 600; color: var(--text); }
+.data-table .cs { font-family: var(--font-mono); }
+
+/* Animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.diagnostic, .improvements, .landscape, .detail-section {
+  animation: fadeUp .4s ease both;
+}
+.improvements    { animation-delay: .08s; }
+.landscape       { animation-delay: .16s; }
+.detail-section  { animation-delay: .24s; }
+
+/* Responsive */
+@media (max-width: 800px) {
+  body { padding: 16px; }
+  .diagnostic { grid-template-columns: 1fr; }
+  .landscape-grid { grid-template-columns: 1fr; }
+  .detail-content { grid-template-columns: 1fr; }
+  .improve-inner { grid-template-columns: 38px 1fr; }
+  .improve-action { grid-column: 1 / -1; padding: 0 16px 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 1. 诊断总览 ===== -->
+<div class="diagnostic">
+
+  <!-- 竞争力评分 -->
+  <div class="score-card">
+    <div class="score-ring-wrap">
+      <svg width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="48" fill="none" stroke="#f0f0f0" stroke-width="7"/>
+        <circle cx="55" cy="55" r="48" fill="none" stroke="#ff5000" stroke-width="7"
+          stroke-dasharray="301.6" stroke-dashoffset="144.8" stroke-linecap="round"/>
+      </svg>
+      <div class="score-value">52</div>
+    </div>
+    <div class="score-sub">在 32 个竞品中<br>处于中等偏下</div>
+  </div>
+
+  <!-- 维度得分 -->
+  <div class="dimension-card">
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">价格定位</span>
+        <span class="dim-val" style="color:#ef5350">偏高 31%</span>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill price"></div></div>
+    </div>
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">标题关键词覆盖</span>
+        <span class="dim-val" style="color:#ff9800">覆盖 55%</span>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill title"></div></div>
+    </div>
+    <div class="dim-item">
+      <div class="dim-head">
+        <span class="dim-name">活动覆盖</span>
+        <span class="dim-val" style="color:#66bb6a">良好</span>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill activity"></div></div>
+    </div>
+  </div>
+
+  <!-- 首要行动 -->
+  <div class="finding-card">
+    <div class="finding-label">首要行动</div>
+    <div class="finding-text">优先调整定价，将售价从 ¥168 降至 ¥128–138 区间</div>
+    <div class="finding-stats">
+      <div class="finding-stat">
+        <div class="sn">¥128</div>
+        <div class="sl">同行均价</div>
+      </div>
+      <div class="finding-stat">
+        <div class="sn">¥168</div>
+        <div class="sl">你的售价</div>
+      </div>
+      <div class="finding-stat">
+        <div class="sn">+31%</div>
+        <div class="sl">偏离幅度</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 2. 改进清单 ===== -->
+<div class="improvements">
+  <div class="section-header">
+    <span class="dot"></span>
+    <h2>改进清单</h2>
+  </div>
+
+  <div class="improve-list">
+
+    <!-- 优先级 1 -->
+    <div class="improve-item priority-high">
+      <div class="improve-inner">
+        <div class="improve-rank">1</div>
+        <div class="improve-body">
+          <div class="improve-title">
+            调整定价 — 降低售价 18%-24%
+            <span class="impact-badge impact-high">高影响</span>
+          </div>
+          <div class="improve-desc">
+            你的售价 <strong>¥168</strong>，同行 75% 的商品定价在 <strong>¥98–145</strong> 区间。
+            价格偏高可能导致点击率低于同行均值。建议调至 <strong>¥128–138</strong>，同时保持利润率在 25% 以上。
+          </div>
+          <div class="improve-evidence">
+            <span class="ev-dot" style="background:#ef5350"></span>
+            同行均价 ¥128 · 中位价 ¥125 · 75%分位 ¥145 · 你的价格处于前 28%
+          </div>
+        </div>
+        <div class="improve-action">
+          <button class="btn btn-primary">复制调价建议</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 优先级 2 -->
+    <div class="improve-item priority-med">
+      <div class="improve-inner">
+        <div class="improve-rank">2</div>
+        <div class="improve-body">
+          <div class="improve-title">
+            补充标题关键词 — 增加 3 个高频词
+            <span class="impact-badge impact-med">中影响</span>
+          </div>
+          <div class="improve-desc">
+            你的标题缺少同行高频词：<strong>「重工刺绣」「舞台演出」「儿童」</strong>。
+            含「重工刺绣」的商品平均销量比不含的高 40%；含「舞台演出」的商品出现在 68% 的搜索结果中。
+          </div>
+          <div class="improve-evidence">
+            <span class="ev-dot" style="background:#ff9800"></span>
+            同行高频词 15 个 · 已覆盖 8 个 · 3 个高价值词未覆盖
+          </div>
+        </div>
+        <div class="improve-action">
+          <button class="btn btn-secondary">查看建议标题 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 优先级 3 -->
+    <div class="improve-item priority-low">
+      <div class="improve-inner">
+        <div class="improve-rank">3</div>
+        <div class="improve-body">
+          <div class="improve-title">
+            开通运费险
+            <span class="impact-badge impact-low">低影响</span>
+          </div>
+          <div class="improve-desc">
+            同行中 <strong>72%</strong> 的商品提供运费险。虽然对点击率提升有限，但能降低定制类目购买决策阻力。
+          </div>
+          <div class="improve-evidence">
+            <span class="ev-dot" style="background:#66bb6a"></span>
+            同行 23/32 开通 · 店铺当前未开通
+          </div>
+        </div>
+        <div class="improve-action">
+          <button class="btn btn-secondary">复制操作路径</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 3. 竞品格局 ===== -->
+<div class="landscape">
+  <div class="section-header">
+    <span class="dot"></span>
+    <h2>竞品格局</h2>
+  </div>
+
+  <div class="landscape-grid">
+    <!-- 散点图 -->
+    <div class="landscape-card">
+      <h3>价格 — 销量分布</h3>
+      <div class="scatter-plot">
+        <span class="y-label">销量 →</span>
+        <span class="x-label">价格（¥）→</span>
+        <div class="scatter-dot" style="left:15%;bottom:38%"></div>
+        <div class="scatter-dot" style="left:20%;bottom:30%"></div>
+        <div class="scatter-dot" style="left:25%;bottom:45%"></div>
+        <div class="scatter-dot" style="left:30%;bottom:25%"></div>
+        <div class="scatter-dot" style="left:32%;bottom:52%"></div>
+        <div class="scatter-dot" style="left:35%;bottom:20%"></div>
+        <div class="scatter-dot" style="left:38%;bottom:42%"></div>
+        <div class="scatter-dot" style="left:40%;bottom:35%"></div>
+        <div class="scatter-dot" style="left:42%;bottom:58%"></div>
+        <div class="scatter-dot" style="left:45%;bottom:28%"></div>
+        <div class="scatter-dot" style="left:48%;bottom:40%"></div>
+        <div class="scatter-dot" style="left:50%;bottom:22%"></div>
+        <div class="scatter-dot" style="left:52%;bottom:50%"></div>
+        <div class="scatter-dot" style="left:55%;bottom:32%"></div>
+        <div class="scatter-dot" style="left:58%;bottom:44%"></div>
+        <div class="scatter-dot" style="left:60%;bottom:18%"></div>
+        <div class="scatter-dot" style="left:62%;bottom:35%"></div>
+        <div class="scatter-dot" style="left:65%;bottom:48%"></div>
+        <div class="scatter-dot" style="left:68%;bottom:25%"></div>
+        <div class="scatter-dot" style="left:70%;bottom:38%"></div>
+        <div class="scatter-dot" style="left:72%;bottom:52%"></div>
+        <div class="scatter-dot" style="left:75%;bottom:20%"></div>
+        <div class="scatter-dot" style="left:78%;bottom:30%"></div>
+        <div class="scatter-dot" style="left:80%;bottom:42%"></div>
+        <div class="scatter-dot" style="left:82%;bottom:28%"></div>
+        <div class="scatter-dot my-dot" style="left:80%;bottom:8%"></div>
+      </div>
+    </div>
+
+    <!-- TOP 5 销量 -->
+    <div class="landscape-card">
+      <h3>TOP 5 销量竞品</h3>
+      <table class="compact-table">
+        <thead>
+          <tr><th>商品</th><th>价格</th><th>销量</th><th>店铺</th></tr>
+        </thead>
+        <tbody>
+          <tr><td title="红楼梦古装演出服黛玉同款古典舞成人飘逸刺绣定制">红楼梦古装演出服黛玉同款古典舞...</td><td class="cp">¥128</td><td class="cs">2.3万+</td><td>古韵坊旗舰店</td></tr>
+          <tr><td title="儿童古装汉服演出服女童六一表演服仙女飘逸">儿童古装汉服演出服女童六一表演...</td><td class="cp">¥98</td><td class="cs">1.8万+</td><td>童星舞台服饰</td></tr>
+          <tr><td title="重工刺绣古装演出服古典舞成人定制舞台表演服">重工刺绣古装演出服古典舞成人定...</td><td class="cp">¥158</td><td class="cs">9,600+</td><td>绣韵阁</td></tr>
+          <tr class="my-row"><td title="古装演出服汉服定制舞台表演服">古装演出服汉服定制舞台表演服</td><td class="cp">¥168</td><td class="cs">—</td><td>你的店铺</td></tr>
+          <tr><td title="仙女风古装舞蹈服成人飘逸演出服定制汉服">仙女风古装舞蹈服成人飘逸演出服...</td><td class="cp">¥118</td><td class="cs">5,200+</td><td>舞艺轩</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 4. 详细数据（折叠） ===== -->
+<div class="detail-section">
+  <div class="detail-toggle" id="detailToggle">
+    <span class="toggle-icon">▶</span>
+    <span class="toggle-text">详细数据</span>
+  </div>
+
+  <div class="detail-content hidden" id="detailContent">
+    <!-- 标题关键词 -->
+    <div class="analysis-mini">
+      <h4>标题关键词分析</h4>
+      <div class="tag-row">
+        <span class="tag hot">古装 68%</span>
+        <span class="tag hot">演出服 62%</span>
+        <span class="tag hot">定制 55%</span>
+        <span class="tag hot">舞台 48%</span>
+        <span class="tag">汉服 42%</span>
+        <span class="tag">成人 38%</span>
+        <span class="tag">儿童 35%</span>
+        <span class="tag">重工刺绣 32%</span>
+        <span class="tag">古典舞 28%</span>
+      </div>
+      <div class="suggestion">检查你的标题是否覆盖了橙色底的高频词（同行出现 ≥30%）。</div>
+    </div>
+
+    <!-- 价格 -->
+    <div class="analysis-mini">
+      <h4>价格竞争力</h4>
+      <div class="stat-mini-row">
+        <div class="stat-mini"><span>你的价格</span><strong>¥168</strong></div>
+        <div class="stat-mini"><span>同行均价</span><strong>¥128</strong></div>
+        <div class="stat-mini"><span>价格区间</span><strong>¥98–188</strong></div>
+        <div class="stat-mini"><span>偏离</span><strong style="color:#c62828">+31%</strong></div>
+      </div>
+      <div class="suggestion">价格高于同行均价 31%。建议考虑增加入门款 SKU 或调整当前定价。</div>
+    </div>
+
+    <!-- 活动 -->
+    <div class="analysis-mini">
+      <h4>活动与优惠对比</h4>
+      <div class="tag-row">
+        <span class="tag hot">满200减15 55%</span>
+        <span class="tag hot">运费险 72%</span>
+        <span class="tag">优惠券 38%</span>
+        <span class="tag">淘金币 25%</span>
+      </div>
+      <div class="suggestion">运费险和满减是同行的标配，建议优先开通。操作入口：千牛 → 营销中心。</div>
+    </div>
+
+    <!-- 利润 -->
+    <div class="analysis-mini">
+      <h4>利润测算</h4>
+      <div class="stat-mini-row">
+        <div class="stat-mini"><span>不参与活动</span><strong>¥68 (40%)</strong></div>
+        <div class="stat-mini"><span>满200减15</span><strong>¥53 (33%)</strong></div>
+        <div class="stat-mini"><span>含3元券</span><strong>¥65 (39%)</strong></div>
+      </div>
+      <div class="suggestion">利润充裕。调价至 ¥138 后利润率约 28%，仍属健康范围。</div>
+    </div>
+
+    <!-- 数据表 -->
+    <div class="data-table-wrap">
+      <h4>原始数据（32 个商品）</h4>
+      <table class="data-table">
+        <thead>
+          <tr><th>#</th><th>标题</th><th>价格</th><th>销量</th><th>店铺</th><th>天猫</th><th>活动</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>红楼梦古装演出服黛玉同款古典舞成人飘逸刺绣定制...</td><td class="cp">¥128</td><td class="cs">2.3万+</td><td>古韵坊旗舰店</td><td>是</td><td>满200减15 / 运费险</td></tr>
+          <tr><td>2</td><td>儿童古装汉服演出服女童六一表演服仙女飘逸...</td><td class="cp">¥98</td><td class="cs">1.8万+</td><td>童星舞台服饰</td><td></td><td>运费险</td></tr>
+          <tr><td>3</td><td>重工刺绣古装演出服古典舞成人定制舞台表演服...</td><td class="cp">¥158</td><td class="cs">9,600+</td><td>绣韵阁</td><td>是</td><td>满200减15</td></tr>
+          <tr><td>4</td><td>仙女风古装舞蹈服成人飘逸演出服定制汉服...</td><td class="cp">¥118</td><td class="cs">5,200+</td><td>舞艺轩</td><td></td><td>运费险 / 淘金币</td></tr>
+          <tr><td>5</td><td>古风汉服女成人演出服古典舞飘逸渐变定制...</td><td class="cp">¥138</td><td class="cs">4,100+</td><td>汉韵华裳</td><td></td><td>满200减15 / 运费险</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('detailToggle').addEventListener('click', function() {
+  var content = document.getElementById('detailContent');
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    this.classList.add('open');
+  } else {
+    content.classList.add('hidden');
+    this.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

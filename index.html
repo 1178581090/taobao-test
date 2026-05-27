@@ -1044,6 +1044,96 @@ function analyzeAndRender(products, myPrice, myCost) {
   generateChecklistTasks(lastAnalysisResult);
 }
 
+function renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgPrice, minPrice, maxPrice) {
+  const valid = products.filter(p => p.title && p.price > 0);
+  const total = valid.length;
+  if (total === 0) { $('diagnosticGrid').style.display = 'none'; return; }
+
+  // 价格定位分 (越接近中位价越高)
+  const prices = valid.map(p => p.price).sort((a, b) => a - b);
+  const p50 = prices[Math.floor(prices.length * 0.5)] || 0;
+  const priceDiff = myPrice > 0 ? Math.abs(myPrice - p50) / Math.max(p50, 1) : 0;
+  const priceScore = myPrice > 0 ? Math.max(0, 100 - priceDiff * 100) : 0;
+
+  // 标题覆盖分 (模拟：基于高频词数量)
+  const significantKeywords = topKeywords.filter(k => k.pct >= 30);
+  const titleScore = Math.min(100, significantKeywords.length * 8);
+
+  // 活动覆盖分
+  const hiActivities = sortedActivities.filter(([name, cnt]) => cnt / total >= 0.3);
+  const activityScore = Math.min(100, hiActivities.length * 30 + 30);
+
+  // 综合分
+  const overall = Math.round((priceScore * 0.4 + titleScore * 0.35 + activityScore * 0.25));
+
+  // 位置描述
+  let position = '中等偏下';
+  if (overall >= 70) position = '中等偏上';
+  else if (overall >= 50) position = '中等';
+  else if (overall >= 30) position = '中等偏下';
+  else position = '靠后';
+
+  // 环形图: circumference = 2*PI*44 ≈ 276.46
+  const circ = 276.46;
+  const offset = circ - (circ * overall / 100);
+
+  // 维度条
+  const pricePct = Math.round(priceScore);
+  const titlePct = Math.round(titleScore);
+  const activityPct = Math.round(activityScore);
+
+  // 首要行动
+  let firstAction = '', firstActionData = '';
+  if (myPrice > 0 && Math.abs((myPrice - avgPrice) / avgPrice * 100) > 15) {
+    const diff = Math.round((myPrice - avgPrice) / avgPrice * 100);
+    firstAction = '优先调整定价，将售价从 ¥' + myPrice + ' 降至 ¥' + Math.round(avgPrice) + ' 附近';
+    firstActionData =
+      '<div class="finding-stat"><div class="sn">¥' + Math.round(avgPrice) + '</div><div class="sl">同行均价</div></div>' +
+      '<div class="finding-stat"><div class="sn">¥' + myPrice + '</div><div class="sl">你的售价</div></div>' +
+      '<div class="finding-stat"><div class="sn">' + (diff > 0 ? '+' : '') + diff + '%</div><div class="sl">偏离幅度</div></div>';
+  } else if (significantKeywords.length < 5) {
+    firstAction = '标题高频词覆盖不足，建议补充同行常用关键词';
+    firstActionData =
+      '<div class="finding-stat"><div class="sn">' + significantKeywords.length + '个</div><div class="sl">已覆盖高频词</div></div>' +
+      '<div class="finding-stat"><div class="sn">' + topKeywords.length + '个</div><div class="sl">同行高频词</div></div>';
+  } else {
+    firstAction = '竞争力正常，持续关注竞品价格和活动变化';
+    firstActionData = '<div class="finding-stat"><div class="sn">' + overall + '分</div><div class="sl">综合评分</div></div>';
+  }
+
+  var html = '';
+
+  // 评分卡
+  html += '<div class="score-card">';
+  html += '<div class="score-ring-wrap">';
+  html += '<svg width="100" height="100" viewBox="0 0 100 100">';
+  html += '<circle cx="50" cy="50" r="44" fill="none" stroke="#f0f0f0" stroke-width="7"/>';
+  html += '<circle cx="50" cy="50" r="44" fill="none" stroke="#ff5000" stroke-width="7"';
+  html += ' stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/>';
+  html += '</svg>';
+  html += '<div class="score-value-num">' + overall + '</div>';
+  html += '</div>';
+  html += '<div class="score-desc">在 ' + total + ' 个竞品中<br>处于' + position + '</div>';
+  html += '</div>';
+
+  // 维度卡
+  html += '<div class="dim-card">';
+  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">价格定位</span><span class="dim-val" style="color:#ef5350">' + (myPrice > 0 ? pricePct + '分' : '未填') + '</span></div><div class="dim-track"><div class="dim-fill high" style="width:' + pricePct + '%"></div></div></div>';
+  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">标题关键词覆盖</span><span class="dim-val" style="color:#ff9800">' + titlePct + '分</span></div><div class="dim-track"><div class="dim-fill med" style="width:' + titlePct + '%"></div></div></div>';
+  html += '<div class="dim-item"><div class="dim-head"><span class="dim-name">活动覆盖</span><span class="dim-val" style="color:#66bb6a">' + activityPct + '分</span></div><div class="dim-track"><div class="dim-fill low" style="width:' + activityPct + '%"></div></div></div>';
+  html += '</div>';
+
+  // 首要行动卡
+  html += '<div class="finding-card">';
+  html += '<div class="finding-label">首要行动</div>';
+  html += '<div class="finding-text">' + firstAction + '</div>';
+  html += '<div class="finding-stats">' + firstActionData + '</div>';
+  html += '</div>';
+
+  $('diagnosticGrid').innerHTML = html;
+  $('diagnosticGrid').style.display = '';
+}
+
 function getKeywordFrequency(titles) {
   const freq = {};
   const stopWords = new Set(['的', '和', '与', '及', '之', '是', '在', '有', '为', '等', '了', '不', '也', '都', '就', '还', '要', '会', '可', '个', '这', '那', '我', '你', '他', '她', '它', '们', 'a', 'the', 'is', 'for', 'and', '没有', '可以', '什么', '一个', '这个', '自己', '我们', '他们', '还是', '不是', '已经']);
