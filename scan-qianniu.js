@@ -11,7 +11,8 @@ const OUTPUT_FILE = path.join(__dirname, 'scan-qianniu.json');
 const PAGES = {
   home: 'https://myseller.taobao.com/home.htm',
   activity: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/homepage.htm',
-  promotion: 'https://myseller.taobao.com/home.htm/tuiguangcenter_new/'
+  promotion: 'https://myseller.taobao.com/home.htm/tuiguangcenter_new/',
+  promotionCenter: 'https://myseller.taobao.com/home.htm/tuiguangcenter_new/'
 };
 
 async function main() {
@@ -153,6 +154,75 @@ async function main() {
     return true;
   });
   console.error('[scan] 推广产品: ' + result.promotions.length + ' 项');
+
+  // ---- 页面 4：推广中心 → 商品成交锦囊 ----
+  console.error('[scan] 抓取推广中心商品推荐...');
+  await page.goto(PAGES.promotionCenter, { waitUntil: 'domcontentloaded', timeout: 25000 });
+  await page.waitForTimeout(5000);
+
+  var productRecs = await page.evaluate(function() {
+    var body = document.body ? document.body.textContent : '';
+
+    // 提取商品 ID
+    var ids = [];
+    var idPattern = /商品ID[：:]\s*(\d+)/g;
+    var m;
+    while ((m = idPattern.exec(body)) !== null) {
+      ids.push(m[1]);
+    }
+
+    // 提取推荐策略
+    var strategies = [];
+    var strategyPattern = /建议使用【(.+?)】|建议用【(.+?)】/g;
+    var sm;
+    while ((sm = strategyPattern.exec(body)) !== null) {
+      strategies.push(sm[1] || sm[2]);
+    }
+
+    // 提取策略关键词
+    var keywords = [];
+    var kwPattern = /(精准关键词锁屏|用户意图截流|新客流量转化|爆品人群复制|新品冷启|潜力打爆|爆品续航)/g;
+    var kwm;
+    while ((kwm = kwPattern.exec(body)) !== null) {
+      keywords.push(kwm[1]);
+    }
+
+    // 提取价格
+    var prices = [];
+    var pricePattern = /(限时\d+元抵\d+元|下单立享[：:][^\s]{2,20})/g;
+    var pm;
+    while ((pm = pricePattern.exec(body)) !== null) {
+      prices.push(pm[1]);
+    }
+
+    // channelHint → channelId 映射
+    var hintMap = {
+      '关键词推广': 'keywordPromo',
+      '人群推广': 'crowdPromo',
+      '精准人群推广': 'crowdPromo',
+      '内容推广': 'contentPromo',
+      '货品全站推': 'allStorePromo',
+      '淘宝联盟': 'tbUnion'
+    };
+
+    // 组合结果
+    var recs = [];
+    for (var i = 0; i < ids.length && i < 10; i++) {
+      var hint = strategies[i] || '';
+      recs.push({
+        productName: '商品' + ids[i],
+        productId: ids[i],
+        strategy: keywords[i] || hint,
+        channelHint: hint,
+        channelId: hintMap[hint] || '',
+        priceInfo: prices[i] || ''
+      });
+    }
+    return recs;
+  });
+
+  result.productRecommendations = productRecs;
+  console.error('[scan] 商品推荐: ' + productRecs.length + ' 条');
 
   // ---- 输出 ----
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2), 'utf-8');
