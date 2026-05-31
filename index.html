@@ -3354,8 +3354,11 @@ function runQianniuScan() {
 
 function handleQianniuData(data) {
   saveAfData(data);
-  $('afScanStatus').style.display = 'none';
+  $('afScanStatus').style.background = '#e6f4ea';
+  $('afScanStatus').innerHTML = '✅ 扫描成功！店铺数据已更新（' + (data.activities ? data.activities.length : 0) + ' 个活动）';
   renderAfResults();
+  // 3 秒后自动收起提示
+  setTimeout(function() { $('afScanStatus').style.display = 'none'; }, 3000);
 }
 
 function handleQianniuError(err) {
