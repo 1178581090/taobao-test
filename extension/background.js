@@ -172,6 +172,7 @@ async function openWithSteps(url, name, steps, requestingTabId) {
 
   // 打开千牛页面
   var tab = await chrome.tabs.create({ url: url, active: true });
+  _pendingSteps[tab.id] = { name: name, steps: steps };
 
   // 等页面加载完后注入面板脚本
   await waitForTabLoad(tab.id);
@@ -184,19 +185,37 @@ async function openWithSteps(url, name, steps, requestingTabId) {
     args: [name, steps]
   }).catch(function() {});
 
-  // 监听标签页变化，SPA 路由改变时重新注入
-  var listener = function(tabId, changeInfo) {
-    if (tabId === tab.id && changeInfo.status === 'complete') {
-      chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        func: injectStepPanel,
-        args: [name, steps]
-      }).catch(function() {});
+  // 监听原标签页 URL 变化 + 搭配购等在新标签页打开时也能注入
+  var updateListener = function(tabId, changeInfo) {
+    if (changeInfo.status === 'complete' && _pendingSteps[tabId]) {
+      var s = _pendingSteps[tabId];
+      setTimeout(function() {
+        chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          func: injectStepPanel,
+          args: [s.name, s.steps]
+        }).catch(function() {});
+      }, 2000);
     }
   };
-  chrome.tabs.onUpdated.addListener(listener);
-  // 5 分钟后清理监听
-  setTimeout(function() { chrome.tabs.onUpdated.removeListener(listener); }, 300000);
+  chrome.tabs.onUpdated.addListener(updateListener);
+
+  // 监听从原标签页打开的新标签页
+  var createListener = function(newTab) {
+    if (newTab.openerTabId === tab.id) {
+      _pendingSteps[newTab.id] = { name: name, steps: steps };
+    }
+  };
+  chrome.tabs.onCreated.addListener(createListener);
+
+  // 10 分钟后清理
+  setTimeout(function() {
+    chrome.tabs.onUpdated.removeListener(updateListener);
+    chrome.tabs.onCreated.removeListener(createListener);
+    for (var tid in _pendingSteps) {
+      if (_pendingSteps[tid] && _pendingSteps[tid].name === name) delete _pendingSteps[tid];
+    }
+  }, 600000);
 }
 
 // 标签页关闭时清理
