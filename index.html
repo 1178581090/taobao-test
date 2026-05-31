@@ -526,6 +526,78 @@ body {
   .topbar { padding: 0 16px; }
   .result-panel { padding: 16px; }
 }
+
+/* ── Promotion Tab ── */
+.promo-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.promo-check input[type="checkbox"] {
+  accent-color: var(--brand);
+  width: 14px; height: 14px;
+  cursor: pointer;
+}
+.promo-check:has(input:checked) {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.promo-action-item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.promo-action-item:hover { box-shadow: var(--shadow); }
+.promo-action-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  border-right: 1px solid var(--border);
+}
+.promo-action-body { padding: 14px 18px; }
+.promo-action-body .act-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  margin-bottom: 3px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.promo-action-body .act-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 4px; }
+.promo-action-body .act-meta {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 5px;
+}
+.promo-action-meta-item {
+  font-size: 10px; color: var(--text-muted);
+  background: #f9fafb; border: 1px solid var(--border);
+  padding: 2px 7px; border-radius: 4px;
+}
+.promo-action-side { padding: 14px 18px 14px 0; display: flex; align-items: flex-start; }
+
+.promo-why-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.promo-why-tag.peer { background: var(--brand-light); color: var(--brand); }
+.promo-why-tag.knowledge { background: #f3f4f6; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .promo-action-item { grid-template-columns: 36px 1fr; }
+  .promo-action-side { grid-column: 1/-1; padding: 0 16px 12px; }
+}
 </style>
 </head>
 <body>
