@@ -665,6 +665,41 @@ function showFallbackBar(fallback) {
 
 // ===== 自动提取：响应 background 的消息，不显示 UI 栏 =====
 
+// —— 步骤浮窗（跨页面持久化）——
+function showStepsPanel(name, stepsHtml) {
+  var oldPanel = document.getElementById('tb-step-panel');
+  if (oldPanel) oldPanel.remove();
+
+  var panel = document.createElement('div');
+  panel.id = 'tb-step-panel';
+  panel.innerHTML =
+    '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:99999;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
+        '<strong style="font-size:14px;color:#ff5000;">📋 ' + (name || '操作步骤') + '</strong>' +
+        '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
+      '</div>' +
+      '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (stepsHtml || '') + '</div>' +
+      '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
+    '</div>';
+  document.body.appendChild(panel);
+  document.getElementById('tb-step-close').onclick = function() {
+    panel.remove();
+    try { sessionStorage.removeItem('tb_inject_steps_name'); } catch(_) {}
+    try { sessionStorage.removeItem('tb_inject_steps_html'); } catch(_) {}
+  };
+}
+
+// 页面加载时自动恢复步骤（跨页面跳转后持久显示）
+(function() {
+  try {
+    var savedName = sessionStorage.getItem('tb_inject_steps_name');
+    var savedHtml = sessionStorage.getItem('tb_inject_steps_html');
+    if (savedName && savedHtml) {
+      setTimeout(function() { showStepsPanel(savedName, savedHtml); }, 1500);
+    }
+  } catch(_) {}
+})();
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   // —— 商品页自动提取 ——
   if (message.action === 'autoExtract' && message.mode === 'product') {
@@ -776,24 +811,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
   // —— 步骤注入（千牛页面显示操作浮窗）——
   if (message.action === 'injectSteps') {
-    // 移除旧面板
-    var oldPanel = document.getElementById('tb-step-panel');
-    if (oldPanel) oldPanel.remove();
-
-    var stepsHtml = message.steps.replace(/\n/g, '<br>');
-    var panel = document.createElement('div');
-    panel.id = 'tb-step-panel';
-    panel.innerHTML =
-      '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:99999;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
-          '<strong style="font-size:14px;color:#ff5000;">📋 ' + message.name + '</strong>' +
-          '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
-        '</div>' +
-        '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + stepsHtml + '</div>' +
-        '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
-      '</div>';
-    document.body.appendChild(panel);
-    document.getElementById('tb-step-close').onclick = function() { panel.remove(); };
+    // 存入 sessionStorage，跨页面跳转时持久化
+    try { sessionStorage.setItem('tb_inject_steps_name', message.name); } catch(_) {}
+    try { sessionStorage.setItem('tb_inject_steps_html', message.steps); } catch(_) {}
+    showStepsPanel(message.name, message.steps);
     return;
   }
 

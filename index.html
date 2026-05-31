@@ -3479,7 +3479,7 @@ function openWithSteps(url, name, ruleId) {
   if (stepsEl) stepsEl.style.display = 'block';
 
   // 通过扩展打开新页面并注入步骤
-  var stepsText = stepsEl ? stepsEl.textContent : '';
+  var stepsText = stepsEl ? stepsEl.innerHTML : '';
   window.postMessage({
     type: 'tb-open-steps',
     url: url,
