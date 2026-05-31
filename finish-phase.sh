@@ -1,8 +1,8 @@
 #!/bin/bash
-# finish-phase.sh — 阶段收尾：清理 + 提交 + 推送
+# finish-phase.sh — 阶段收尾：清理 + 文档检查 + 提交 + 推送
 # 用法:
 #   ./finish-phase.sh                    仅清理并展示变更，不提交
-#   ./finish-phase.sh ":sparkles: 词典管理和标题优化"  清理 → 提交 → 推送
+#   ./finish-phase.sh ":sparkles: 词典管理和标题优化"  清理 → 文档检查 → 提交 → 推送
 
 set -e
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -56,6 +56,37 @@ if [ -n "$UNTRACKED" ]; then
   echo "$UNTRACKED"
   echo ""
 fi
+
+# ===== 2.5 文档同步检查 =====
+echo "===== 2.5 文档同步检查 ====="
+
+# 本次变更中涉及代码的文件（index.html 或 extension/ 目录下）
+CODE_CHANGED=$(git diff --name-only; git diff --cached --name-only; git ls-files --others --exclude-standard)
+HAS_CODE_CHANGE=$(echo "$CODE_CHANGED" | grep -E '^(index\.html|extension/)' || true)
+# 本次变更中涉及文档的文件
+HAS_DOC_CHANGE=$(echo "$CODE_CHANGED" | grep -E '(CLAUDE\.md|设计文档\.md|CHANGELOG\.md)' || true)
+
+if [ -n "$HAS_CODE_CHANGE" ] && [ -z "$HAS_DOC_CHANGE" ]; then
+  echo ""
+  echo "  ⚠️  ════════════════════════════════════════════════"
+  echo "  ⚠️  检测到代码变更但前端文档未更新："
+  echo "  ⚠️"
+  echo "  ⚠️  代码变更："
+  echo "$HAS_CODE_CHANGE" | while read f; do echo "  ⚠️    $f"; done
+  echo "  ⚠️"
+  echo "  ⚠️  以下文档可能需同步更新："
+  echo "  ⚠️    - CLAUDE.md      （项目概述/架构/函数列表）"
+  echo "  ⚠️    - 设计文档.md     （功能模块/布局/数据流）"
+  echo "  ⚠️    - CHANGELOG.md   （开发日志）"
+  echo "  ⚠️"
+  echo "  ⚠️  如果本次改动无需更新文档，请忽略此提醒。"
+  echo "  ⚠️  ════════════════════════════════════════════════"
+  echo ""
+else
+  echo "  文档同步状态正常 ✓"
+fi
+
+echo ""
 
 # ===== 3. 更新开发日志 =====
 if [ -n "$1" ]; then

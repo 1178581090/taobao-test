@@ -1,6 +1,7 @@
 # 开发日志
 
 ## 2026-05-31
+- finish-phase.sh 新增文档同步检查，代码变更时提醒更新 CLAUDE.md/设计文档
 - 更新 CLAUDE.md、设计文档、CHANGELOG 至当前架构
 
 ### 竞品分析一键自动化
