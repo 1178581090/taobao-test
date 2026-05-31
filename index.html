@@ -3312,13 +3312,14 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
     var costHtml = r.monthlyCost
       ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
       : '';
+    var stepsId = 'steps-' + (r.id || Math.random().toString(36).slice(2));
     var stepsHtml = r.detailedSteps
-      ? '<div style="margin-top:8px;padding:6px 10px;background:#fef5e7;border:1px solid var(--amber);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--amber);" onclick="var s=this.nextElementSibling;var arrow=this.querySelector(\'.af-step-arrow\');if(s.style.display===\'none\'){s.style.display=\'block\';arrow.textContent=\'▴\'}else{s.style.display=\'none\';arrow.textContent=\'▾\'}">📋 操作步骤（点击展开，跳转后可对照操作）<span class=\"af-step-arrow\">▾</span></div>' +
-        '<div style="display:none;font-size:12px;line-height:2;padding:10px;background:#fffbf0;border:1px solid var(--amber);border-top:none;border-radius:0 0 6px 6px;margin-bottom:4px;">' +
+      ? '<div style="margin-top:8px;padding:6px 10px;background:#fef5e7;border:1px solid var(--amber);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--amber);" onclick="var s=document.getElementById(\'' + stepsId + '\');var arrow=this.querySelector(\'.af-step-arrow\');if(s.style.display===\'none\'){s.style.display=\'block\';arrow.textContent=\'▴\'}else{s.style.display=\'none\';arrow.textContent=\'▾\'}">📋 操作步骤（点击展开）<span class=\"af-step-arrow\">▾</span></div>' +
+        '<div id="' + stepsId + '" style="display:none;font-size:12px;line-height:2;padding:10px;background:#fffbf0;border:1px solid var(--amber);border-top:none;border-radius:0 0 6px 6px;margin-bottom:4px;">' +
         escHtml(r.detailedSteps).replace(/\n/g, '<br>') + '</div>'
       : '';
     var actionHtml = r.url
-      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;margin-top:6px;display:inline-block;">去参加 →（新标签页打开，可对照步骤操作）</a>'
+      ? '<button class="btn-xs btn-xs-primary" onclick="showStepModal(\'' + stepsId + '\',\'' + escHtml(r.url) + '\',\'' + escHtml(r.name) + '\')" style="margin-top:6px;">去参加 →（先看步骤再跳转）</button>'
       : '';
 
     html += '<div class="af-activity-card">' +
@@ -3457,6 +3458,49 @@ function initActivityFilter() {
   var data = loadAfData();
   if (data) { renderAfResults(); }
 }
+
+function showStepModal(stepsId, url, name) {
+  // 展开原位置的步骤
+  var stepsEl = document.getElementById(stepsId);
+  if (stepsEl) stepsEl.style.display = 'block';
+
+  var stepsContent = stepsEl ? stepsEl.innerHTML : '暂无操作步骤';
+  $('stepModalTitle').textContent = '📋 ' + name + ' — 操作步骤';
+  $('stepModalBody').innerHTML = stepsContent;
+  $('stepModalLink').href = url;
+  $('stepModalLink').onclick = function() { $('stepModal').style.display = 'none'; };
+  $('stepModal').style.display = 'flex';
+  $('stepModal').scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeStepModal() {
+  $('stepModal').style.display = 'none';
+}
+
+// 点击遮罩关闭
+document.addEventListener('click', function(e) {
+  if (e.target === $('stepModal')) closeStepModal();
+});
+// ESC 关闭
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && $('stepModal').style.display === 'flex') closeStepModal();
+});
 </script>
+
+<!-- 步骤弹窗 -->
+<div id="stepModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);">
+      <h3 id="stepModalTitle" style="margin:0;font-size:15px;"></h3>
+      <button onclick="closeStepModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:0;">✕</button>
+    </div>
+    <div id="stepModalBody" style="padding:16px 20px;font-size:13px;line-height:2.2;color:var(--text);"></div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;">
+      <a id="stepModalLink" class="btn btn-primary" target="_blank" rel="noopener" style="text-decoration:none;flex:1;text-align:center;">在新标签页打开千牛 →</a>
+      <button onclick="closeStepModal()" style="background:#f3f4f6;border:1px solid var(--border);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">关闭</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
