@@ -3,7 +3,7 @@
   "name": "淘宝竞品分析助手",
   "version": "1.2",
   "description": "提取淘宝搜索结果页和商品详情页数据，配合竞品分析工具使用。支持一键自动竞品分析。",
-  "permissions": ["clipboardWrite", "storage", "tabs"],
+  "permissions": ["clipboardWrite", "storage", "tabs", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
