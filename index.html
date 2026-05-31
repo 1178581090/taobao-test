@@ -3566,6 +3566,7 @@ function importAfJson() {
 function initActivityFilter() {
   var data = loadAfData();
   if (data) { renderAfResults(); }
+  initBudgetCalc();
 }
 
 function openWithSteps(url, name, ruleId) {
@@ -3598,6 +3599,88 @@ function showStepToast(msg) {
   toast.style.opacity = '1';
   clearTimeout(toast._timer);
   toast._timer = setTimeout(function() { toast.style.opacity = '0'; }, 4000);
+}
+
+function updateBudgetCalc() {
+  var budget = parseInt($('afBudgetInput').value) || 0;
+  localStorage.setItem('tb_af_budget', budget);
+
+  var paidItems = [];
+  ACTIVITY_RULES.forEach(function(rule) {
+    if (rule.costType === 'paid' || typeof rule.monthlyCost === 'number') {
+      paidItems.push(rule);
+    }
+  });
+
+  var itemsHtml = '';
+  var totalCost = 0;
+  var totalExposureLow = 0;
+  var totalExposureHigh = 0;
+
+  paidItems.forEach(function(rule) {
+    var checked = localStorage.getItem('tb_af_budget_' + rule.id) === '1';
+    var cost = typeof rule.monthlyCost === 'number' ? rule.monthlyCost : 0;
+    var costText = typeof rule.monthlyCost === 'number' ? '¥' + cost + '/月' : (rule.monthlyCost || '费用未知');
+
+    if (checked && typeof rule.monthlyCost === 'number') {
+      totalCost += cost;
+      if (rule.cpcRange) {
+        var dailyBudget = cost / 30;
+        totalExposureLow += Math.round(dailyBudget / rule.cpcRange.max * 30);
+        totalExposureHigh += Math.round(dailyBudget / rule.cpcRange.min * 30);
+      }
+    }
+
+    itemsHtml += '<label class="af-budget-item">' +
+      '<input type="checkbox" ' + (checked ? 'checked' : '') +
+      ' onchange="toggleBudgetItem(\'' + rule.id + '\')">' +
+      escHtml(rule.name) +
+      '<span class="af-budget-cost">' + escHtml(costText) + '</span>' +
+      '</label>';
+  });
+
+  if (paidItems.length === 0) {
+    itemsHtml = '<div style="color:var(--text-muted);font-size:11px;padding:4px 0;">全部免费，无需预算规划 🎉</div>';
+  }
+  $('afBudgetItems').innerHTML = itemsHtml;
+
+  var summaryHtml = '';
+  if (totalCost === 0 && paidItems.length > 0) {
+    summaryHtml = '<span style="color:var(--text-muted);">未勾选付费项目</span>';
+  } else if (totalCost > 0) {
+    summaryHtml =
+      '<div>预计月支出: <strong>' + totalCost.toLocaleString() + ' 元</strong></div>';
+    if (totalExposureLow > 0) {
+      summaryHtml +=
+        '<div style="font-size:10px;color:var(--text-muted);">预计月曝光: ' +
+        totalExposureLow.toLocaleString() + ' - ' + totalExposureHigh.toLocaleString() + ' 次</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);">预计月点击: ' +
+        Math.round(totalExposureLow * 0.01).toLocaleString() + ' - ' + Math.round(totalExposureHigh * 0.02).toLocaleString() + ' 次</div>';
+    }
+    if (budget > 0 && totalCost > budget) {
+      summaryHtml +=
+        '<div class="af-budget-warn" style="margin-top:4px;">⚠ 超出预算 ' + (totalCost - budget).toLocaleString() + ' 元</div>';
+    } else if (budget > 0 && totalCost <= budget) {
+      summaryHtml +=
+        '<div class="af-budget-ok" style="margin-top:4px;">✓ 在预算范围内</div>';
+    }
+  }
+  $('afBudgetSummary').innerHTML = summaryHtml;
+}
+
+function toggleBudgetItem(id) {
+  var key = 'tb_af_budget_' + id;
+  var current = localStorage.getItem(key) === '1';
+  localStorage.setItem(key, current ? '0' : '1');
+  updateBudgetCalc();
+}
+
+function initBudgetCalc() {
+  var saved = localStorage.getItem('tb_af_budget');
+  if (saved !== null) {
+    $('afBudgetInput').value = saved;
+  }
+  updateBudgetCalc();
 }
 </script>
 </body>
