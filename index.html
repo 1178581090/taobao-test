@@ -996,7 +996,7 @@ body {
     <div class="setup-section-title">我的推广现状</div>
 
     <div style="margin-bottom:8px;">
-      <a href="#" onclick="renderPromotionTab();return false;" style="font-size:11px;color:var(--brand);text-decoration:underline;">不确定开通了哪些？直接生成推荐 →</a>
+      <a href="#" onclick="renderPromotionTab();return false;" style="font-size:11px;color:var(--brand);text-decoration:underline;">不确定开通了哪些？直接刷新查看 →</a>
     </div>
 
     <div style="margin-bottom:4px;">
@@ -1031,11 +1031,11 @@ body {
     </div>
 
     <button class="btn btn-primary" id="btnPromoGenerate" style="width:100%;margin-top:10px;" onclick="renderPromotionTab()">
-      生成推荐
+      刷新
     </button>
 
     <div class="setup-hint" style="margin-top:12px;">
-      勾选你已开通的渠道（开通状态自动保存）。工具会基于你未开通的渠道生成推荐清单。
+      勾选你已开通的渠道（开通状态自动保存）。下方显示全部渠道的操作手册，按需查阅。
     </div>
   </div>
 
@@ -1044,36 +1044,12 @@ body {
     <div id="promoEmpty" class="empty-state">
       <div class="empty-icon">📋</div>
       <div class="empty-title">推广行动清单</div>
-      <div class="empty-desc">勾选左侧的推广现状，点击「生成推荐」查看你应该优先开通的渠道</div>
+      <div class="empty-desc">勾选左侧的推广现状，点击「刷新」查看渠道操作手册</div>
     </div>
 
     <div id="promoResult" style="display:none;">
-      <!-- 新手术语提示（仅首次显示） -->
-      <div id="promoJargonTip" class="setup-hint" style="display:none;margin-bottom:0;"></div>
-
       <!-- 综合状态卡片 -->
       <div class="result-strip" id="promoSummary"></div>
-
-      <!-- 英雄推荐卡片 -->
-      <div id="promoHeroCard" style="display:none;"></div>
-
-      <!-- 立刻免费开通 -->
-      <div class="card" id="promoQuickWinsCard" style="display:none;">
-        <div class="card-header"><h3>一键开通，省心省力</h3></div>
-        <div id="promoQuickWins"></div>
-      </div>
-
-      <!-- 花小钱加速 -->
-      <div class="card" id="promoPaidCard" style="display:none;">
-        <div class="card-header"><h3>需要投入，持续经营</h3></div>
-        <div id="promoPaidList"></div>
-      </div>
-
-      <!-- 等有基础再试 -->
-      <div class="card" id="promoLaterCard" style="display:none;">
-        <div class="card-header"><h3>需要资质或预算充足再试 <span style="font-weight:400;font-size:11px;color:var(--text-muted);">（点击展开）</span></h3></div>
-        <div id="promoLaterList"></div>
-      </div>
 
       <!-- 同行对标卡片 -->
       <div class="card" id="promoPeerCard" style="display:none;">
@@ -1081,11 +1057,9 @@ body {
         <div id="promoPeerContent"></div>
       </div>
 
-      <!-- 渠道详情（折叠） -->
-      <div class="toggle-bar open" id="promoDetailToggle" onclick="togglePromoDetail()">
-        <span class="arr" id="promoDetailToggleIcon">▶</span><span id="promoDetailToggleLabel"> 未开通渠道详情</span>
-      </div>
-      <div class="toggle-content open" id="promoDetailContent"></div>
+      <!-- 渠道操作手册 -->
+      <div id="promoManualContent"></div>
+
       <!-- OCR 截图辅助区域（默认隐藏） -->
       <div id="ocrZone" class="ocr-zone" style="display:none;">
         <div class="ocr-zone-title">截图辅助定位</div>
@@ -1591,216 +1565,40 @@ function getPeerCoverage(peerData) {
 }
 
 // ===== 推荐引擎 =====
-function getPromoPlan() {
-  var myStatus = loadPromoStatus();
-  var peerData = window._lastAnalysis;
-  var peerCoverage = peerData ? getPeerCoverage(peerData) : {};
-
-  var unopened = [];
-  CHANNEL_KNOWLEDGE.forEach(function(ch) {
-    if (myStatus[ch.id]) return;
-    var peerCov = peerCoverage[ch.id];
-    unopened.push({
-      channel: ch,
-      effectiveScore: ch.baseScore,
-      peerPct: (peerCov && peerCov.count >= 3) ? peerCov.pct : null,
-      peerCount: (peerCov && peerCov.count >= 3) ? peerCov.count : 0
-    });
-  });
-
-  unopened.sort(function(a, b) { return b.effectiveScore - a.effectiveScore; });
-
-  // Hero: 低成本 + 低精力 + 最高分
-  var hero = null;
-  for (var i = 0; i < unopened.length; i++) {
-    var it = unopened[i];
-    if (it.channel.costLevel !== 'high' && it.channel.effortLevel === 'low' && it.effectiveScore >= 60) {
-      hero = it; break;
-    }
-  }
-  if (!hero && unopened.length > 0) { hero = unopened[0]; }
-
-  // 二维分组（hero 从各组排除）
-  var quickWins = unopened.filter(function(item) {
-    return item !== hero && item.channel.costLevel !== 'high' && item.channel.effortLevel === 'low';
-  });
-  var paid = unopened.filter(function(item) {
-    return item !== hero && item.channel.costLevel !== 'high' && item.channel.effortLevel !== 'low';
-  });
-  var later = unopened.filter(function(item) {
-    return item !== hero && item.channel.costLevel === 'high';
-  });
-
-  return { hero: hero, quickWins: quickWins, paid: paid, later: later };
-}
-
 // ===== 推广分析渲染 =====
 var _lastPromoRenderTs = 0;
 
 function renderPromotionTab() {
   restorePromoCheckboxes();
-  var plan = getPromoPlan();
   var peerData = window._lastAnalysis;
 
-  if (!plan.hero) {
-    $('promoEmpty').style.display = '';
-    $('promoResult').style.display = 'none';
-    $('promoEmpty').querySelector('.empty-title').textContent = '全部渠道已开通';
-    $('promoEmpty').querySelector('.empty-desc').textContent = '你已开通所有已知推广渠道，暂无新推荐。';
-    return;
-  }
-
-  $('promoEmpty').style.display = 'none';
-  $('promoResult').style.display = 'flex';
-  $('promoResult').style.flexDirection = 'column';
-  $('promoResult').style.gap = '18px';
-
-  // 数据状态提示
   var hasPeer = peerData && peerData.total > 0;
   if (hasPeer) {
     var kwPart = peerData.keyword ? '「<strong>' + escHtml(peerData.keyword) + '</strong>」' : '';
-    $('promoDataStatus').innerHTML = '已读取竞品搜索数据' + kwPart + '（' + peerData.total + ' 个商品），同行标签用于辅助推荐。';
+    $('promoDataStatus').innerHTML = '已读取竞品搜索数据' + kwPart + '（' + peerData.total + ' 个商品）。';
     $('promoDataStatus').style.background = '#eafaf1';
     $('promoDataStatus').style.borderColor = 'var(--green)';
   } else {
-    $('promoDataStatus').innerHTML = '尚未搜索竞品数据。推荐将基于行业经验，建议先在「竞品分析」Tab 完成一次搜索以获得同行对比。';
+    $('promoDataStatus').innerHTML = '尚未搜索竞品数据。请先在「竞品分析」Tab 完成一次搜索。';
     $('promoDataStatus').style.background = '#fef5e7';
     $('promoDataStatus').style.borderColor = 'var(--amber)';
   }
 
   _lastPromoRenderTs = peerData ? peerData.timestamp : 0;
 
-  // 首次使用：术语提示
-  var isFirstVisit = !localStorage.getItem('tb_promo_visited');
-  if (isFirstVisit) {
-    localStorage.setItem('tb_promo_visited', '1');
-  }
-
-  // 综合状态条（简化）
   var myStatus = loadPromoStatus();
   var enabledCount = Object.values(myStatus).filter(Boolean).length;
   var totalCount = CHANNEL_KNOWLEDGE.length;
-  var remaining = plan.quickWins.length + plan.paid.length + plan.later.length;
   $('promoSummary').innerHTML =
     '<span style="font-size:13px;color:var(--text-muted);">' +
     '你已开通 <strong style="color:var(--green);">' + enabledCount + '</strong> / ' + totalCount + ' 项。' +
-    '建议先从 <strong style="color:var(--brand);">' + escHtml(plan.hero.channel.name) + '</strong> 开始——免费、一键开通、效果最确定。' +
-    '还有 <strong>' + remaining + '</strong> 项可后续尝试。' +
+    '下方为全部渠道操作手册，按需查阅。' +
     '</span>';
 
-  // 首次使用术语提示
-  if (isFirstVisit) {
-    $('promoJargonTip').style.display = '';
-    $('promoJargonTip').innerHTML =
-      '<div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.6;">' +
-        '<span style="font-size:18px;">📖</span>' +
-        '<span><strong>新手术语速查：</strong>' +
-        'CPC = 按点击付费（点一次扣一次钱）&nbsp;·&nbsp;' +
-        'CPS = 按成交付费（卖出才扣佣金）&nbsp;·&nbsp;' +
-        'CPM = 按千次曝光付费&nbsp;·&nbsp;' +
-        'CPV = 按观看付费&nbsp;·&nbsp;' +
-        'ROI = 投产比（赚的钱÷花的钱）&nbsp;·&nbsp;' +
-        'C店 = 淘宝个人店铺&nbsp;·&nbsp;' +
-        'DSR = 店铺动态评分（描述/服务/物流）' +
-        '</span>' +
-        '<button onclick="this.parentElement.parentElement.style.display=\'none\'" style="flex:0 0 auto;font-size:11px;padding:2px 8px;cursor:pointer;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);">✕ 关闭</button>' +
-      '</div>';
-  }
-
-  // 英雄推荐卡片
-  renderPromoHero(plan.hero);
-
-  // 三类分组
-  renderPromoSection('quickWins', plan.quickWins, '开了就有用，全部免费', !isFirstVisit || true);  // quickWins 始终展开
-  renderPromoSection('paid', plan.paid, '花点小钱，加速增长', !isFirstVisit);  // 首次访问折叠 paid
-  renderPromoSection('later', plan.later, '需要资质或预算充足再试', false);
-
-  // 同行对标（仅在数据充足时显示）
   renderPromoPeerCard();
-
-  renderPromoDetail(plan);
+  renderPromoManual();
 }
 
-function renderPromoHero(item) {
-  var ch = item.channel;
-  var peerTag = item.peerPct !== null
-    ? '<span class="promo-why-tag peer" title="基于竞品分析 Tab 的搜索结果，' + item.peerCount + ' 个同行开通了此渠道">同行 ' + item.peerPct + '% 已开通</span> '
-    : '<span class="promo-why-tag knowledge" title="基于淘宝运营行业经验，非实时数据">行业经验推荐</span> ';
-
-  var checkAfterHtml = ch.checkAfter
-    ? '<div class="hero-checkafter">📊 ' + escHtml(ch.checkAfter) + '</div>'
-    : '';
-
-  var actionBtn = ch.directUrl
-    ? '<a class="btn btn-primary btn-sm" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-left:8px;white-space:nowrap;">在网页版打开 →</a>'
-    : '<button class="btn btn-outline btn-sm" onclick="goToDetail(\'' + ch.id + '\')" style="margin-left:8px;white-space:nowrap;">查看开通步骤 ↓</button>';
-
-  $('promoHeroCard').style.display = '';
-  $('promoHeroCard').innerHTML =
-    '<div class="hero-badge">建议你从这里开始</div>' +
-    '<div class="hero-body">' +
-      '<div class="hero-name">' + peerTag + escHtml(ch.name) + ' · ' + escHtml(ch.type) + '</div>' +
-      '<div class="hero-why">' + escHtml(ch.effectDesc) + '</div>' +
-      '<div class="hero-cost">💰 ' + escHtml(ch.costDesc) + ' · 📋 ' + escHtml(ch.threshold) + '</div>' +
-      '<div class="hero-effort">⏱ 精力投入：' + ({ low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' }[ch.effortLevel] || ch.effortLevel) + '</div>' +
-      checkAfterHtml +
-      '<div class="hero-action" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">' +
-        '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
-        actionBtn +
-      '</div>' +
-    '</div>';
-}
-
-function renderPromoSection(section, items, title, defaultOpen) {
-  var cardId, listId;
-  if (section === 'quickWins') { cardId = 'promoQuickWinsCard'; listId = 'promoQuickWins'; }
-  else if (section === 'paid')    { cardId = 'promoPaidCard'; listId = 'promoPaidList'; }
-  else                            { cardId = 'promoLaterCard'; listId = 'promoLaterList'; }
-
-  if (items.length === 0) { $(cardId).style.display = 'none'; return; }
-  $(cardId).style.display = '';
-
-  // 默认折叠的后组
-  if (!defaultOpen) {
-    $(cardId).querySelector('.card-header h3').style.cursor = 'pointer';
-    $(cardId).querySelector('.card-header h3').onclick = function() { togglePromoSection(listId); };
-  }
-
-  var html = '';
-  items.forEach(function(item) {
-    var ch = item.channel;
-    var peerTag = item.peerPct !== null
-      ? '<span class="promo-why-tag peer" title="基于竞品数据，' + item.peerCount + ' 个同行已开通">同行 ' + item.peerPct + '%</span> '
-      : '';
-    var btnHint = ch.directUrl
-      ? '<span style="font-size:9px;color:var(--text-muted);" title="跳转网页版卖家中心，需登录淘宝账号">需登录</span>'
-      : '<span style="font-size:9px;color:var(--text-muted);" title="此功能无网页版入口，需截图后在千牛中按路径操作">无网页版</span>';
-    var actionBtn = ch.directUrl
-      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="white-space:nowrap;text-decoration:none;">打开</a>'
-      : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="white-space:nowrap;">截图定位</button>';
-    html += '<div class="section-item" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-      '<span class="section-item-name" style="flex:0 0 auto;">' + peerTag + escHtml(ch.name) + '</span>' +
-      '<span class="section-item-desc" style="flex:1;min-width:200px;">' + escHtml(ch.effectDesc) + '</span>' +
-      '<span class="section-item-cost" style="flex:0 0 auto;font-size:10px;color:var(--text-muted);">' + escHtml(ch.costDesc) + '</span>' +
-      '<span style="display:flex;align-items:center;gap:4px;">' + btnHint + actionBtn + '</span>' +
-    '</div>';
-  });
-  $(listId).innerHTML = html;
-
-  // 折叠组的初始状态
-  if (!defaultOpen) {
-    $(listId).style.display = 'none';
-    $(listId).classList.add('promo-collapsible');
-  }
-}
-
-function togglePromoSection(listId) {
-  var el = $(listId);
-  if (el.style.display === 'none') { el.style.display = ''; }
-  else { el.style.display = 'none'; }
-}
-
-// 收紧同行对标：仅 ≥3 个标签渠道有 ≥3 个商品数据才显示
 function renderPromoPeerCard() {
   var peerData = window._lastAnalysis;
   if (!peerData || peerData.total === 0) { $('promoPeerCard').style.display = 'none'; return; }
@@ -1830,102 +1628,50 @@ function renderPromoPeerCard() {
   $('promoPeerContent').innerHTML = html;
 }
 
-function renderPromoDetail(plan) {
+function renderPromoManual() {
   var myStatus = loadPromoStatus();
   var html = '';
-
-  // 按推荐顺序排列待展示渠道（hero → quickWins → paid → later）
-  var ordered = [];
-  if (plan) {
-    if (plan.hero && !myStatus[plan.hero.channel.id]) ordered.push(plan.hero.channel);
-    (plan.quickWins || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
-    (plan.paid || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
-    (plan.later || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
-  } else {
-    // fallback: 数组原始顺序
-    CHANNEL_KNOWLEDGE.forEach(function(ch) { if (!myStatus[ch.id]) ordered.push(ch); });
-  }
   var effortLabels = { low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' };
   var effortColors = { low: 'var(--green)', medium: 'var(--amber)', high: 'var(--red)' };
-  var count = 0;
 
-  ordered.forEach(function(ch) {
-    count++;
-
-    var effortLabel = effortLabels[ch.effortLevel] || ch.effortLevel;
-    var effortColor = effortColors[ch.effortLevel] || 'var(--text-muted)';
-
-    var actionHtml = ch.directUrl
-      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;text-decoration:none;">在网页版打开</a>'
-      : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">📸 截图辅助定位</button>';
-
-    var checkAfterHtml = ch.checkAfter
-      ? '<br><strong>效果验证：</strong>' + escHtml(ch.checkAfter)
-      : '';
-
-    var stepsHtml = escHtml(ch.detailedSteps).replace(/\n/g, '<br>');
-
-    // 付费渠道加月度费用示例
-    var costNote = '';
-    if (ch.costLevel !== 'low') {
-      costNote = ' <span style="font-size:10px;color:var(--amber);">（新手参考：日预算即使只设 30 元/天，月支出也需 900 元。建议优先试免费渠道。）</span>';
-    }
-
-    html += '<div class="a-card" style="margin-bottom:10px;" id="detail-' + ch.id + '">' +
-      '<div class="a-card-hd"><h4>' + escHtml(ch.name) + ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">' + escHtml(ch.type) + '</span></h4></div>' +
-      '<div class="a-card-bd">' +
-        '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
-        '<strong>适合谁：</strong>' + escHtml(ch.suitableFor) + '<br>' +
-        '<strong>不适合：</strong>' + escHtml(ch.notSuitableFor) + '<br>' +
-        '<strong>操作步骤：</strong><br>' + stepsHtml + '<br>' +
-        '<strong>费用：</strong>' + escHtml(ch.costDesc) + costNote + '<br>' +
-        '<strong>门槛：</strong>' + escHtml(ch.threshold) + '<br>' +
-        '<strong>精力投入：</strong><span style="color:' + effortColor + ';font-weight:600;">' + effortLabel + '</span>' +
-        checkAfterHtml +
-        '<br>' + actionHtml +
-      '</div>' +
-    '</div>';
+  var sections = [
+    { title: '未开通渠道', items: [] },
+    { title: '已开通渠道', items: [] }
+  ];
+  CHANNEL_KNOWLEDGE.forEach(function(ch) {
+    if (myStatus[ch.id]) { sections[1].items.push(ch); }
+    else { sections[0].items.push(ch); }
   });
 
-  if (count === 0) {
-    html = '<p style="color:var(--text-muted);padding:12px;">所有渠道已开通，暂无待查看详情。</p>';
-  }
+  sections.forEach(function(sec) {
+    if (sec.items.length === 0) return;
+    html += '<div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:var(--text);">' + sec.title + ' (' + sec.items.length + ')</div>';
+    sec.items.forEach(function(ch) {
+      var effortLabel = effortLabels[ch.effortLevel] || ch.effortLevel;
+      var effortColor = effortColors[ch.effortLevel] || 'var(--text-muted)';
+      var actionHtml = ch.directUrl
+        ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;text-decoration:none;">在网页版打开</a>'
+        : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">📸 截图辅助定位</button>';
+      var stepsHtml = escHtml(ch.detailedSteps).replace(/\n/g, '<br>');
+      var costNote = ch.costLevel !== 'low'
+        ? ' <span style="font-size:10px;color:var(--amber);">（付费渠道，新手优先试免费）</span>' : '';
 
-  $('promoDetailContent').innerHTML = html;
-  $('promoDetailToggleLabel').textContent = ' 未开通渠道详情 (' + count + ' 项)';
-}
+      html += '<div class="a-card" style="margin-bottom:10px;">' +
+        '<div class="a-card-hd"><h4>' + escHtml(ch.name) + ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">' + escHtml(ch.type) + '</span></h4></div>' +
+        '<div class="a-card-bd">' +
+          '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
+          '<strong>路径：</strong>' + escHtml(ch.path) + '<br>' +
+          '<strong>操作步骤：</strong><br>' + stepsHtml + '<br>' +
+          '<strong>费用：</strong>' + escHtml(ch.costDesc) + costNote + '<br>' +
+          '<strong>门槛：</strong>' + escHtml(ch.threshold) + '<br>' +
+          '<strong>精力投入：</strong><span style="color:' + effortColor + ';font-weight:600;">' + effortLabel + '</span>' +
+          '<br>' + actionHtml +
+        '</div>' +
+      '</div>';
+    });
+  });
 
-function goToDetail(channelId) {
-  var content = $('promoDetailContent');
-  var toggle = $('promoDetailToggle');
-  // 确保详情区域展开
-  if (!content.classList.contains('open')) {
-    content.classList.add('open');
-    toggle.classList.add('open');
-  }
-  // 滚动到详情区域
-  $('promoDetailToggle').scrollIntoView({ behavior: 'smooth' });
-  // 高亮对应渠道卡片
-  setTimeout(function() {
-    var card = document.getElementById('detail-' + channelId);
-    if (card) {
-      card.style.boxShadow = '0 0 0 3px var(--brand)';
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(function() { card.style.boxShadow = ''; }, 2000);
-    }
-  }, 300);
-}
-
-function togglePromoDetail() {
-  var content = $('promoDetailContent');
-  var toggle = $('promoDetailToggle');
-  if (content.classList.contains('open')) {
-    content.classList.remove('open');
-    toggle.classList.remove('open');
-  } else {
-    content.classList.add('open');
-    toggle.classList.add('open');
-  }
+  $('promoManualContent').innerHTML = html;
 }
 
 // ===== OCR 截图辅助 =====
