@@ -11,7 +11,7 @@
     "https://s.taobao.com/*",
     "https://item.taobao.com/*",
     "https://detail.tmall.com/*",
-    "https://myseller.taobao.com/*",
+    "https://*.taobao.com/*",
     "file:///E:/taobaoTest/*"
   ],
   "content_scripts": [
@@ -20,7 +20,7 @@
         "https://s.taobao.com/search*",
         "https://item.taobao.com/item*",
         "https://detail.tmall.com/item*",
-        "https://myseller.taobao.com/*",
+        "https://*.taobao.com/*",
         "file:///E:/taobaoTest/*"
       ],
       "js": ["content.js"],

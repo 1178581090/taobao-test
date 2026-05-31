@@ -106,13 +106,27 @@ async function scanQianniuStore(requestingTabId) {
   }
 }
 
-// 存储待注入的步骤（tabId → steps）
+// 存储待注入的步骤（tabId → steps），支持跨页面跳转持久注入
 var _pendingSteps = {};
+
+// 监听标签页 URL 变化，每次导航都重新注入步骤
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
+  if (changeInfo.status === 'complete' && _pendingSteps[tabId]) {
+    var s = _pendingSteps[tabId];
+    setTimeout(function() {
+      chrome.tabs.sendMessage(tabId, {
+        action: 'injectSteps',
+        name: s.name,
+        steps: s.steps
+      }).catch(function() {});
+    }, 2000);
+  }
+});
 
 async function openWithSteps(url, name, steps, requestingTabId) {
   var tab = await chrome.tabs.create({ url: url, active: true });
   _pendingSteps[tab.id] = { name: name, steps: steps };
-  // 等页面加载完成后注入
+  // 首次注入
   try {
     await waitForTabLoad(tab.id);
     await sleep(2000);
@@ -121,11 +135,15 @@ async function openWithSteps(url, name, steps, requestingTabId) {
       name: name,
       steps: steps
     }).catch(function() {});
-    delete _pendingSteps[tab.id];
   } catch (e) {
-    delete _pendingSteps[tab.id];
+    // 忽略，onUpdated 会重试
   }
 }
+
+// 标签页关闭时清理
+chrome.tabs.onRemoved.addListener(function(tabId) {
+  delete _pendingSteps[tabId];
+});
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.action === 'searchCompetitors') {

@@ -689,7 +689,7 @@ function showStepsPanel(name, stepsHtml) {
   };
 }
 
-// 页面加载时自动恢复 + 定时轮询（SPA 切换后 body 被替换时也能恢复）
+// 页面加载时自动恢复 + hash 路由监听 + 定时轮询
 (function() {
   function restorePanel() {
     try {
@@ -700,10 +700,14 @@ function showStepsPanel(name, stepsHtml) {
       }
     } catch(_) {}
   }
-  // 首次
+  // 首次加载
   setTimeout(restorePanel, 1500);
-  // 每 3 秒轮询（SPA 切换后 body 变了，之前的 observer 失效，用轮询兜底）
-  setInterval(restorePanel, 3000);
+  // hash 路由变化（SPA 内部跳转）
+  window.addEventListener('hashchange', function() { setTimeout(restorePanel, 1000); });
+  // popstate（pushState/replaceState 导航）
+  window.addEventListener('popstate', function() { setTimeout(restorePanel, 1000); });
+  // 每 5 秒轮询兜底
+  setInterval(restorePanel, 5000);
 })();
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
