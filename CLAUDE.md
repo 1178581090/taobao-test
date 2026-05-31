@@ -45,24 +45,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `renderDataTable(valid)` — 渲染原始商品数据表格
 - `getKeywordFrequency(titles)` — N-gram 分词统计，取 2-4 字片段，去停用词
 
-## 推广分析核心函数
+## 推广分析（工具手册模式）
 
-- `CHANNEL_KNOWLEDGE` — 16 个推广渠道的知识库数组，每个含 id/name/type/baseScore/costLevel/costDesc/effortLevel/threshold/path/detailedSteps/suitableFor/notSuitableFor/directUrl/effectDesc/searchWeight/checkAfter
-- `renderPromotionTab()` — 入口：恢复勾选状态 → `getPromoPlan()` 生成推荐 → 渲染各卡片
-- `getPromoPlan()` — 推荐引擎：过滤未开通渠道 → 按 baseScore 排序 → 分组（hero/quickWins/paid/later）
-- `renderPromoHero(item)` — 渲染英雄推荐卡片（最高优先级）
-- `renderPromoSection(section, items, title, defaultOpen)` — 渲染三组分渠道列表
-- `renderPromoDetail()` — 渲染底部知识库，展示所有渠道完整信息（适合/不适合、分步步骤、精力投入度）
+推广分析 Tab 已降级为工具手册，不再做推荐排序。仅保留勾选面板和渠道详情卡片。
+
+- `CHANNEL_KNOWLEDGE` — 13 个推广渠道的知识库数组（直通车/引力魔方/极速推已合并入万相台无界版）
+- `renderPromotionTab()` — 入口：恢复勾选状态 → 渲染同行对标 + 渠道手册
+- `renderPromoManual()` — 渲染渠道操作手册（未开通/已开通分组，每项含效果/路径/步骤/费用/门槛/精力）
 - `renderPromoPeerCard()` — 同行对标卡片（服务工具覆盖率对比）
 - `loadPromoStatus()` / `savePromoStatus()` / `restorePromoCheckboxes()` — 渠道勾选状态持久化
-- `getPeerCoverage(peerData)` — 从竞品数据中计算各渠道的同行使用覆盖率
 - `ACTIVITY_TAG_TO_CHANNEL` — 竞品活动标签到渠道 ID 的映射表
+
+## 活动筛选 Tab（核心推荐引擎）
+
+基于千牛真实店铺数据 + 资格匹配规则的个性化活动推荐。
+
+- `ACTIVITY_RULES` — 27 条活动规则数组，含 rules（资格条件）/ costType / effort / scope / monthlyCost / cpcRange / expectedReturn / selectionTip / detailedSteps / url
+- `matchRule(rule, store)` / `matchAllRules(store)` — 资格匹配引擎，5 维度判断（层级/体验分/订单/保证金/违规）
+- `renderAfResults()` — 渲染四组结果（可参加/差一步/暂不可参加/平台暂停）
+- `renderAfGroup()` — 渲染单组活动卡片列表
+- `renderAfStoreCard()` — 渲染店铺状态快照
+- `applyAfFilter()` — 筛选开关切换
+- `scanStore()` / `runQianniuScan()` / `handleQianniuData()` — 千牛一键扫描
+- `loadAfData()` / `saveAfData()` — 扫描数据 localStorage 持久化（键名 `tb_af_scan`）
+- `openWithSteps(url, name, ruleId)` — 通过扩展打开千牛页面并注入步骤跟随面板
+- `updateBudgetCalc()` / `toggleBudgetItem()` / `initBudgetCalc()` / `scrollToActivity()` — 预算计算器
+
+## OCR 截图辅助
+
+- `showOcrZone(channelId)` — 展开截图粘贴区，注入对应渠道的操作步骤
+- 粘贴事件监听 — 截图后显示操作指引，与步骤对照
 
 ## localStorage 键名
 
 - `tb_my_cost` — 用户填写的成本价，跨会话保留
-- `tb_promo_status` — 推广渠道勾选状态（通过 `savePromoStatus()` / `restorePromoCheckboxes()` 持久化）
+- `tb_promo_status` — 推广渠道勾选状态
 - `tb_domain_dict` — 自定义领域词典（标题生成用）
+- `tb_af_scan` — 千牛扫描数据缓存
+- `tb_af_budget` — 月预算上限
+- `tb_af_budget_<id>` — 单个活动的预算勾选状态
+- `tb_promo_visited` — 首次访问标记
 
 ## 重要参考文件
 
@@ -72,6 +94,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 脚本
 
 - `finish-phase.sh` — 阶段收尾脚本：清理临时文件 → 展示变更 → 更新 CHANGELOG → 提交 → 推送。用法：`./finish-phase.sh "提交信息"`
+- `scan-qianniu.js` — Playwright 脚本，扫描千牛 4 个页面（首页/活动报名/推广中心/商品成交锦囊），输出 scan-qianniu.json。需先用 fetch-page.js 登录一次保存 cookie
+- `fetch-page.js` — 单页抓取工具，登录态保存到 `.browser-state/state.json`
+
+## 浏览器扩展新增能力
+
+- `scanQianniu` — 一键扫描店铺数据（background.js 开 myseller 后台标签页 → content.js qianniu 模式提取数据）
+- `openWithSteps` — 打开千牛页面并在页面内注入步骤跟随浮动面板（支持递归多级标签页跳转）
+- `injectStepPanel` — 被 chrome.scripting.executeScript 序列化注入到千牛页面的面板函数，自带 setInterval 轮询自愈
 
 ## 技术约束
 
