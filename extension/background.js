@@ -141,35 +141,45 @@ function showPanelFn(name, stepsHtml) {
   }
 }
 
-// 监听标签页 URL 变化，每次导航都用 scripting API 动态注入面板
+// 监听标签页 URL 变化，sendMessage + scripting 双重保障
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
   if (changeInfo.status === 'complete' && _pendingSteps[tabId]) {
     var s = _pendingSteps[tabId];
-    var code = '(' + showPanelFn.toString() + ')(' + JSON.stringify(s.name) + ',' + JSON.stringify(s.steps) + ');';
     setTimeout(function() {
-      chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        func: showPanelFn,
-        args: [s.name, s.steps]
-      }).catch(function() {});
-    }, 2000);
+      chrome.tabs.sendMessage(tabId, {
+        action: 'injectSteps', name: s.name, steps: s.steps
+      }).catch(function() {
+        // sendMessage 失败则用 scripting 兜底
+        chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          func: showPanelFn,
+          args: [s.name, s.steps]
+        }).catch(function() {});
+      });
+    }, 2500);
   }
 });
 
 async function openWithSteps(url, name, steps, requestingTabId) {
   var tab = await chrome.tabs.create({ url: url, active: true });
   _pendingSteps[tab.id] = { name: name, steps: steps };
-  // 首次注入（用 scripting API，不依赖 content_scripts 匹配）
   try {
     await waitForTabLoad(tab.id);
-    await sleep(2000);
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: showPanelFn,
-      args: [name, steps]
-    }).catch(function() {});
+    await sleep(2500);
+    // 先试 sendMessage（已验证可行）
+    try {
+      await chrome.tabs.sendMessage(tab.id, { action: 'injectSteps', name: name, steps: steps });
+    } catch (e) {
+      // 如果页面没匹配 content_scripts，改用 scripting 注入
+      await sleep(1000);
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: showPanelFn,
+        args: [name, steps]
+      }).catch(function() {});
+    }
   } catch (e) {
-    // 忽略，onUpdated 会重试
+    // onUpdated 兜底
   }
 }
 
