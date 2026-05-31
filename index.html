@@ -3322,6 +3322,17 @@ function renderAfResults() {
   var groups = { eligible: [], almost: [], ineligible: [], paused: [] };
   matched.forEach(function(m) { groups[m.group].push(m); });
 
+  // 千牛推荐数据关联
+  var qnRecs = data.productRecommendations || [];
+  var qnMap = {};
+  qnRecs.forEach(function(rec) {
+    if (rec.channelId) {
+      if (!qnMap[rec.channelId]) qnMap[rec.channelId] = [];
+      qnMap[rec.channelId].push(rec);
+    }
+  });
+  window._qnRecommendations = qnMap;
+
   // 计算付费渠道月度预算
   var paidEligible = groups.eligible.filter(function(m) { return m.rule.costType === 'paid'; });
   var paidBudget = paidEligible.length;
@@ -3418,6 +3429,14 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
     var selectionHtml = (r.scope === 'product' || r.scope === 'both') && r.selectionTip
       ? '<div style="font-size:11px;color:#1967d2;margin-bottom:6px;background:#e8f0fe;padding:6px 8px;border-radius:4px;">🎯 <strong>选品建议：</strong>' + escHtml(r.selectionTip) + '</div>'
       : '';
+    var returnHtml = '';
+    var qnRecsForThis = window._qnRecommendations && window._qnRecommendations[r.id];
+    if (qnRecsForThis && qnRecsForThis.length > 0) {
+      var rec = qnRecsForThis[0];
+      returnHtml = '<div style="font-size:11px;color:#1967d2;margin-bottom:6px;background:#e8f0fe;padding:4px 8px;border-radius:4px;">📊 千牛推荐：为「' + escHtml(rec.productName) + '」匹配了' + escHtml(r.name) + '，' + escHtml(rec.priceInfo) + '试投</div>';
+    } else if (r.expectedReturn) {
+      returnHtml = '<div style="font-size:11px;color:#137333;margin-bottom:6px;background:#e6f4ea;padding:4px 8px;border-radius:4px;">📊 ' + escHtml(r.expectedReturn) + '</div>';
+    }
     var costHtml = r.monthlyCost
       ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
       : '';
@@ -3439,6 +3458,7 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
       '<div class="af-activity-effect">' + escHtml(r.effect) + '</div>' +
       reasonHtml +
       selectionHtml +
+      returnHtml +
       '<div class="af-activity-rules">' + rulesHtml + ' ' + costHtml + '</div>' +
       improveHtml +
       stepsHtml +
