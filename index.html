@@ -977,6 +977,280 @@ var CHANNEL_KNOWLEDGE = [
   }
 ];
 
+// ===== 推广状态管理 =====
+var PROMO_DEFAULT_STATUS = {
+  freightInsurance: false, goldCoins: false, sevenDayReturn: false, fastRefund: false,
+  zhitongche: false, yinlimofang: false, wanxiangtai: false, taoke: false,
+  juhuasuan: false, tiantitemai: false
+};
+
+function loadPromoStatus() {
+  try {
+    var saved = localStorage.getItem('tb_promo_mystatus');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      return Object.assign({}, PROMO_DEFAULT_STATUS, parsed);
+    }
+  } catch (_) {}
+  return Object.assign({}, PROMO_DEFAULT_STATUS);
+}
+
+function savePromoStatus() {
+  var status = {};
+  document.querySelectorAll('#tabPromotion input[type="checkbox"][data-id]').forEach(function(cb) {
+    status[cb.dataset.id] = cb.checked;
+  });
+  localStorage.setItem('tb_promo_mystatus', JSON.stringify(status));
+}
+
+function savePromoBudget() {
+  localStorage.setItem('tb_promo_monthly_budget', $('promoMonthlyBudget').value);
+}
+
+function restorePromoCheckboxes() {
+  var status = loadPromoStatus();
+  document.querySelectorAll('#tabPromotion input[type="checkbox"][data-id]').forEach(function(cb) {
+    cb.checked = !!status[cb.dataset.id];
+  });
+  var savedBudget = localStorage.getItem('tb_promo_monthly_budget');
+  if (savedBudget) $('promoMonthlyBudget').value = savedBudget;
+}
+
+// ===== 同行标签匹配 =====
+var ACTIVITY_TAG_TO_CHANNEL = {
+  '运费险': 'freightInsurance',
+  '退货运费险': 'freightInsurance',
+  '淘金币': 'goldCoins',
+  '金币': 'goldCoins',
+  '7天无理由': 'sevenDayReturn',
+  '7天退换': 'sevenDayReturn',
+  '极速退款': 'fastRefund',
+  '聚划算': 'juhuasuan',
+  '天天特卖': 'tiantitemai'
+};
+
+function getPeerCoverage(peerData) {
+  if (!peerData || !peerData.activityCount || peerData.total === 0) return {};
+  var result = {};
+  Object.keys(peerData.activityCount).forEach(function(tag) {
+    var chId = ACTIVITY_TAG_TO_CHANNEL[tag];
+    if (chId) {
+      var count = peerData.activityCount[tag];
+      result[chId] = { count: count, pct: Math.round(count / peerData.total * 100) };
+    }
+  });
+  return result;
+}
+
+// ===== 推荐引擎 =====
+function generateRecommendations() {
+  var myStatus = loadPromoStatus();
+  var peerData = window._lastAnalysis;
+  var peerCoverage = peerData ? getPeerCoverage(peerData) : {};
+  var hasPeerData = peerData && peerData.total >= 10;
+
+  var recommendations = [];
+
+  CHANNEL_KNOWLEDGE.forEach(function(ch) {
+    if (myStatus[ch.id]) return;
+
+    var pri;
+    if (ch.costLevel === 'low' && ch.baseScore >= 75) {
+      pri = 'P0';
+    } else if (ch.costLevel === 'medium' || ch.baseScore >= 55) {
+      pri = 'P1';
+    } else {
+      pri = 'P2';
+    }
+
+    var peerCov = peerCoverage[ch.id];
+    var peerText = '';
+    if (peerCov && peerCov.count >= 3) {
+      peerText = '同行 <strong>' + peerCov.pct + '%</strong> 已开通（' + peerCov.count + '/' + peerData.total + ' 个商品）。';
+    } else if (hasPeerData) {
+      peerText = '同行样本不足（仅 ' + peerData.total + ' 个商品中有活动标签），以下基于行业经验推荐。';
+    } else {
+      peerText = '';
+    }
+
+    var whyText = (peerText ? peerText + ' ' : '') + ch.effectDesc;
+
+    recommendations.push({
+      channel: ch,
+      priority: pri,
+      whyText: whyText,
+      hasPeer: !!(peerCov && peerCov.count >= 3)
+    });
+  });
+
+  var priOrder = { P0: 0, P1: 1, P2: 2 };
+  recommendations.sort(function(a, b) {
+    if (priOrder[a.priority] !== priOrder[b.priority]) return priOrder[a.priority] - priOrder[b.priority];
+    return b.channel.baseScore - a.channel.baseScore;
+  });
+
+  return recommendations;
+}
+
+// ===== 推广分析渲染 =====
+function renderPromotionTab() {
+  restorePromoCheckboxes();
+  var recs = generateRecommendations();
+  var myStatus = loadPromoStatus();
+  var peerData = window._lastAnalysis;
+  var hasPeer = peerData && peerData.total > 0;
+
+  if (recs.length === 0) {
+    $('promoEmpty').style.display = '';
+    $('promoResult').style.display = 'none';
+    $('promoEmpty').querySelector('.empty-title').textContent = '全部渠道已开通';
+    $('promoEmpty').querySelector('.empty-desc').textContent = '你已开通所有已知推广渠道，暂无新推荐。';
+    return;
+  }
+
+  $('promoEmpty').style.display = 'none';
+  $('promoResult').style.display = 'flex';
+  $('promoResult').style.flexDirection = 'column';
+  $('promoResult').style.gap = '18px';
+
+  if (hasPeer) {
+    $('promoDataStatus').innerHTML = '已读取竞品搜索数据（' + peerData.total + ' 个商品），同行标签用于辅助推荐。';
+    $('promoDataStatus').style.background = '#eafaf1';
+    $('promoDataStatus').style.borderColor = 'var(--green)';
+  } else {
+    $('promoDataStatus').innerHTML = '尚未搜索竞品数据。推荐将基于行业经验，建议先在「竞品分析」Tab 完成一次搜索以获得同行对比。';
+    $('promoDataStatus').style.background = '#fef5e7';
+    $('promoDataStatus').style.borderColor = 'var(--amber)';
+  }
+
+  var enabledCount = Object.values(myStatus).filter(Boolean).length;
+  var totalCount = CHANNEL_KNOWLEDGE.length;
+  var p0Count = recs.filter(function(r) { return r.priority === 'P0'; }).length;
+  var p1Count = recs.filter(function(r) { return r.priority === 'P1'; }).length;
+  var p2Count = recs.filter(function(r) { return r.priority === 'P2'; }).length;
+
+  $('promoSummary').innerHTML =
+    '<span style="font-size:13px;color:var(--text-muted);">' +
+    '已开通 <strong style="color:var(--green);">' + enabledCount + '</strong> / ' + totalCount + ' 项' +
+    ' · 推荐开通 <strong style="color:var(--brand);">' + recs.length + '</strong> 项' +
+    '（P0: <strong style="color:var(--red);">' + p0Count + '</strong> · P1: <strong style="color:var(--amber);">' + p1Count + '</strong> · P2: ' + p2Count + '）' +
+    '</span>';
+
+  renderPromoGroup('P0', recs.filter(function(r) { return r.priority === 'P0'; }));
+  renderPromoGroup('P1', recs.filter(function(r) { return r.priority === 'P1'; }));
+  renderPromoGroup('P2', recs.filter(function(r) { return r.priority === 'P2'; }));
+
+  renderPromoPeerCard();
+  renderPromoDetail();
+}
+
+var PROMO_PRI_COLORS = { P0: '#e74c3c', P1: '#f5a623', P2: '#27ae60' };
+
+function renderPromoGroup(pri, items) {
+  var cardEl = $('promoList' + pri + 'Card');
+  var listEl = $('promoList' + pri);
+  if (items.length === 0) { cardEl.style.display = 'none'; return; }
+  cardEl.style.display = '';
+
+  var html = '';
+  items.forEach(function(item, i) {
+    var ch = item.channel;
+    var color = PROMO_PRI_COLORS[pri];
+    var whyTagClass = item.hasPeer ? 'peer' : 'knowledge';
+    var whyTagText = item.hasPeer ? '同行验证' : '行业经验';
+    html += '<div class="promo-action-item">' +
+      '<div class="promo-action-rank" style="color:' + color + ';">' + (i + 1) + '</div>' +
+      '<div class="promo-action-body">' +
+        '<div class="act-title"><span class="promo-why-tag ' + whyTagClass + '">' + whyTagText + '</span>' + escHtml(ch.name) + ' · ' + escHtml(ch.type) + '</div>' +
+        '<div class="act-desc">' + item.whyText + '</div>' +
+        '<div class="act-meta">' +
+          '<span class="promo-action-meta-item">💰 ' + escHtml(ch.costDesc) + '</span>' +
+          '<span class="promo-action-meta-item">📋 ' + escHtml(ch.threshold) + '</span>' +
+          '<span class="promo-action-meta-item">🚀 ' + escHtml(ch.searchWeight) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="promo-action-side">' +
+        '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入清单</button>' +
+      '</div>' +
+    '</div>';
+  });
+  listEl.innerHTML = html;
+}
+
+function renderPromoPeerCard() {
+  var peerData = window._lastAnalysis;
+  if (!peerData || peerData.total === 0) { $('promoPeerCard').style.display = 'none'; return; }
+
+  var coverage = getPeerCoverage(peerData);
+  var tools = ['freightInsurance', 'goldCoins', 'sevenDayReturn', 'fastRefund'];
+  var myStatus = loadPromoStatus();
+  var hasAny = tools.some(function(id) { return coverage[id] && coverage[id].count >= 3; });
+  if (!hasAny) { $('promoPeerCard').style.display = 'none'; return; }
+
+  $('promoPeerCard').style.display = '';
+
+  var html = '<table class="peer-table"><thead><tr><th>工具</th><th>同行覆盖率</th><th>你的状态</th></tr></thead><tbody>';
+  tools.forEach(function(id) {
+    var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === id; });
+    if (!ch) return;
+    var cov = coverage[id];
+    var covText = (cov && cov.count >= 3) ? cov.pct + '%（' + cov.count + '/' + peerData.total + '）' : '数据不足';
+    var myText = myStatus[id] ? '<span style="color:var(--green);font-weight:600;">已开通</span>' : '<span style="color:var(--red);">未开通</span>';
+    html += '<tr><td style="font-weight:600;">' + escHtml(ch.name) + '</td><td>' + covText + '</td><td>' + myText + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<p style="font-size:10px;color:var(--text-muted);margin-top:6px;">基于「竞品分析」Tab 最新搜索结果（' + peerData.total + ' 个商品）。覆盖率 ≥ 3 个商品才显示数字，否则显示"数据不足"。</p>';
+
+  $('promoPeerContent').innerHTML = html;
+}
+
+function renderPromoDetail() {
+  var html = '';
+  CHANNEL_KNOWLEDGE.forEach(function(ch) {
+    html += '<div class="a-card" style="margin-bottom:10px;">' +
+      '<div class="a-card-hd"><h4>' + escHtml(ch.name) + ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">' + escHtml(ch.type) + '</span></h4></div>' +
+      '<div class="a-card-bd">' +
+        '<strong>费用：</strong>' + escHtml(ch.costDesc) + '<br>' +
+        '<strong>门槛：</strong>' + escHtml(ch.threshold) + '<br>' +
+        '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
+        '<strong>路径：</strong>' + escHtml(ch.path) +
+      '</div>' +
+    '</div>';
+  });
+  $('promoDetailContent').innerHTML = html;
+}
+
+function togglePromoDetail() {
+  var content = $('promoDetailContent');
+  var toggle = $('promoDetailToggle');
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
+    toggle.classList.remove('open');
+  } else {
+    content.classList.add('open');
+    toggle.classList.add('open');
+  }
+}
+
+// ===== 写入明日清单 =====
+function addToChecklist(channelId) {
+  var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === channelId; });
+  if (!ch) return;
+
+  var taskText = '【推广】开通' + ch.name + '：' + ch.path + '（' + ch.costDesc + '）';
+
+  try {
+    var tasks = JSON.parse(localStorage.getItem('tb_checklist_tasks') || '[]');
+    var exists = tasks.some(function(t) { return t.text === taskText; });
+    if (exists) { alert('该任务已在明日清单中'); return; }
+    tasks.push({ text: taskText, done: false, createdAt: Date.now() });
+    localStorage.setItem('tb_checklist_tasks', JSON.stringify(tasks));
+    alert('已添加到明日清单 ✓');
+  } catch (_) {
+    alert('添加失败，请重试');
+  }
+}
+
 // ===== 搜索模式切换 =====
 document.getElementById('searchModeRow').addEventListener('click', function(e) {
   var btn = e.target.closest('.setup-mode-btn');
@@ -1194,6 +1468,14 @@ function analyzeAndRender(products, myPrice, myCost) {
   else { $('cardProfit').style.display = 'none'; }
 
   renderDataTable(valid);
+  // 保存分析结果供推广分析 Tab 使用
+  window._lastAnalysis = {
+    sortedActivities: sortedActivities,
+    activityCount: activityCount,
+    total: valid.length,
+    products: valid,
+    timestamp: Date.now()
+  };
 }
 
 // ===== 诊断总览 =====
@@ -2156,6 +2438,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (savedCost && $('compMyCost')) { $('compMyCost').value = savedCost; }
 
   updateDictCount();
+  restorePromoCheckboxes();
 });
 
 // 保存成本价
