@@ -1426,7 +1426,6 @@ function renderPromoHero(item) {
       checkAfterHtml +
       '<div class="hero-action">' +
         '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
-        '' +
       '</div>' +
     '</div>';
 }
@@ -1456,7 +1455,6 @@ function renderPromoSection(section, items, title, defaultOpen) {
       '<span class="section-item-name">' + peerTag + escHtml(ch.name) + '</span>' +
       '<span class="section-item-desc">' + escHtml(ch.effectDesc) + '</span>' +
       '<span class="section-item-cost">' + escHtml(ch.costDesc) + '</span>' +
-      '' +
     '</div>';
   });
   $(listId).innerHTML = html;
