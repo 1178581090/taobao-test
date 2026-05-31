@@ -1063,7 +1063,7 @@ body {
 
       <!-- OCR 截图辅助区域（默认隐藏） -->
       <div id="ocrZone" class="ocr-zone" style="display:none;">
-        <div class="ocr-zone-title">截图辅助定位</div>
+        <div class="ocr-zone-title">在千牛中找这个功能（截图辅助）</div>
         <div class="ocr-channel-name" id="ocrChannelName"></div>
         <div id="ocrPasteBox" class="ocr-paste-box">
           <strong>如何截图辅助定位：</strong><br>
@@ -1458,28 +1458,28 @@ var ACTIVITY_RULES = [
 
   // ===== 推广产品 =====
   { id: 'keywordPromo', name: '关键词推广（原直通车）', category: '付费推广', source: '推广 > 关键词推广',
-    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥30 起 = 月支出约 ¥900+',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥30 起 = 月支出约 ¥900+（预计每天 50-200 次曝光）',
     effect: '搜索广告位按点击付费，精准触达正在搜索你类目的买家',
     reason: '买家搜"演出服"时你的商品出现在第一位，是获取精准流量最直接的方式。适合主推利润较高的款式。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/subway_new/'
   },
   { id: 'crowdPromo', name: '人群推广（原引力魔方）', category: '付费推广', source: '推广 > 人群推广',
-    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（预计每天 100-300 次推荐曝光）',
     effect: '推荐流广告（猜你喜欢），适合视觉效果好、有点击欲望的商品',
     reason: '买家浏览其他商品时被动看到你的商品，适合有清晰主图和上身效果图的款式。和关键词推广配合效果更佳。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/display_new/'
   },
   { id: 'contentPromo', name: '内容推广', category: '付费推广', source: '推广 > 内容推广',
-    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（直播回放持续引流）',
     effect: '短视频+直播推广，展示演出服穿着效果和定制细节',
     reason: '演出服上身效果和细节展示力远超图文，一条优质视频持续带来流量。需要拍摄和剪辑能力。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
   },
   { id: 'allStorePromo', name: '货品全站推', category: '付费推广', source: '推广 > 货品全站推',
-    rules: {}, costType: 'paid', effort: 'medium', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    rules: {}, costType: 'paid', effort: 'medium', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（系统自动分配各渠道曝光）',
     effect: '全站流量智能投放，系统自动匹配搜索+推荐+内容渠道',
     reason: '不想分别管理多个推广工具的懒人方案。系统自动在各渠道分配预算，省心但可控性较低。',
     howToImprove: null,
@@ -1649,6 +1649,16 @@ function renderPromoManual() {
     else { sections[0].items.push(ch); }
   });
 
+  // 新手优先摘要
+  var freeUnopened = sections[0].items.filter(function(ch) { return ch.costLevel === 'low'; });
+  if (freeUnopened.length >= 3) {
+    html += '<div style="background:#f0f7ff;border:1px solid var(--brand);border-radius:8px;padding:12px;margin-bottom:14px;">' +
+      '<div style="font-weight:700;font-size:13px;color:var(--brand);margin-bottom:6px;">新手优先：建议从这 3 个免费的开始</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);line-height:1.8;">' +
+      freeUnopened.slice(0, 3).map(function(ch) { return '· <strong>' + escHtml(ch.name) + '</strong> — ' + escHtml(ch.effectDesc).slice(0, 60) + '...'; }).join('<br>') +
+      '</div></div>';
+  }
+
   sections.forEach(function(sec) {
     if (sec.items.length === 0) return;
     html += '<div style="font-weight:600;font-size:13px;margin:16px 0 8px;color:var(--text);">' + sec.title + ' (' + sec.items.length + ')</div>';
@@ -1657,7 +1667,7 @@ function renderPromoManual() {
       var effortColor = effortColors[ch.effortLevel] || 'var(--text-muted)';
       var actionHtml = ch.directUrl
         ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;text-decoration:none;">在网页版打开</a>'
-        : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">📸 截图辅助定位</button>';
+        : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">📸 在千牛中找这个功能</button>';
       var stepsHtml = escHtml(ch.detailedSteps).replace(/\n/g, '<br>');
       var costNote = ch.costLevel !== 'low'
         ? ' <span style="font-size:10px;color:var(--amber);">（付费渠道，新手优先试免费）</span>' : '';
@@ -3236,6 +3246,17 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
   }
 
   var html = '';
+
+  // 可参加超过 5 个时加聚焦提示
+  if (groupKey === 'eligible' && items.length > 5) {
+    var freeItems = items.filter(function(m) { return m.rule.costType === 'free'; });
+    if (freeItems.length >= 2) {
+      var names = freeItems.slice(0, 3).map(function(m) { return m.rule.name; }).join(' → ');
+      html += '<div style="background:#fef5e7;border-left:3px solid var(--amber);padding:8px 12px;font-size:12px;margin:8px;">' +
+        '💡 <strong>新手先试：' + names + '</strong>。免费一键开通，其余按需再看</div>';
+    }
+  }
+
   items.forEach(function(item) {
     var r = item.rule;
     var tagClass = TAG_CLASS[r.category] || 'af-tag-tool';
@@ -3292,10 +3313,12 @@ function toggleAfSection(listId) {
 
 function renderAfStoreCard(store) {
   function val(v, cls) { return '<span class="af-value ' + (cls || '') + '">' + escHtml(String(v)) + '</span>'; }
-  var expCls = (parseFloat(store.expScore) || 0) >= 4.2 ? 'good' : 'bad';
+  var expNum = parseFloat(store.expScore) || 0;
+  var expCls = expNum === 0 ? '' : (expNum >= 4.2 ? 'good' : 'bad');
+  var expText = expNum === 0 ? '暂无（需 30 单后计算）' : (store.expScore || '暂无');
   $('afStoreContent').innerHTML =
     '<div class="af-field"><span class="af-label">店铺层级</span>' + val(store.level) + '</div>' +
-    '<div class="af-field"><span class="af-label">体验分</span>' + val(store.expScore || '暂无', expCls) + '</div>' +
+    '<div class="af-field"><span class="af-label">体验分</span>' + val(expText, expCls) + '</div>' +
     '<div class="af-field"><span class="af-label">保证金</span>' + val(store.deposit || '未知') + '</div>' +
     '<div class="af-field"><span class="af-label">信用等级</span>' + val(store.creditLevel || '未知') + '</div>' +
     '<div class="af-field"><span class="af-label">违规次数</span>' + val(store.violations || '0') + '</div>' +
