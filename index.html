@@ -1073,9 +1073,13 @@ body {
           4. 回到此页面，点击本区域后按 Ctrl+V 粘贴
         </div>
         <img id="ocrPreview" class="ocr-preview-img" style="display:none;" alt="截图预览">
-        <a id="ocrSaveBtn" class="btn btn-primary btn-sm" style="display:none;" download="qianniu-screenshot.png">下载截图</a>
-        <div id="ocrHint" class="ocr-hint" style="display:none;">
-          截图已就绪。请下载截图并使用 OCR 工具识别<br>（或直接对照截图，按上方的操作步骤说明在千牛中操作）
+        <div id="ocrGuide" style="display:none;margin-top:10px;padding:10px;background:#f9fafb;border-radius:6px;font-size:12px;line-height:1.8;">
+          <strong>对照以下步骤在截图中查找：</strong>
+          <div id="ocrSteps" style="margin-top:4px;"></div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">
+            截图已粘贴在上方。对照操作步骤在千牛页面中逐项查找对应入口。
+            <a id="ocrSaveBtn" class="btn btn-primary btn-sm" style="margin-top:4px;display:inline-block;" download="qianniu-screenshot.png">下载截图</a>
+          </div>
         </div>
       </div>
     </div>
@@ -1697,11 +1701,15 @@ function showOcrZone(channelId) {
   _ocrChannelId = channelId;
   var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === channelId; });
   $('ocrChannelName').textContent = ch ? '正在定位：' + ch.name : '';
+  // 预填操作步骤
+  $('ocrSteps').innerHTML = ch
+    ? '<div style="margin-bottom:4px;">🚀 <strong>路径：</strong>' + escHtml(ch.path) + '</div>' +
+      '<div>' + escHtml(ch.detailedSteps).replace(/\n/g, '<br>') + '</div>'
+    : '';
   $('ocrZone').style.display = '';
   $('ocrPasteBox').style.display = '';
   $('ocrPreview').style.display = 'none';
-  $('ocrSaveBtn').style.display = 'none';
-  $('ocrHint').style.display = 'none';
+  $('ocrGuide').style.display = 'none';
   $('ocrZone').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -1721,8 +1729,7 @@ document.addEventListener('paste', function(e) {
         $('ocrPreview').src = ev.target.result;
         $('ocrPreview').style.display = '';
         $('ocrSaveBtn').href = ev.target.result;
-        $('ocrSaveBtn').style.display = '';
-        $('ocrHint').style.display = '';
+        $('ocrGuide').style.display = '';
         $('ocrPasteBox').style.display = 'none';
       };
       reader.readAsDataURL(blob);
