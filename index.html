@@ -834,6 +834,14 @@ body {
 
 #afGroupIneligible .card-header h3,
 #afGroupPaused .card-header h3 { cursor: pointer; }
+
+/* 预算计算器 */
+#afBudgetCard input[type="number"] { font-family: inherit; }
+.af-budget-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 11px; }
+.af-budget-item input[type="checkbox"] { accent-color: var(--brand); width: 13px; height: 13px; cursor: pointer; }
+.af-budget-item .af-budget-cost { margin-left: auto; color: var(--text-muted); white-space: nowrap; }
+.af-budget-warn { color: var(--red); font-weight: 600; }
+.af-budget-ok { color: var(--green); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -1113,6 +1121,21 @@ body {
     </button>
     <div id="afScanStatus" class="setup-hint" style="margin-top:6px;display:none;"></div>
 
+    <div class="setup-section-title" style="margin-top:14px;">💰 预算计算器</div>
+    <div id="afBudgetCard" style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="white-space:nowrap;">月预算上限：</span>
+        <input type="number" id="afBudgetInput" value="1500" min="0" step="100"
+          style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"
+          onchange="updateBudgetCalc()" oninput="updateBudgetCalc()">
+        <span>元</span>
+      </div>
+      <div id="afBudgetItems"></div>
+      <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+        <div id="afBudgetSummary"></div>
+      </div>
+    </div>
+
     <div class="setup-section-title" style="margin-top:14px;">筛选</div>
     <div id="afFilters">
       <label class="promo-check"><input type="checkbox" data-filter="eligible" checked onchange="applyAfFilter()"> 可参加 (<span id="afCntEligible">0</span>)</label>
@@ -1366,54 +1389,63 @@ var ACTIVITY_RULES = [
   // ===== 营销工具 =====
   { id: 'evalGift', name: '评价有礼', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: 'AI自动发奖积累评价，评价数越多商品转化率越高',
     effect: 'AI自动发奖，积累有效评价，提升商品转化',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「评价有礼」卡片\n2. 点击进入，选择「智能托管」或手动设置\n3. 设置发奖金额（建议默认）和评价条件\n4. 选择参与商品（全店或指定商品）\n5. 点击保存，AI自动管理评价发奖', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'coupon', name: '优惠券', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '设置优惠券后商品在搜索结果有「券」标识，提升点击率',
     effect: '多场景优惠凭证工具，提升转化率',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「优惠券」卡片\n2. 点击进入，选择券类型：店铺券（全店通用）或商品券（指定商品）\n3. 设置优惠面额（如满100减10）和使用门槛\n4. 设置领取时间和使用期限\n5. 点击保存，优惠券即时生效', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'singleBao', name: '单品宝', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '限时限量标价营造紧迫感，提升商品转化率',
     effect: '单品标价工具，限时限量提转化，以价换量',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「单品宝」卡片\n2. 点击进入 → 点击「新建活动」\n3. 选择要打折的商品（可批量选择）\n4. 设置折扣类型：打折/减钱/促销价\n5. 设置折扣力度和活动时间\n6. 点击保存，商品标价自动更新', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'multiDiscount', name: '多件优惠', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '满减优惠促进多件下单，提升客单价',
     effect: '满件满元合并下单优惠，提升客单价',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「多件优惠」卡片\n2. 点击进入 → 点击「新建活动」\n3. 选择优惠方式：满X件减Y元 或 满X元减Y元\n4. 设置满减门槛和优惠金额\n5. 选择参与商品\n6. 点击保存', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'gift', name: '赠品', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '赠品增加下单吸引力，满赠门槛提升客单价',
     effect: '下单即赠，满元满件赠，提升主品转化',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「赠品」卡片\n2. 点击进入 → 点击「新建活动」\n3. 选择赠品商品（需先在商品库中创建赠品链接）\n4. 设置赠送条件：满X元赠 或 满X件赠\n5. 选择主商品（买这些商品才送赠品）\n6. 点击保存', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'singleReduce', name: '单品立减', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: 'SKU级精准调价，不影响其他规格利润',
     effect: '支持SKU级设置，精准调整单品券后价',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「单品立减」卡片\n2. 点击进入 → 选择商品\n3. 选择要调价的SKU（可精确到每个规格）\n4. 设置立减金额\n5. 点击保存，券后价自动更新', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'csCoupon', name: '客服专属优惠', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '客服发券提升询单转化率，买家犹豫时推一把',
     effect: '客服向买家发送商品立减优惠，提升询单转化',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「客服专属优惠」卡片\n2. 点击进入 → 设置优惠金额\n3. 设置优惠有效期\n4. 点击保存\n5. 使用时：在千牛聊天窗口向买家发送此优惠', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'pricePlan', name: '价格计划', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '直接设置到手价，自动配置优惠组合',
     effect: '官方调价工具，直接设置到手价自动配置优惠',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「价格计划」卡片\n2. 点击进入 → 选择商品\n3. 直接设置期望到手价\n4. 系统自动计算并配置优惠组合\n5. 点击保存，无需手动算优惠叠加', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'matchBuy', name: '搭配购', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '搭配组合提升客单价，买家一次买多件',
     effect: '搭配组合销售，提升客单价',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入营销工具页，找到「搭配购」卡片\n2. 点击进入 → 点击「新建搭配」\n3. 选择主商品和搭配商品（2-5件）\n4. 设置搭配组合的优惠价格\n5. 设置搭配名称和展示图\n6. 点击保存，搭配组合在商品详情页展示', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
@@ -1422,6 +1454,7 @@ var ACTIVITY_RULES = [
   // ===== 营销活动 =====
   { id: 'taojinbi', name: '淘金币抵扣', category: '常驻活动', source: '营销 > 淘金币',
     rules: {}, costType: 'free', effort: 'low',
+    expectedReturn: '淘金币频道日均亿级流量，开通即享搜索加权',
     effect: '淘金币频道曝光 + 搜索加权',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入淘金币页，查看抵扣方案\n2. 设置全域普通抵扣比例（1%-10%，建议从3%开始）\n3. 可选：设置淘金币频道专享抵扣（需大于普通抵扣）\n4. 选择参与范围：「全店商品参与」或「选择商品参与」\n5. 勾选同意《淘金币服务协议》\n6. 点击「采纳方案」→ 一键开通', url: 'https://myseller.taobao.com/home.htm/taojinbi/'
@@ -1429,12 +1462,14 @@ var ACTIVITY_RULES = [
   { id: 'flashSale', name: '淘宝秒杀', category: '常驻活动', source: '营销 > 淘宝秒杀',
     rules: { expScore: { min: 4.2 }, orders30d: { min: 10 } },
     costType: 'free', effort: 'medium',
-    effect: '秒杀频道流量，适合测款引流',
+    expectedReturn: '根据商品销量自动匹配团型，不同层级流量扶持力度递增',
+    effect: '按销量分三层：新品冷启团(≥20单) / 潜力打爆团(≥50单) / 爆品续航团(≥300单)。不同层级的流量扶持力度不同。',
     howToImprove: '积累 10 单真实交易 + 体验分 ≥ 4.2 后解锁',
     scope: 'product', selectionTip: '选主图清晰、价格低于同行10%的款式。避开0销量品，有基础销量的商品通过率更高。', detailedSteps: '1. 进入淘宝秒杀页\n2. 根据自己的销量选择团型：新品冷启团（≥20单）/ 潜力打爆团（≥50单）/ 爆品续航团（≥300单）\n3. 点击对应团型的「去报名」\n4. 选择符合活动要求的商品\n5. 设置活动到手价（需低于近期最低价）\n6. 提交报名，等待审核', url: 'https://myseller.taobao.com/home.htm/ltao-home/'
   },
   { id: 'superReduce', name: '超级立减', category: '常驻活动', source: '营销 > 超级立减',
     rules: {}, costType: 'free', effort: 'medium',
+    expectedReturn: '平台补贴部分金额，商品自动打标立减',
     effect: '单品立减券，平台补贴部分金额',
     howToImprove: null,
     scope: 'product', selectionTip: '选有价格优势的商品。平台补贴后更吸引人，建议选利润空间较大的款。', detailedSteps: '1. 进入超级立减页\n2. 查看「活动商品管理」→「全部活动」\n3. 找到可报名的超级立减活动\n4. 选择商品 → 设置立减金额\n5. 提交报名\n（大促期间此功能暂停，注意查看公告）', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/ttmjpt.htm',
@@ -1443,6 +1478,7 @@ var ACTIVITY_RULES = [
   { id: 'dailyDeal', name: '天天特价', category: '常驻活动', source: '营销 > 活动报名',
     rules: { expScore: { min: 4.2 }, orders30d: { min: 5 } },
     costType: 'free', effort: 'medium',
+    expectedReturn: '日常特卖频道流量，适合测款引流',
     effect: '日常特卖频道，门槛低，适合清库存或引流款',
     howToImprove: '积累 5 单真实交易 + 体验分 ≥ 4.2 后解锁',
     scope: 'product', selectionTip: '选基础款或引流款，价格要有竞争力。0销量报名通过率低，先积累3-5单再报。', detailedSteps: '1. 进入活动报名页\n2. 在顶部搜索框搜索「天天特价」或「天天特卖」\n3. 查看活动招商规则和要求\n4. 选择合适的活动场次，点击「去报名」\n5. 选择商品并设置活动价（需低于近30天最低价）\n6. 填写库存数量\n7. 提交报名，等待审核', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/homepage.htm'
@@ -1457,13 +1493,15 @@ var ACTIVITY_RULES = [
   { id: 'brandNew', name: '品牌新享', category: '常驻活动', source: '营销 > 品牌新享',
     rules: { storeLevel: { min: 'Lv.3' } },
     costType: 'free', effort: 'medium',
-    effect: '品牌新品扶持流量，适合有品牌资质的店铺',
+    expectedReturn: '三种礼金模式精准拉新促活，提升全生命周期转化',
+    effect: '分三种礼金：新客礼金（拉新）、新品礼金（推新）、老客礼金（复购）。点击「添加商品」参与。',
     howToImprove: '提升店铺层级到 Lv.3 后解锁',
     scope: 'product', selectionTip: '需品牌资质。选有设计感的新品上传，突出演出服的舞台效果和定制特色。', detailedSteps: '1. 进入品牌新享页\n2. 选择礼金类型：新客礼金（拉新）/ 新品礼金（推新）/ 老客礼金（复购）\n3. 点击「添加商品」按钮\n4. 选择要推广的商品\n5. 设置礼金金额\n6. 点击提交', url: 'https://myseller.taobao.com/home.htm/qianniu-alimama-ppxx/'
   },
   { id: 'couponMarketing', name: '消费券', category: '常驻活动', source: '营销 > 消费券',
     rules: {},
     costType: 'free', effort: 'medium',
+    expectedReturn: '平台发放消费券，买家领券后到店消费',
     effect: '平台补贴消费券，提升大促转化',
     howToImprove: null,
     scope: 'store', detailedSteps: '1. 进入消费券页\n2. 查看「活动参与」tab\n3. 找到可参与的平台消费券活动\n4. 选择参与商品\n5. 设置券面额和数量\n6. 提交参与', url: 'https://myseller.taobao.com/home.htm/coupon_marketing/home'
@@ -1479,6 +1517,8 @@ var ACTIVITY_RULES = [
   // ===== 推广产品 =====
   { id: 'keywordPromo', name: '关键词推广（原直通车）', category: '付费推广', source: '推广 > 关键词推广',
     rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥30 起 = 月支出约 ¥900+（预计每天 50-200 次曝光）',
+    cpcRange: { min: 0.5, max: 2 },
+    expectedReturn: '预计每天 50-200 次搜索曝光，按 1% 点击率约 0.5-2 次点击',
     effect: '搜索广告位按点击付费，精准触达正在搜索你类目的买家',
     reason: '买家搜"演出服"时你的商品出现在第一位，是获取精准流量最直接的方式。适合主推利润较高的款式。',
     howToImprove: null,
@@ -1486,6 +1526,8 @@ var ACTIVITY_RULES = [
   },
   { id: 'crowdPromo', name: '人群推广（原引力魔方）', category: '付费推广', source: '推广 > 人群推广',
     rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（预计每天 100-300 次推荐曝光）',
+    cpcRange: { min: 0.3, max: 1.5 },
+    expectedReturn: '预计每天 100-300 次推荐位曝光，适合主图视觉好的商品',
     effect: '推荐流广告（猜你喜欢），适合视觉效果好、有点击欲望的商品',
     reason: '买家浏览其他商品时被动看到你的商品，适合有清晰主图和上身效果图的款式。和关键词推广配合效果更佳。',
     howToImprove: null,
@@ -1493,13 +1535,17 @@ var ACTIVITY_RULES = [
   },
   { id: 'contentPromo', name: '内容推广', category: '付费推广', source: '推广 > 内容推广',
     rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（直播回放持续引流）',
-    effect: '短视频+直播推广，展示演出服穿着效果和定制细节',
+    cpcRange: { min: 0.2, max: 1 },
+    expectedReturn: '预计每天 200-500 次内容曝光，直播回放持续引流',
+    effect: '包含三个子类型：超级直播（直播间引流）、超级短视频（视频推广）、短直联动（直播+视频组合）。',
     reason: '演出服上身效果和细节展示力远超图文，一条优质视频持续带来流量。需要拍摄和剪辑能力。',
     howToImprove: null,
     scope: 'product', selectionTip: '选有上身视频或细节展示的商品。展示穿着效果和定制细节，演出服在视频中说服力远超图文。', detailedSteps: '1. 先在千牛或淘宝App发布商品短视频/开播\n2. 进入内容推广页\n3. 选择推广类型：短视频推广 或 直播推广\n4. 选择已发布的视频或正在进行的直播\n5. 设置日预算（建议30-50元/天起步）\n6. 提交推广', url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
   },
   { id: 'allStorePromo', name: '货品全站推', category: '付费推广', source: '推广 > 货品全站推',
     rules: {}, costType: 'paid', effort: 'medium', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（系统自动分配各渠道曝光）',
+    cpcRange: { min: 0.3, max: 2 },
+    expectedReturn: '系统自动分配搜索+推荐+内容渠道，预计每天 100-400 次综合曝光',
     effect: '全站流量智能投放，系统自动匹配搜索+推荐+内容渠道',
     reason: '不想分别管理多个推广工具的懒人方案。系统自动在各渠道分配预算，省心但可控性较低。',
     howToImprove: null,
@@ -1507,10 +1553,59 @@ var ACTIVITY_RULES = [
   },
   { id: 'tbUnion', name: '淘宝联盟（淘客）', category: '付费推广', source: '推广 > 淘宝联盟',
     rules: {}, costType: 'paid', effort: 'low', monthlyCost: '按成交抽佣 5%~10%，不成交不花钱',
-    effect: '按成交付费，有人帮你推广，卖出才给佣金',
-    reason: '风险最低的付费方式——不成交不花钱。适合先试水，设定 5% 佣金起步，有人推就有成交。',
+    expectedReturn: '按成交抽佣，不成交不花钱。设 5% 佣金后由团长/淘客推广，有成交才扣费',
+    effect: '找团长合作推广，团长触达更多推广者帮你卖货。不成交不花钱。',
+    reason: '不用自己找淘客。选择服务商（团长），他们帮你匹配推广者。按成交抽佣，风险最低。',
     howToImprove: null,
     scope: 'product', selectionTip: '设置佣金后全店商品自动生效，也可指定商品单独设佣金。先选销量好的款设置较高佣金吸引淘客。', detailedSteps: '1. 进入淘宝联盟页\n2. 点击「设置佣金」→「新建推广计划」\n3. 选择推广计划类型（通用/定向/营销）\n4. 设置佣金比例（演出服建议5-10%起步）\n5. 选择参与商品（全店或指定商品）\n6. 保存生效，淘客即可开始推广', url: 'https://myseller.taobao.com/home.htm/union-adv/'
+  },
+  { id: 'promoGoods', name: '商品推广', category: '推广工具', source: '推广 > 推广工具',
+    rules: {}, costType: 'free', effort: 'medium', scope: 'product',
+    monthlyCost: null, cpcRange: null,
+    expectedReturn: '货品一站式成长解决方案，加速打爆潜力商品',
+    returnSource: 'static',
+    effect: '商品成长加速工具，系统分析数据后给出优化方向和推广建议',
+    reason: '适合有潜力但缺流量的商品，系统给出个性化成长方案',
+    selectionTip: '选有浏览和收藏基础数据的商品，系统能给出更精准建议',
+    howToImprove: null,
+    detailedSteps: '1. 进入推广工具页\n2. 找到「商品推广」\n3. 选择要推广的商品\n4. 查看系统成长方案\n5. 按建议执行',
+    url: 'https://myseller.taobao.com/home.htm/tuiguang_UnionPage/'
+  },
+  { id: 'memberGrowth', name: '入会增粉', category: '推广工具', source: '推广 > 推广工具',
+    rules: {}, costType: 'free', effort: 'low', scope: 'store',
+    monthlyCost: null, cpcRange: null,
+    expectedReturn: '增加店铺粉丝和会员数，积累可免费触达的私域流量',
+    returnSource: 'static',
+    effect: '高效工具帮助店铺增加粉丝关注和会员入会，建立私域流量池',
+    reason: '粉丝和会员是免费流量——新品上架、促销活动可直接触达，不用每次都花钱买流量',
+    selectionTip: null,
+    howToImprove: null,
+    detailedSteps: '1. 进入推广工具页\n2. 找到「入会增粉」\n3. 设置会员权益和入会福利\n4. 保存后系统自动在商品详情页展示入会入口',
+    url: 'https://myseller.taobao.com/home.htm/tuiguang_UnionPage/'
+  },
+  { id: 'creativeMaker', name: '创意制作', category: '推广工具', source: '推广 > 推广工具',
+    rules: {}, costType: 'free', effort: 'medium', scope: 'product',
+    monthlyCost: null, cpcRange: null,
+    expectedReturn: '免费制作营销图文和短视频，提升商品点击率',
+    returnSource: 'static',
+    effect: '营销图文和短视频创作工具，一键生成商品推广素材',
+    reason: '演出服尤其需要上身效果图/视频。好素材=高点击率，免费工具就能做',
+    selectionTip: '选有模特图的商品优先做视频，上身效果是最好的素材',
+    howToImprove: null,
+    detailedSteps: '1. 进入推广工具页\n2. 找到「创意制作」\n3. 选择商品\n4. 用模板一键生成图文或短视频\n5. 发布到商品详情页',
+    url: 'https://myseller.taobao.com/home.htm/tuiguang_UnionPage/'
+  },
+  { id: 'bidHot', name: '爆款竞价', category: '平台活动', source: '营销 > 爆款竞价',
+    rules: { orders30d: { min: 100 } }, costType: 'free', effort: 'high', scope: 'product',
+    monthlyCost: null, cpcRange: null,
+    expectedReturn: '竞价成功可获得对应赛道流量（秒杀频道/芭芭农场等）',
+    returnSource: 'static',
+    effect: '在多个竞价赛道中以价格竞标获取额外流量曝光',
+    reason: '适合已有爆款的店铺。多个赛道可选：天天热卖竞价、淘宝秒杀竞价、芭芭农场兑换',
+    selectionTip: '只拿销量最好的爆款参与竞价，不是所有商品都适合',
+    howToImprove: '需近30天≥100单，当前差距很大，暂时跳过',
+    detailedSteps: '1. 进入爆款竞价页\n2. 选择竞价赛道（天天热卖/秒杀/芭芭农场）\n3. 查看竞品门槛价\n4. 设置自己的竞价价格\n5. 提交竞价',
+    url: 'https://myseller.taobao.com/home.htm/starb/bidding/sale/race/market?biddingCode=all'
   }
 ];
 
