@@ -111,76 +111,87 @@ var _pendingSteps = {};
 
 // 此函数会被 chrome.scripting.executeScript 序列化注入到目标页面
 function showPanelFn(name, stepsHtml) {
-  var oldPanel = document.getElementById('tb-step-panel');
-  if (oldPanel) oldPanel.remove();
+  try {
+    var oldPanel = document.getElementById('tb-step-panel');
+    if (oldPanel) oldPanel.remove();
 
-  var panel = document.createElement('div');
-  panel.id = 'tb-step-panel';
-  panel.innerHTML =
-    '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
-        '<strong style="font-size:14px;color:#ff5000;">📋 ' + (name || '操作步骤') + '</strong>' +
-        '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
-      '</div>' +
-      '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (stepsHtml || '') + '</div>' +
-      '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
-    '</div>';
-  document.body.appendChild(panel);
-  document.getElementById('tb-step-close').onclick = function() { panel.remove(); };
+    if (!document.body) return false;
 
-  // 在目标页面设置轮询恢复（解决 SPA 内跳转）
-  if (!window._tbStepRestoreId) {
-    window._tbStepRestoreId = setInterval(function() {
-      if (!document.getElementById('tb-step-panel') && document.body) {
-        var p = document.createElement('div'); p.id = 'tb-step-panel';
-        p.innerHTML = panel.querySelector('div').outerHTML;
-        document.body.appendChild(p);
-        document.getElementById('tb-step-close').onclick = function() { p.remove(); };
-      }
-    }, 3000);
-  }
+    var panel = document.createElement('div');
+    panel.id = 'tb-step-panel';
+    panel.innerHTML =
+      '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
+          '<strong style="font-size:14px;color:#ff5000;">📋 ' + (name || '操作步骤') + '</strong>' +
+          '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
+        '</div>' +
+        '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (stepsHtml || '') + '</div>' +
+        '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
+      '</div>';
+    document.body.appendChild(panel);
+    document.getElementById('tb-step-close').onclick = function() { panel.remove(); };
+
+    // 轮询自愈：SPA 切换后 body 被替换时自动恢复面板
+    if (!window._tbStepRestoreRunning) {
+      window._tbStepRestoreRunning = true;
+      window._tbStepName = name;
+      window._tbStepHtml = stepsHtml;
+      setInterval(function() {
+        if (!document.getElementById('tb-step-panel') && document.body && window._tbStepName) {
+          var p = document.createElement('div'); p.id = 'tb-step-panel';
+          p.innerHTML =
+            '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
+                '<strong style="font-size:14px;color:#ff5000;">📋 ' + (window._tbStepName || '') + '</strong>' +
+                '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
+              '</div>' +
+              '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (window._tbStepHtml || '') + '</div>' +
+              '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
+            '</div>';
+          document.body.appendChild(p);
+          document.getElementById('tb-step-close').onclick = function() { p.remove(); };
+        }
+      }, 3000);
+    }
+    return true;
+  } catch(e) { return false; }
 }
 
-// 监听标签页 URL 变化，sendMessage + scripting 双重保障
+// 监听标签页 URL 变化，直接 scripting 注入
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
   if (changeInfo.status === 'complete' && _pendingSteps[tabId]) {
     var s = _pendingSteps[tabId];
-    setTimeout(function() {
-      chrome.tabs.sendMessage(tabId, {
-        action: 'injectSteps', name: s.name, steps: s.steps
-      }).catch(function() {
-        // sendMessage 失败则用 scripting 兜底
+    setTimeout(function() { injectPanel(tabId, s.name, s.steps); }, 3000);
+  }
+});
+
+function injectPanel(tabId, name, steps) {
+  chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    func: showPanelFn,
+    args: [name, steps]
+  }).then(function(res) {
+    if (res && res[0] && res[0].result === false) {
+      // 重试
+      setTimeout(function() {
         chrome.scripting.executeScript({
           target: { tabId: tabId },
           func: showPanelFn,
-          args: [s.name, s.steps]
+          args: [name, steps]
         }).catch(function() {});
-      });
-    }, 2500);
-  }
-});
+      }, 2000);
+    }
+  }).catch(function(err) {
+    console.error('[steps] scripting注入失败:', err.message);
+  });
+}
 
 async function openWithSteps(url, name, steps, requestingTabId) {
   var tab = await chrome.tabs.create({ url: url, active: true });
   _pendingSteps[tab.id] = { name: name, steps: steps };
-  try {
-    await waitForTabLoad(tab.id);
-    await sleep(2500);
-    // 先试 sendMessage（已验证可行）
-    try {
-      await chrome.tabs.sendMessage(tab.id, { action: 'injectSteps', name: name, steps: steps });
-    } catch (e) {
-      // 如果页面没匹配 content_scripts，改用 scripting 注入
-      await sleep(1000);
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: showPanelFn,
-        args: [name, steps]
-      }).catch(function() {});
-    }
-  } catch (e) {
-    // onUpdated 兜底
-  }
+  await waitForTabLoad(tab.id);
+  await sleep(3000);
+  injectPanel(tab.id, name, steps);
 }
 
 // 标签页关闭时清理
