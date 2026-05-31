@@ -183,6 +183,13 @@ body {
 }
 .btn-secondary:hover { background: #e5e7eb; color: var(--text); }
 .btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-outline { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+.btn-outline:hover { background: var(--brand); color: #fff; }
+.btn-xs { padding: 3px 10px; font-size: 11px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; }
+.btn-xs-primary { background: var(--brand); color: #fff; border: 1px solid var(--brand); }
+.btn-xs-primary:hover { filter: brightness(0.9); }
+.btn-xs-outline { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+.btn-xs-outline:hover { background: var(--brand); color: #fff; }
 
 .setup-hint {
   font-size: 11px;
@@ -935,6 +942,10 @@ body {
 
     <div class="setup-section-title">我的推广现状</div>
 
+    <div style="margin-bottom:8px;">
+      <a href="#" onclick="renderPromotionTab();return false;" style="font-size:11px;color:var(--brand);text-decoration:underline;">不确定开通了哪些？直接生成推荐 →</a>
+    </div>
+
     <div style="margin-bottom:4px;">
       <span class="field-label">服务工具</span>
     </div>
@@ -951,11 +962,8 @@ body {
       <span class="field-label">付费推广</span>
     </div>
     <div id="promoCheckPaid">
-      <label class="promo-check"><input type="checkbox" data-id="zhitongche" onchange="savePromoStatus()"> 直通车 <span class="promo-hint">按点击付费·搜索广告位</span></label>
-      <label class="promo-check"><input type="checkbox" data-id="yinlimofang" onchange="savePromoStatus()"> 引力魔方 <span class="promo-hint">按点击付费·推荐流广告</span></label>
-      <label class="promo-check"><input type="checkbox" data-id="wanxiangtai" onchange="savePromoStatus()"> 万相台 <span class="promo-hint">按点击付费·全渠道智能投放</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="wanxiangtai" onchange="savePromoStatus()"> 万相台无界版 <span class="promo-hint">统一投放平台·整合直通车/引力魔方/极速推</span></label>
       <label class="promo-check"><input type="checkbox" data-id="taoke" onchange="savePromoStatus()"> 淘客 <span class="promo-hint">按成交付费·CPS佣金</span></label>
-      <label class="promo-check"><input type="checkbox" data-id="jisutui" onchange="savePromoStatus()"> 极速推 <span class="promo-hint">按曝光付费·新品测款</span></label>
       <label class="promo-check"><input type="checkbox" data-id="superLive" onchange="savePromoStatus()"> 超级直播 <span class="promo-hint">按观看付费·直播推广</span></label>
       <label class="promo-check"><input type="checkbox" data-id="superShortVideo" onchange="savePromoStatus()"> 超级短视频 <span class="promo-hint">按观看付费·短视频推广</span></label>
     </div>
@@ -987,6 +995,9 @@ body {
     </div>
 
     <div id="promoResult" style="display:none;">
+      <!-- 新手术语提示（仅首次显示） -->
+      <div id="promoJargonTip" class="setup-hint" style="display:none;margin-bottom:0;"></div>
+
       <!-- 综合状态卡片 -->
       <div class="result-strip" id="promoSummary"></div>
 
@@ -995,13 +1006,13 @@ body {
 
       <!-- 立刻免费开通 -->
       <div class="card" id="promoQuickWinsCard" style="display:none;">
-        <div class="card-header"><h3>开了就有用，全部免费</h3></div>
+        <div class="card-header"><h3>一键开通，省心省力</h3></div>
         <div id="promoQuickWins"></div>
       </div>
 
       <!-- 花小钱加速 -->
       <div class="card" id="promoPaidCard" style="display:none;">
-        <div class="card-header"><h3>花点小钱，加速增长</h3></div>
+        <div class="card-header"><h3>需要投入，持续经营</h3></div>
         <div id="promoPaidList"></div>
       </div>
 
@@ -1019,7 +1030,7 @@ body {
 
       <!-- 渠道详情（折叠） -->
       <div class="toggle-bar open" id="promoDetailToggle" onclick="togglePromoDetail()">
-        <span class="arr" id="promoDetailToggleIcon">▶</span> 全部渠道知识库
+        <span class="arr" id="promoDetailToggleIcon">▶</span><span id="promoDetailToggleLabel"> 未开通渠道详情</span>
       </div>
       <div class="toggle-content open" id="promoDetailContent"></div>
       <!-- OCR 截图辅助区域（默认隐藏） -->
@@ -1027,12 +1038,16 @@ body {
         <div class="ocr-zone-title">截图辅助定位</div>
         <div class="ocr-channel-name" id="ocrChannelName"></div>
         <div id="ocrPasteBox" class="ocr-paste-box">
-          在千牛打开对应页面后截图（Win+Shift+S）<br>回到此页面，点击此处后 Ctrl+V 粘贴截图
+          <strong>如何截图辅助定位：</strong><br>
+          1. 打开 <a href="https://myseller.taobao.com" target="_blank" rel="noopener">myseller.taobao.com</a> 并登录千牛网页版<br>
+          2. 在左侧菜单中找到对应功能的入口页面<br>
+          3. 按 Win+Shift+S 截图（或微信/QQ 截图）<br>
+          4. 回到此页面，点击本区域后按 Ctrl+V 粘贴
         </div>
         <img id="ocrPreview" class="ocr-preview-img" style="display:none;" alt="截图预览">
         <a id="ocrSaveBtn" class="btn btn-primary btn-sm" style="display:none;" download="qianniu-screenshot.png">下载截图</a>
         <div id="ocrHint" class="ocr-hint" style="display:none;">
-          截图已就绪。请下载截图并告诉我文件路径，<br>我会识别截图中的千牛界面并告诉你具体操作步骤。
+          截图已就绪。请下载截图并使用 OCR 工具识别<br>（或直接对照截图，按上方的操作步骤说明在千牛中操作）
         </div>
       </div>
     </div>
@@ -1050,13 +1065,13 @@ var CHANNEL_KNOWLEDGE = [
     baseScore: 95, costLevel: 'low',
     costDesc: '按售价 1%~2%，单均约 ¥0.5~2',
     effortLevel: 'low',
-    threshold: '无门槛，千牛一键开通',
-    path: '千牛卖家中心 → 商家保障 → 运费险 → 立即加入',
-    detailedSteps: '1. 打开千牛卖家中心首页\n2. 左侧导航找到「商家保障」\n3. 在保障列表中找到「运费险」条目\n4. 点击「立即加入」按钮\n5. 阅读协议后点击确认开通',
+    threshold: '无门槛，网页版一键开通',
+    path: 'myseller.taobao.com → 店铺管理 → 商家保障 → 退货运费险 → 立即加入',
+    detailedSteps: '1. 浏览器打开 myseller.taobao.com 并登录\n2. 左侧导航找到「店铺管理」→「商家保障」\n3. 在保障列表中找到「退货运费险」\n4. 点击「立即加入」按钮\n5. 阅读协议后点击确认开通',
     suitableFor: '所有店铺都适合，尤其是退货率偏高的类目。演出服定制类商品因尺码/款式问题退换较多，建议优先开通。',
     notSuitableFor: '几乎没有不适用的场景。如果商品利润极薄（单件毛利 < ¥5），注意计算保费成本是否可接受。',
     directUrl: null,
-    effectDesc: '退货补运费，买家下单顾虑降低。演出服定制类退货率偏高，开通后转化率通常提升 10-20%。',
+    effectDesc: '退货补运费，买家下单顾虑降低。演出服定制类退货率偏高，开通后转化率通常提升 10-20%。此功能在千牛后台内操作，无稳定独立 URL。',
     searchWeight: '搜索加权 + 转化率提升',
     checkAfter: '开通后在「生意参谋 → 交易」看转化率是否提升'
   },
@@ -1065,12 +1080,12 @@ var CHANNEL_KNOWLEDGE = [
     baseScore: 85, costLevel: 'low',
     costDesc: '买家抵扣 2%~5%，卖家承担费用，单均几分到几毛',
     effortLevel: 'low',
-    threshold: '无门槛，千牛一键开通',
-    path: '千牛卖家中心 → 营销中心 → 淘金币 → 立即开通',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 在营销工具中找到「淘金币」\n4. 点击「立即开通」按钮\n5. 设置金币抵扣比例（建议默认 2%）',
+    threshold: '无门槛，网页版一键开通',
+    path: 'myseller.taobao.com → 营销中心 → 淘金币 → 立即开通',
+    detailedSteps: '1. 浏览器打开 myseller.taobao.com 并登录\n2. 左侧导航找到「营销中心」\n3. 在营销工具中找到「淘金币」\n4. 点击「立即开通」按钮\n5. 设置金币抵扣比例（建议默认 2%）',
     suitableFor: '所有店铺都适合。淘金币是淘宝最大的积分体系，买家习惯使用淘金币抵扣，开通后商品有搜索加权和淘金币频道额外曝光。',
     notSuitableFor: '如果商品单价极低（< ¥20），淘金币抵扣比例可能影响利润。不过单均抵扣只有几分到几毛钱，影响很小。',
-    directUrl: null,
+    directUrl: 'https://market.m.taobao.com/app/tbcoin/coin_seller/index.html#/home',
     effectDesc: '淘宝最大积分体系，开通后商品在淘金币频道有额外曝光，搜索有加权。',
     searchWeight: '搜索加权 + 淘金币频道流量',
     checkAfter: '开通后在「生意参谋 → 流量」看淘金币频道是否有新增访客'
@@ -1080,9 +1095,9 @@ var CHANNEL_KNOWLEDGE = [
     baseScore: 80, costLevel: 'low',
     costDesc: '免费开通，退货由买家承担运费（非质量问题）',
     effortLevel: 'low',
-    threshold: '无门槛，千牛一键开通',
-    path: '千牛卖家中心 → 消费者保障 → 7天无理由退换货 → 加入',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「消费者保障」\n3. 找到「7天无理由退换货」服务\n4. 点击「加入」按钮\n5. 确认服务协议后开通',
+    threshold: '无门槛，网页版一键开通',
+    path: 'myseller.taobao.com → 客户服务 → 消费者保障服务 → 7天无理由退换货 → 加入',
+    detailedSteps: '1. 浏览器打开 myseller.taobao.com 并登录\n2. 左侧导航找到「客户服务」→「消费者保障服务」\n3. 找到「7天无理由退换货」服务\n4. 点击「加入」按钮\n5. 确认服务协议后开通',
     suitableFor: '所有店铺都必须开通。这是淘宝基础服务标识，不开通会直接影响搜索排序和买家下单意愿。',
     notSuitableFor: '定制类商品（如刻字、来图定制）可申请特殊类目豁免，但需提供证明材料。普通演出服建议保持开通。',
     directUrl: null,
@@ -1096,8 +1111,8 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '免费开通',
     effortLevel: 'low',
     threshold: '需店铺信用达标',
-    path: '千牛卖家中心 → 消费者保障 → 极速退款 → 开通',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「消费者保障」\n3. 找到「极速退款」服务\n4. 点击「开通」按钮\n5. 系统自动审核店铺信用，达标即时开通',
+    path: 'myseller.taobao.com → 客户服务 → 消费者保障服务 → 极速退款 → 开通',
+    detailedSteps: '1. 浏览器打开 myseller.taobao.com 并登录\n2. 左侧导航找到「客户服务」→「消费者保障服务」\n3. 找到「极速退款」服务\n4. 点击「开通」按钮\n5. 系统自动审核店铺信用，达标即时开通',
     suitableFor: '店铺信用良好的卖家。能缩短买家退款等待时间，提升购物体验和复购率。',
     notSuitableFor: '需要店铺信用达标才能开通。如果店铺信用分较低，可能暂时无法开通，需要先积累信用。',
     directUrl: null,
@@ -1106,49 +1121,20 @@ var CHANNEL_KNOWLEDGE = [
     checkAfter: '开通后在商品详情页确认「极速退款」标识已展示'
   },
   {
-    id: 'zhitongche', name: '直通车', type: '付费推广',
-    baseScore: 70, costLevel: 'medium',
-    costDesc: '按点击付费（CPC），类目均价约 ¥0.5~2/次，建议日预算 ¥30~100 起步',
-    effortLevel: 'high',
-    threshold: '需充值，最低 ¥200 起充',
-    path: '千牛卖家中心 → 营销中心 → 直通车 → 新建推广计划 → 选商品 → 设关键词出价',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「直通车」进入\n4. 点击「新建推广计划」\n5. 选择要推广的商品\n6. 设置日预算（新手建议 ¥30-100）\n7. 添加关键词并设置出价\n8. 提交等待审核',
-    suitableFor: '有一定预算且愿意持续优化投放的卖家。适合主推利润较高的款式，按点击付费，精准触达搜索用户，是最直接的获客方式。',
-    notSuitableFor: '预算有限（月 < ¥500）或没有时间每天看数据调价的卖家。新手建议先从日预算 ¥30 开始测试，跑 1-2 周积累数据后再调整。',
-    directUrl: null,
-    effectDesc: '搜索关键词精准流量，是最直接的获客方式。按点击付费，不成交不扣费（仅扣点击费）。',
-    searchWeight: '搜索首位曝光',
-    checkAfter: '投放 1 周后在「直通车 → 报表」看点击率和转化成本，评估关键词效果'
-  },
-  {
-    id: 'yinlimofang', name: '引力魔方', type: '付费推广',
-    baseScore: 60, costLevel: 'medium',
-    costDesc: '按点击付费（CPC），建议日预算 ¥50~200',
-    effortLevel: 'high',
-    threshold: '需充值',
-    path: '千牛卖家中心 → 营销中心 → 引力魔方 → 新建计划 → 选商品 → 设人群定向',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「引力魔方」进入\n4. 点击「新建计划」\n5. 选择推广商品\n6. 设置人群定向（新手建议先用系统智能推荐）\n7. 设置日预算（建议 ¥50-200）\n8. 提交',
-    suitableFor: '希望获取推荐流量的卖家。适合商品主图视觉效果好、点击率高的商品，能在「猜你喜欢」「购后推荐」等位置获得曝光。',
-    notSuitableFor: '商品主图质量一般的情况下，点击率低，投放效率不高。建议先优化主图（清晰、有吸引力）再考虑投放。',
-    directUrl: null,
-    effectDesc: '推荐流量（猜你喜欢、购后推荐等），适合获取非搜索的被动曝光。',
-    searchWeight: '推荐位曝光',
-    checkAfter: '投放 1 周后在「引力魔方 → 报表」看展现量和点击率，评估人群定向效果'
-  },
-  {
-    id: 'wanxiangtai', name: '万相台', type: '付费推广',
-    baseScore: 55, costLevel: 'medium',
-    costDesc: '按点击付费，建议日预算 ¥50~300',
+    id: 'wanxiangtai', name: '万相台无界版', type: '付费推广',
+    baseScore: 72, costLevel: 'medium',
+    costDesc: '按点击付费（CPC），建议日预算 ¥50~300 起步。已整合原直通车/引力魔方/极速推，一次充值全场景通用',
     effortLevel: 'medium',
-    threshold: '需充值',
-    path: '千牛卖家中心 → 营销中心 → 万相台 → 新建推广',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「万相台」进入\n4. 点击「新建推广」\n5. 选择投放目标（拉新客/促成交）\n6. 设置日预算\n7. 提交，系统自动在搜索+推荐+内容渠道分配预算',
-    suitableFor: '不想分别管理多个推广工具的卖家。万相台自动在搜索+推荐+内容多渠道分配预算，省心省力，适合精力有限的卖家。',
-    notSuitableFor: '需要精细控制每个渠道投放的卖家。万相台是智能托管模式，无法分别调控每个渠道的出价和预算分配。',
-    directUrl: null,
-    effectDesc: '阿里妈妈智能投放平台，自动在搜索+推荐+内容多渠道分配预算。适合不想手动调价的卖家。',
-    searchWeight: '多渠道智能投放',
-    checkAfter: '投放 1 周后在「万相台 → 报表」看各渠道投产比（ROI），评估智能分配效果'
+    threshold: '需充值，最低 ¥200 起充',
+    path: '1bp.taobao.com → 万相台无界版首页 → 选择投放场景 → 新建推广',
+    detailedSteps: '1. 浏览器打开 1bp.taobao.com 并登录\n2. 进入万相台无界版首页，可见三个子场景：\n   - 关键词推广（原直通车）：搜索广告位，按点击付费\n   - 精准人群推广（原引力魔方）：推荐流广告，按点击付费\n   - 消费者运营/货品运营：智能投放，系统自动分配预算\n3. 选择需要的场景，点击「新建推广」\n4. 选择推广商品，设置日预算\n5. 提交等待审核',
+    suitableFor: '所有想做付费推广的卖家。万相台无界版已将直通车、引力魔方、极速推整合为统一入口，不用分别学习多个工具。新手可以从智能投放场景开始，系统自动优化。',
+    notSuitableFor: '预算极有限（月 < ¥500）的卖家建议先从免费渠道开始。付费推广需要一定预算才能看到效果，且需要花时间看数据调整。',
+    directUrl: 'https://1bp.taobao.com',
+    effectDesc: '阿里妈妈一站式智能投放平台，已整合原直通车（关键词推广）、引力魔方（精准人群推广）、极速推等工具。三个子场景在后台内切换，无需分别开通。',
+    searchWeight: '搜索+推荐+内容多渠道智能投放',
+    checkAfter: '投放 1 周后在「万相台无界版 → 报表」看各场景投产比（ROI），评估投放效果',
+    _subScenes: '包含三个主要投放场景：① 关键词推广（原直通车）— 搜索广告位按点击付费；② 精准人群推广（原引力魔方）— 推荐流按点击付费；③ 智能测款（原极速推）— 一键推广按曝光付费。三个场景在万相台后台内切换，无需分别开通。'
   },
   {
     id: 'taoke', name: '淘客', type: '付费推广',
@@ -1156,41 +1142,41 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '按成交付费（CPS），佣金比例自行设定（建议 5%~10% 起步）',
     effortLevel: 'low',
     threshold: '需设置佣金计划',
-    path: '千牛卖家中心 → 营销中心 → 淘宝客 → 设置佣金 → 推广计划',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「淘宝客」进入\n4. 点击「设置佣金」\n5. 创建推广计划\n6. 设置佣金比例（演出服建议 5-10% 起步，后续根据效果调整）\n7. 保存生效',
+    path: 'ad.alimama.com（阿里妈妈首页）→ 左侧菜单找到「淘宝联盟」→ 设置佣金 → 推广计划',
+    detailedSteps: '1. 浏览器打开 ad.alimama.com 并登录（此为阿里妈妈首页，需手动找到淘宝联盟入口）\n2. 在左侧或顶部导航找到「淘宝联盟」或「淘宝客」\n3. 点击「设置佣金」\n4. 创建推广计划\n5. 设置佣金比例（演出服建议 5-10% 起步，后续根据效果调整）\n6. 保存生效',
     suitableFor: '愿意用佣金换销量的卖家。按成交付费，不成交不花钱，风险低。设定好佣金后几乎不需要日常维护。',
     notSuitableFor: '利润薄的商品（毛利率 < 30%），佣金会大幅压缩利润。演出服客单价高，佣金金额可观，建议从 5% 起步慢慢测试。',
-    directUrl: null,
-    effectDesc: '按成交付费，不成交不花钱。适合让利换量，但注意佣金会压缩利润。演出服客单价高，佣金金额大，需谨慎设置比例。',
+    directUrl: 'https://ad.alimama.com/',
+    effectDesc: '按成交付费，不成交不花钱。适合让利换量。入口在阿里妈妈首页内，需手动导航到淘宝联盟。（无直达淘宝客设置的独立 URL）',
     searchWeight: '淘客渠道额外流量',
     checkAfter: '设置后在「淘宝客 → 效果报表」看引入订单量和佣金支出'
   },
   {
     id: 'juhuasuan', name: '聚划算', type: '平台活动',
-    baseScore: 45, costLevel: 'high',
-    costDesc: '活动保证金 + 佣金扣点（通常 2%~5%）+ 活动价要求',
+    baseScore: 45, costLevel: 'medium',
+    costDesc: '活动保证金（可退）+ 佣金扣点（通常 2%~5%）+ 活动价让利',
     effortLevel: 'high',
     threshold: '需店铺资质审核，商品需有销量基础',
-    path: '千牛卖家中心 → 营销中心 → 活动报名 → 聚划算 → 提交申请',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「活动报名」\n4. 找到「聚划算」活动入口\n5. 查看当期活动要求和坑位门槛\n6. 准备活动价和库存方案\n7. 提交商品申请\n8. 等待审核（通常 3-7 个工作日）',
+    path: 'sale.tmall.com → 活动报名 → 搜索「聚划算」→ 提交申请',
+    detailedSteps: '1. 浏览器打开 sale.tmall.com 并登录\n2. 点击「活动报名」，搜索「聚划算」\n3. 查看当期活动要求和坑位门槛\n4. 准备活动价和库存方案\n5. 提交商品申请\n6. 等待审核（通常 3-7 个工作日）',
     suitableFor: '有一定销量基础和产能的店铺。聚划算单品爆发力强，适合打造爆款。需要做好活动期间的产能和客服准备。',
     notSuitableFor: '新店或销量低的店铺很难通过审核。定制类商品生产周期长，需提前评估产能能否支撑活动期间的单量，否则容易超卖导致店铺处罚。',
-    directUrl: null,
-    effectDesc: '淘宝最大团购IP，单品爆发力强。但定制类目商品周期长，需评估产能能否支撑活动单量。',
+    directUrl: 'https://sale.tmall.com/',
+    effectDesc: '淘宝最大团购IP，单品爆发力强。但定制类目商品周期长，需评估产能能否支撑活动单量。入口在营销活动中心搜索。',
     searchWeight: '活动流量 + 搜索加权',
     checkAfter: '活动期间关注订单量和店铺评分变化，活动结束后评估投产效果'
   },
   {
     id: 'tiantitemai', name: '天天特卖', type: '平台活动',
-    baseScore: 40, costLevel: 'high',
-    costDesc: '需让利（活动价要求）+ 佣金扣点',
+    baseScore: 40, costLevel: 'medium',
+    costDesc: '免费报名，需活动价让利 + 佣金扣点（6%~8%）',
     effortLevel: 'medium',
     threshold: '商品需有一定销量和好评基础',
-    path: '千牛卖家中心 → 营销中心 → 活动报名 → 天天特卖 → 提交申请',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「活动报名」\n4. 找到「天天特卖」\n5. 选择适合的活动场次\n6. 提交商品并设置活动价\n7. 等待审核',
+    path: 'sale.tmall.com（营销活动中心首页）→ 活动报名 → 搜索「天天特卖」→ 提交申请',
+    detailedSteps: '1. 浏览器打开 sale.tmall.com 并登录\n2. 点击「活动报名」\n3. 搜索或找到「天天特卖」活动\n4. 选择适合的活动场次\n5. 提交商品并设置活动价\n6. 等待审核',
     suitableFor: '希望清理库存或做低价引流的卖家。门槛低于聚划算，更适合日常使用。可拿出一两个基础款参加活动为店铺引流。',
     notSuitableFor: '高客单价商品不太适合（天天特卖用户对价格敏感）。利润薄的商品让利空间有限，参加活动可能亏本。',
-    directUrl: null,
+    directUrl: 'https://sale.tmall.com/',
     effectDesc: '日常特卖活动，门槛低于聚划算，适合清库存或引流款。',
     searchWeight: '活动流量',
     checkAfter: '活动期间关注订单量和访客数，评估引流效果和让利成本'
@@ -1201,11 +1187,11 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '免费，平台扶持新品获得初始曝光',
     effortLevel: 'low',
     threshold: '商品上架 ≤90 天即可，无销量门槛',
-    path: '千牛卖家中心 → 营销中心 → 新品成长 → 选择新品 → 启动加速',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 找到「新品成长」入口\n4. 系统自动列出上架 90 天内的新品\n5. 选择要推广的新品\n6. 点击「启动加速」按钮',
+    path: 'tstage.taobao.com/newGrowthPlan → 选择新品 → 启动加速',
+    detailedSteps: '1. 浏览器打开 tstage.taobao.com/newGrowthPlan 并登录\n2. 系统自动列出上架 90 天内的新品\n3. 选择要推广的新品\n4. 点击「启动加速」按钮',
     suitableFor: '持续上新的店铺最受益。演出服款型多、上新频繁，非常适合用新品成长推新款，帮助新品快速度过冷启动期获得初始曝光。',
     notSuitableFor: '商品上架超过 90 天无法参与。如果店铺很少上新，能用到的机会不多。',
-    directUrl: null,
+    directUrl: 'https://tstage.taobao.com/newGrowthPlan',
     effectDesc: '平台为新品提供搜索和推荐位额外曝光，帮助新品快速度过冷启动期。演出服款型多、上新频繁，非常适合用新品成长推新款。',
     searchWeight: '搜索加权 + 推荐流量',
     checkAfter: '加速 7 天后在「生意参谋 → 商品」看新品访客数是否增长'
@@ -1216,11 +1202,11 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '免费入驻（需审核），无额外费用',
     effortLevel: 'medium',
     threshold: '服饰类目店铺，商品有设计感或风格统一',
-    path: '千牛卖家中心 → 营销中心 → iFashion → 提交入驻申请',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 找到「iFashion」入口\n4. 点击「提交入驻申请」\n5. 填写店铺风格描述\n6. 上传具有设计感的商品图片\n7. 提交等待审核（通常 3-7 个工作日）',
+    path: 'access.taobao.com/portal/index.htm → 核心商家计划 → iFashion → 提交入驻申请',
+    detailedSteps: '1. 浏览器打开 access.taobao.com/portal/index.htm 并登录\n2. 找到「核心商家计划」→「iFashion」\n3. 点击「提交入驻申请」\n4. 填写店铺风格描述\n5. 上传具有设计感的商品图片\n6. 提交等待审核（通常 3-7 个工作日）',
     suitableFor: '服饰类目店铺，商品有设计感或统一风格。演出服、舞台装属于服饰类目，入驻后可获取精准的演出服/舞台装流量入口。',
     notSuitableFor: '非服饰类目无法入驻。商品如果以通货为主、缺乏设计感，审核可能不通过。店铺需要有一定数量的风格统一的商品。',
-    directUrl: null,
+    directUrl: 'https://access.taobao.com/portal/index.htm',
     effectDesc: '淘宝服饰行业官方频道，入驻后商品获得行业专属推荐位。演出服属于服饰类目，可获取精准的舞台装/演出服流量入口。',
     searchWeight: '行业频道流量 + 精准人群曝光',
     checkAfter: '入驻后在 iFashion 频道搜索类目关键词，确认商品已展示'
@@ -1231,29 +1217,14 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '需设置活动价（通常 7~9 折），无额外扣点',
     effortLevel: 'low',
     threshold: '店铺评分 ≥4.4，商品有一定销量基础',
-    path: '千牛卖家中心 → 营销中心 → 活动报名 → 淘宝秒杀 → 提交商品',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「活动报名」\n4. 找到「淘宝秒杀」入口\n5. 查看当期活动要求\n6. 提交商品并设置活动价（建议 7-9 折）\n7. 等待审核',
+    path: 'sale.tmall.com（营销活动中心首页）→ 活动报名 → 搜索「秒杀」→ 提交商品',
+    detailedSteps: '1. 浏览器打开 sale.tmall.com 并登录\n2. 点击「活动报名」\n3. 搜索或找到「淘宝秒杀」入口\n4. 查看当期活动要求\n5. 提交商品并设置活动价（建议 7-9 折）\n6. 等待审核',
     suitableFor: '想测试商品价格竞争力的卖家。门槛低于聚划算和天天特卖，适合拿出一两个基础款参加秒杀为店铺引流。',
     notSuitableFor: '店铺评分 < 4.4 无法报名。0 销量的商品建议先积累基础销量再参加，否则报名成功率低。',
-    directUrl: null,
+    directUrl: 'https://sale.tmall.com/',
     effectDesc: '淘宝日常秒杀频道，门槛低于聚划算，适合测试商品价格竞争力。可设置部分基础款参加秒杀为店铺引流。',
     searchWeight: '秒杀频道流量',
     checkAfter: '活动期间关注商品访客数和转化率，评估引流效果'
-  },
-  {
-    id: 'jisutui', name: '极速推', type: '付费推广',
-    baseScore: 62, costLevel: 'medium',
-    costDesc: '按曝光付费（CPM），建议日预算 ¥30~100',
-    effortLevel: 'medium',
-    threshold: '需充值，最低 ¥100 起',
-    path: '千牛卖家中心 → 营销中心 → 极速推 → 选商品 → 设预算 → 一键推广',
-    detailedSteps: '1. 打开千牛卖家中心\n2. 左侧导航找到「营销中心」\n3. 点击「极速推」进入\n4. 选择要推广的商品\n5. 设置日预算（新手建议 ¥30-100）\n6. 点击「一键推广」按钮\n7. 系统自动匹配人群投放',
-    suitableFor: '新手卖家或不擅长关键词投放的卖家。操作比直通车简单很多，无需手动设置关键词，系统自动匹配人群，适合新品测款和快速获取曝光。',
-    notSuitableFor: '需要精准控制投放人群和关键词的卖家。极速推的定向精度不如直通车，不适合复杂的投放策略。',
-    directUrl: null,
-    effectDesc: '操作比直通车更简单，系统自动匹配人群，无需手动设关键词。适合新手快速获取曝光、推广新品或测款。',
-    searchWeight: '推荐位 + 搜索位曝光',
-    checkAfter: '推广 3 天后在「生意参谋 → 流量」看新增访客来源'
   },
   {
     id: 'superLive', name: '超级直播', type: '付费推广',
@@ -1261,12 +1232,12 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '按观看付费（CPV）或按点击付费，日预算 ¥50~200',
     effortLevel: 'high',
     threshold: '需开播 + 充值',
-    path: '千牛卖家中心 → 营销中心 → 超级直播 → 创建直播推广',
-    detailedSteps: '1. 先使用千牛或淘宝主播 App 开播\n2. 打开千牛卖家中心\n3. 左侧导航找到「营销中心」\n4. 点击「超级直播」进入\n5. 点击「创建直播推广」\n6. 关联正在进行的直播\n7. 设置日预算（建议 ¥50-200）\n8. 开始推广',
+    path: '千牛 APP → 搜索「超级直播」→ 创建直播推广（无网页版入口）',
+    detailedSteps: '1. 使用千牛 APP 或淘宝主播 App 开播\n2. 在千牛 APP 搜索「超级直播」进入小程序\n3. 点击「创建直播推广」\n4. 关联正在进行的直播\n5. 设置日预算（建议 ¥50-200）\n6. 开始推广',
     suitableFor: '有直播条件和意愿的卖家。演出服上身效果和定制细节在直播中展示力强，转化率明显高于图文。能定期开播（每周至少 1-2 次）的情况下值得投入。',
     notSuitableFor: '没有主播或时间开播的卖家不建议。直播推广需要配合开播才有用，不开播就没有意义。副业卖家需评估能否每周固定时间开播。',
     directUrl: null,
-    effectDesc: '为直播间引流，演出服上身效果和定制细节在直播中展示力强。直播能有效提升转化率，但需主播和时间投入。',
+    effectDesc: '为直播间引流，演出服上身效果和定制细节在直播中展示力强。直播能有效提升转化率，但需主播和时间投入。仅在千牛 APP 内操作，无网页版入口。',
     searchWeight: '直播频道 + 搜索直播卡曝光',
     checkAfter: '推广后在直播数据看板查看引流效果和成交转化'
   },
@@ -1276,24 +1247,177 @@ var CHANNEL_KNOWLEDGE = [
     costDesc: '按观看付费（CPV），建议日预算 ¥30~100',
     effortLevel: 'medium',
     threshold: '需制作短视频 + 充值',
-    path: '千牛卖家中心 → 营销中心 → 超级短视频 → 选视频 → 设预算出价',
-    detailedSteps: '1. 先在千牛或淘宝 App 发布商品短视频\n2. 打开千牛卖家中心\n3. 左侧导航找到「营销中心」\n4. 点击「超级短视频」进入\n5. 选择已发布的短视频\n6. 设置日预算（建议 ¥30-100）\n7. 设置出价\n8. 开始推广',
+    path: '千牛 APP → 搜索「超级短视频」→ 选视频 → 设预算出价（无网页版入口）',
+    detailedSteps: '1. 先在千牛或淘宝 App 发布商品短视频\n2. 在千牛 APP 搜索「超级短视频」进入小程序\n3. 选择已发布的短视频\n4. 设置日预算（建议 ¥30-100）\n5. 设置出价\n6. 开始推广',
     suitableFor: '能制作商品展示视频的卖家。演出服的穿着效果、细节展示在短视频中表现力强。一条优质短视频可持续带来免费+付费流量，投入一次长期受益。',
     notSuitableFor: '没有条件拍摄和剪辑短视频的卖家。短视频需要一定的拍摄和剪辑能力，如果视频质量差反而会影响商品形象。',
     directUrl: null,
-    effectDesc: '为短视频引流，演出服的穿着效果、细节展示在短视频中表现力强。一条优质短视频可持续带来免费+付费流量。',
+    effectDesc: '为短视频引流，演出服的穿着效果、细节展示在短视频中表现力强。一条优质短视频可持续带来免费+付费流量。仅在千牛 APP 内操作，无网页版入口。',
     searchWeight: '短视频推荐流曝光',
     checkAfter: '推广后在视频数据看板查看播放量和商品点击率'
+  }
+];
+
+// ===== 活动规则库（资格匹配） =====
+var ACTIVITY_RULES = [
+  // ===== 营销工具 =====
+  { id: 'evalGift', name: '评价有礼', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: 'AI自动发奖，积累有效评价，提升商品转化',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'coupon', name: '优惠券', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '多场景优惠凭证工具，提升转化率',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'singleBao', name: '单品宝', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '单品标价工具，限时限量提转化，以价换量',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'multiDiscount', name: '多件优惠', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '满件满元合并下单优惠，提升客单价',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'gift', name: '赠品', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '下单即赠，满元满件赠，提升主品转化',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'singleReduce', name: '单品立减', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '支持SKU级设置，精准调整单品券后价',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'csCoupon', name: '客服专属优惠', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '客服向买家发送商品立减优惠，提升询单转化',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'pricePlan', name: '价格计划', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '官方调价工具，直接设置到手价自动配置优惠',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+  { id: 'matchBuy', name: '搭配购', category: '营销工具', source: '营销 > 营销工具',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '搭配组合销售，提升客单价',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+  },
+
+  // ===== 营销活动 =====
+  { id: 'taojinbi', name: '淘金币抵扣', category: '常驻活动', source: '营销 > 淘金币',
+    rules: {}, costType: 'free', effort: 'low',
+    effect: '淘金币频道曝光 + 搜索加权',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/taojinbi/'
+  },
+  { id: 'flashSale', name: '淘宝秒杀', category: '常驻活动', source: '营销 > 淘宝秒杀',
+    rules: { expScore: { min: 4.2 }, orders30d: { min: 10 } },
+    costType: 'free', effort: 'medium',
+    effect: '秒杀频道流量，适合测款引流',
+    howToImprove: '积累 10 单真实交易 + 体验分 ≥ 4.2 后解锁',
+    url: 'https://myseller.taobao.com/home.htm/ltao-home/'
+  },
+  { id: 'superReduce', name: '超级立减', category: '常驻活动', source: '营销 > 超级立减',
+    rules: {}, costType: 'free', effort: 'medium',
+    effect: '单品立减券，平台补贴部分金额',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/ttmjpt.htm',
+    note: '大促期间（如618）暂停，预计大促结束后恢复'
+  },
+  { id: 'dailyDeal', name: '天天特价', category: '常驻活动', source: '营销 > 活动报名',
+    rules: { expScore: { min: 4.2 }, orders30d: { min: 5 } },
+    costType: 'free', effort: 'medium',
+    effect: '日常特卖频道，门槛低，适合清库存或引流款',
+    howToImprove: '积累 5 单真实交易 + 体验分 ≥ 4.2 后解锁',
+    url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/homepage.htm'
+  },
+  { id: 'bybt', name: '百亿补贴', category: '常驻活动', source: '营销 > 百亿补贴',
+    rules: { expScore: { min: 4.5 }, orders30d: { min: 50 } },
+    costType: 'free', effort: 'high',
+    effect: '平台级补贴流量，需有价格竞争力',
+    howToImprove: '体验分 ≥ 4.5 且近30天 ≥ 50单后解锁。当前差距较大，先积累基础销量',
+    url: 'https://myseller.taobao.com/home.htm/qn-jhs-bybt-seller/bybt'
+  },
+  { id: 'brandNew', name: '品牌新享', category: '常驻活动', source: '营销 > 品牌新享',
+    rules: { storeLevel: { min: 'Lv.3' } },
+    costType: 'free', effort: 'medium',
+    effect: '品牌新品扶持流量，适合有品牌资质的店铺',
+    howToImprove: '提升店铺层级到 Lv.3 后解锁',
+    url: 'https://myseller.taobao.com/home.htm/qianniu-alimama-ppxx/'
+  },
+  { id: 'couponMarketing', name: '消费券', category: '常驻活动', source: '营销 > 消费券',
+    rules: {},
+    costType: 'free', effort: 'medium',
+    effect: '平台补贴消费券，提升大促转化',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/coupon_marketing/home'
+  },
+  { id: 'bidHot', name: '爆款竞价', category: '常驻活动', source: '营销 > 爆款竞价',
+    rules: { orders30d: { min: 100 } },
+    costType: 'free', effort: 'high',
+    effect: '爆款竞价排名，适合已有爆款的店铺',
+    howToImprove: '需近30天 ≥ 100单。当前差距很大，暂时不需要考虑',
+    url: 'https://myseller.taobao.com/home.htm/starb/bidding/sale/race/market?biddingCode=all'
+  },
+
+  // ===== 推广产品 =====
+  { id: 'keywordPromo', name: '关键词推广（原直通车）', category: '付费推广', source: '推广 > 关键词推广',
+    rules: {},
+    costType: 'paid', effort: 'high',
+    effect: '搜索广告位按点击付费，新手可 1 元抵 101 元试投',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/subway_new/'
+  },
+  { id: 'crowdPromo', name: '人群推广（原引力魔方）', category: '付费推广', source: '推广 > 人群推广',
+    rules: {},
+    costType: 'paid', effort: 'high',
+    effect: '推荐流广告按点击付费，适合主图视觉好的商品',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/display_new/'
+  },
+  { id: 'contentPromo', name: '内容推广', category: '付费推广', source: '推广 > 内容推广',
+    rules: {},
+    costType: 'paid', effort: 'high',
+    effect: '短视频+直播推广，需要内容制作能力',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
+  },
+  { id: 'allStorePromo', name: '货品全站推', category: '付费推广', source: '推广 > 货品全站推',
+    rules: {},
+    costType: 'paid', effort: 'medium',
+    effect: '全站流量智能投放，系统自动匹配',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/alltaopromotion/'
+  },
+  { id: 'tbUnion', name: '淘宝联盟（淘客）', category: '付费推广', source: '推广 > 淘宝联盟',
+    rules: {},
+    costType: 'paid', effort: 'low',
+    effect: '按成交付费 CPS，不成交不花钱',
+    howToImprove: null,
+    url: 'https://myseller.taobao.com/home.htm/union-adv/'
   }
 ];
 
 // ===== 推广状态管理 =====
 var PROMO_DEFAULT_STATUS = {
   freightInsurance: false, goldCoins: false, sevenDayReturn: false, fastRefund: false,
-  zhitongche: false, yinlimofang: false, wanxiangtai: false, taoke: false,
+  wanxiangtai: false, taoke: false,
   juhuasuan: false, tiantitemai: false,
   newProductGrowth: false, ifashion: false, flashSale: false,
-  jisutui: false, superLive: false, superShortVideo: false
+  superLive: false, superShortVideo: false
 };
 
 function loadPromoStatus() {
@@ -1339,7 +1463,7 @@ var ACTIVITY_TAG_TO_CHANNEL = {
   'ifashion': 'ifashion',
   '秒杀': 'flashSale',
   '淘宝秒杀': 'flashSale',
-  '极速推': 'jisutui',
+  '极速推': 'wanxiangtai',
   '直播': 'superLive',
   '超级直播': 'superLive',
   '短视频': 'superShortVideo'
@@ -1370,28 +1494,30 @@ function getPromoPlan() {
     var peerCov = peerCoverage[ch.id];
     unopened.push({
       channel: ch,
+      effectiveScore: ch.baseScore,
       peerPct: (peerCov && peerCov.count >= 3) ? peerCov.pct : null,
       peerCount: (peerCov && peerCov.count >= 3) ? peerCov.count : 0
     });
   });
 
-  unopened.sort(function(a, b) { return b.channel.baseScore - a.channel.baseScore; });
+  unopened.sort(function(a, b) { return b.effectiveScore - a.effectiveScore; });
 
-  // Hero: 免费 + 一键开通 + baseScore 最高的那个
+  // Hero: 低成本 + 低精力 + 最高分
   var hero = null;
   for (var i = 0; i < unopened.length; i++) {
-    if (unopened[i].channel.costLevel === 'low' && unopened[i].channel.baseScore >= 75) {
-      hero = unopened[i]; break;
+    var it = unopened[i];
+    if (it.channel.costLevel !== 'high' && it.channel.effortLevel === 'low' && it.effectiveScore >= 60) {
+      hero = it; break;
     }
   }
   if (!hero && unopened.length > 0) { hero = unopened[0]; }
 
-  // 分组（hero 从各分组中排除）
+  // 二维分组（hero 从各组排除）
   var quickWins = unopened.filter(function(item) {
-    return item !== hero && item.channel.costLevel === 'low' && item.channel.baseScore >= 70;
+    return item !== hero && item.channel.costLevel !== 'high' && item.channel.effortLevel === 'low';
   });
   var paid = unopened.filter(function(item) {
-    return item !== hero && item.channel.costLevel === 'medium';
+    return item !== hero && item.channel.costLevel !== 'high' && item.channel.effortLevel !== 'low';
   });
   var later = unopened.filter(function(item) {
     return item !== hero && item.channel.costLevel === 'high';
@@ -1436,6 +1562,12 @@ function renderPromotionTab() {
 
   _lastPromoRenderTs = peerData ? peerData.timestamp : 0;
 
+  // 首次使用：术语提示
+  var isFirstVisit = !localStorage.getItem('tb_promo_visited');
+  if (isFirstVisit) {
+    localStorage.setItem('tb_promo_visited', '1');
+  }
+
   // 综合状态条（简化）
   var myStatus = loadPromoStatus();
   var enabledCount = Object.values(myStatus).filter(Boolean).length;
@@ -1448,29 +1580,52 @@ function renderPromotionTab() {
     '还有 <strong>' + remaining + '</strong> 项可后续尝试。' +
     '</span>';
 
+  // 首次使用术语提示
+  if (isFirstVisit) {
+    $('promoJargonTip').style.display = '';
+    $('promoJargonTip').innerHTML =
+      '<div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.6;">' +
+        '<span style="font-size:18px;">📖</span>' +
+        '<span><strong>新手术语速查：</strong>' +
+        'CPC = 按点击付费（点一次扣一次钱）&nbsp;·&nbsp;' +
+        'CPS = 按成交付费（卖出才扣佣金）&nbsp;·&nbsp;' +
+        'CPM = 按千次曝光付费&nbsp;·&nbsp;' +
+        'CPV = 按观看付费&nbsp;·&nbsp;' +
+        'ROI = 投产比（赚的钱÷花的钱）&nbsp;·&nbsp;' +
+        'C店 = 淘宝个人店铺&nbsp;·&nbsp;' +
+        'DSR = 店铺动态评分（描述/服务/物流）' +
+        '</span>' +
+        '<button onclick="this.parentElement.parentElement.style.display=\'none\'" style="flex:0 0 auto;font-size:11px;padding:2px 8px;cursor:pointer;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);">✕ 关闭</button>' +
+      '</div>';
+  }
+
   // 英雄推荐卡片
   renderPromoHero(plan.hero);
 
   // 三类分组
-  renderPromoSection('quickWins', plan.quickWins, '开了就有用，全部免费', true);
-  renderPromoSection('paid', plan.paid, '花点小钱，加速增长', true);
+  renderPromoSection('quickWins', plan.quickWins, '开了就有用，全部免费', !isFirstVisit || true);  // quickWins 始终展开
+  renderPromoSection('paid', plan.paid, '花点小钱，加速增长', !isFirstVisit);  // 首次访问折叠 paid
   renderPromoSection('later', plan.later, '需要资质或预算充足再试', false);
 
   // 同行对标（仅在数据充足时显示）
   renderPromoPeerCard();
 
-  renderPromoDetail();
+  renderPromoDetail(plan);
 }
 
 function renderPromoHero(item) {
   var ch = item.channel;
   var peerTag = item.peerPct !== null
-    ? '<span class="promo-why-tag peer">同行 ' + item.peerPct + '% 已开通</span> '
-    : '<span class="promo-why-tag knowledge">行业经验推荐</span> ';
+    ? '<span class="promo-why-tag peer" title="基于竞品分析 Tab 的搜索结果，' + item.peerCount + ' 个同行开通了此渠道">同行 ' + item.peerPct + '% 已开通</span> '
+    : '<span class="promo-why-tag knowledge" title="基于淘宝运营行业经验，非实时数据">行业经验推荐</span> ';
 
   var checkAfterHtml = ch.checkAfter
     ? '<div class="hero-checkafter">📊 ' + escHtml(ch.checkAfter) + '</div>'
     : '';
+
+  var actionBtn = ch.directUrl
+    ? '<a class="btn btn-primary btn-sm" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-left:8px;white-space:nowrap;">在网页版打开 →</a>'
+    : '<button class="btn btn-outline btn-sm" onclick="goToDetail(\'' + ch.id + '\')" style="margin-left:8px;white-space:nowrap;">查看开通步骤 ↓</button>';
 
   $('promoHeroCard').style.display = '';
   $('promoHeroCard').innerHTML =
@@ -1481,8 +1636,9 @@ function renderPromoHero(item) {
       '<div class="hero-cost">💰 ' + escHtml(ch.costDesc) + ' · 📋 ' + escHtml(ch.threshold) + '</div>' +
       '<div class="hero-effort">⏱ 精力投入：' + ({ low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' }[ch.effortLevel] || ch.effortLevel) + '</div>' +
       checkAfterHtml +
-      '<div class="hero-action">' +
+      '<div class="hero-action" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">' +
         '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
+        actionBtn +
       '</div>' +
     '</div>';
 }
@@ -1506,12 +1662,19 @@ function renderPromoSection(section, items, title, defaultOpen) {
   items.forEach(function(item) {
     var ch = item.channel;
     var peerTag = item.peerPct !== null
-      ? '<span class="promo-why-tag peer">同行 ' + item.peerPct + '%</span> '
+      ? '<span class="promo-why-tag peer" title="基于竞品数据，' + item.peerCount + ' 个同行已开通">同行 ' + item.peerPct + '%</span> '
       : '';
-    html += '<div class="section-item">' +
-      '<span class="section-item-name">' + peerTag + escHtml(ch.name) + '</span>' +
-      '<span class="section-item-desc">' + escHtml(ch.effectDesc) + '</span>' +
-      '<span class="section-item-cost">' + escHtml(ch.costDesc) + '</span>' +
+    var btnHint = ch.directUrl
+      ? '<span style="font-size:9px;color:var(--text-muted);" title="跳转网页版卖家中心，需登录淘宝账号">需登录</span>'
+      : '<span style="font-size:9px;color:var(--text-muted);" title="此功能无网页版入口，需截图后在千牛中按路径操作">无网页版</span>';
+    var actionBtn = ch.directUrl
+      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="white-space:nowrap;text-decoration:none;">打开</a>'
+      : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="white-space:nowrap;">截图定位</button>';
+    html += '<div class="section-item" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+      '<span class="section-item-name" style="flex:0 0 auto;">' + peerTag + escHtml(ch.name) + '</span>' +
+      '<span class="section-item-desc" style="flex:1;min-width:200px;">' + escHtml(ch.effectDesc) + '</span>' +
+      '<span class="section-item-cost" style="flex:0 0 auto;font-size:10px;color:var(--text-muted);">' + escHtml(ch.costDesc) + '</span>' +
+      '<span style="display:flex;align-items:center;gap:4px;">' + btnHint + actionBtn + '</span>' +
     '</div>';
   });
   $(listId).innerHTML = html;
@@ -1559,18 +1722,34 @@ function renderPromoPeerCard() {
   $('promoPeerContent').innerHTML = html;
 }
 
-function renderPromoDetail() {
+function renderPromoDetail(plan) {
+  var myStatus = loadPromoStatus();
   var html = '';
+
+  // 按推荐顺序排列待展示渠道（hero → quickWins → paid → later）
+  var ordered = [];
+  if (plan) {
+    if (plan.hero && !myStatus[plan.hero.channel.id]) ordered.push(plan.hero.channel);
+    (plan.quickWins || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
+    (plan.paid || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
+    (plan.later || []).forEach(function(it) { if (!myStatus[it.channel.id]) ordered.push(it.channel); });
+  } else {
+    // fallback: 数组原始顺序
+    CHANNEL_KNOWLEDGE.forEach(function(ch) { if (!myStatus[ch.id]) ordered.push(ch); });
+  }
   var effortLabels = { low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' };
   var effortColors = { low: 'var(--green)', medium: 'var(--amber)', high: 'var(--red)' };
+  var count = 0;
 
-  CHANNEL_KNOWLEDGE.forEach(function(ch) {
+  ordered.forEach(function(ch) {
+    count++;
+
     var effortLabel = effortLabels[ch.effortLevel] || ch.effortLevel;
     var effortColor = effortColors[ch.effortLevel] || 'var(--text-muted)';
 
     var actionHtml = ch.directUrl
-      ? '<a class="btn btn-outline btn-sm" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;">在千牛打开</a>'
-      : '<button class="btn btn-outline btn-sm" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">截图辅助定位</button>';
+      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;text-decoration:none;">在网页版打开</a>'
+      : '<button class="btn-xs btn-xs-outline" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">📸 截图辅助定位</button>';
 
     var checkAfterHtml = ch.checkAfter
       ? '<br><strong>效果验证：</strong>' + escHtml(ch.checkAfter)
@@ -1578,14 +1757,20 @@ function renderPromoDetail() {
 
     var stepsHtml = escHtml(ch.detailedSteps).replace(/\n/g, '<br>');
 
-    html += '<div class="a-card" style="margin-bottom:10px;">' +
+    // 付费渠道加月度费用示例
+    var costNote = '';
+    if (ch.costLevel !== 'low') {
+      costNote = ' <span style="font-size:10px;color:var(--amber);">（新手参考：日预算即使只设 30 元/天，月支出也需 900 元。建议优先试免费渠道。）</span>';
+    }
+
+    html += '<div class="a-card" style="margin-bottom:10px;" id="detail-' + ch.id + '">' +
       '<div class="a-card-hd"><h4>' + escHtml(ch.name) + ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">' + escHtml(ch.type) + '</span></h4></div>' +
       '<div class="a-card-bd">' +
         '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
         '<strong>适合谁：</strong>' + escHtml(ch.suitableFor) + '<br>' +
         '<strong>不适合：</strong>' + escHtml(ch.notSuitableFor) + '<br>' +
         '<strong>操作步骤：</strong><br>' + stepsHtml + '<br>' +
-        '<strong>费用：</strong>' + escHtml(ch.costDesc) + '<br>' +
+        '<strong>费用：</strong>' + escHtml(ch.costDesc) + costNote + '<br>' +
         '<strong>门槛：</strong>' + escHtml(ch.threshold) + '<br>' +
         '<strong>精力投入：</strong><span style="color:' + effortColor + ';font-weight:600;">' + effortLabel + '</span>' +
         checkAfterHtml +
@@ -1593,7 +1778,34 @@ function renderPromoDetail() {
       '</div>' +
     '</div>';
   });
+
+  if (count === 0) {
+    html = '<p style="color:var(--text-muted);padding:12px;">所有渠道已开通，暂无待查看详情。</p>';
+  }
+
   $('promoDetailContent').innerHTML = html;
+  $('promoDetailToggleLabel').textContent = ' 未开通渠道详情 (' + count + ' 项)';
+}
+
+function goToDetail(channelId) {
+  var content = $('promoDetailContent');
+  var toggle = $('promoDetailToggle');
+  // 确保详情区域展开
+  if (!content.classList.contains('open')) {
+    content.classList.add('open');
+    toggle.classList.add('open');
+  }
+  // 滚动到详情区域
+  $('promoDetailToggle').scrollIntoView({ behavior: 'smooth' });
+  // 高亮对应渠道卡片
+  setTimeout(function() {
+    var card = document.getElementById('detail-' + channelId);
+    if (card) {
+      card.style.boxShadow = '0 0 0 3px var(--brand)';
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function() { card.style.boxShadow = ''; }, 2000);
+    }
+  }, 300);
 }
 
 function togglePromoDetail() {
