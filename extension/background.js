@@ -85,6 +85,27 @@ async function runPipeline(productUrl, requestingTabId) {
   }).catch(function() {}); // 主页面可能已关闭
 }
 
+async function scanQianniuStore(requestingTabId) {
+  var tab = await chrome.tabs.create({ url: 'https://myseller.taobao.com/home.htm', active: false });
+  var tabId = tab.id;
+  try {
+    await waitForTabLoad(tabId);
+    await sleep(4000);
+    var resp = await chrome.tabs.sendMessage(tabId, { action: 'autoExtract', mode: 'qianniu' });
+    if (!resp || !resp.store) {
+      throw new Error('千牛店铺数据提取失败');
+    }
+    chrome.tabs.sendMessage(requestingTabId, { action: 'qianniuData', data: resp })
+      .catch(function() {});
+  } catch (err) {
+    chrome.tabs.sendMessage(requestingTabId, {
+      action: 'qianniuError', error: err.message || '千牛扫描失败'
+    }).catch(function() {});
+  } finally {
+    chrome.tabs.remove(tabId).catch(function() {});
+  }
+}
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.action === 'searchCompetitors') {
     var productUrl = message.productUrl;
@@ -99,5 +120,14 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       }).catch(function() {});
     });
     return true; // 保持异步通道
+  }
+  if (message.action === 'scanQianniu') {
+    scanQianniuStore(sender.tab.id).catch(function(err) {
+      chrome.tabs.sendMessage(sender.tab.id, {
+        action: 'qianniuError',
+        error: err.message || '千牛扫描失败'
+      }).catch(function() {});
+    });
+    return true;
   }
 });

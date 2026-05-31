@@ -810,6 +810,7 @@ body {
 .af-tag-campaign { background: #fce8e6; color: #c5221f; }
 .af-tag-paid { background: #fef7e0; color: #ea8600; }
 .af-activity-effect { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.af-activity-reason { font-size: 11px; color: var(--text); margin-bottom: 6px; background: #f0f7ff; padding: 6px 8px; border-radius: 4px; border-left: 3px solid var(--brand); }
 .af-activity-rules { font-size: 11px; line-height: 1.7; margin-bottom: 6px; }
 .af-rule-pass { color: var(--green); }
 .af-rule-fail { color: var(--red); }
@@ -1457,37 +1458,37 @@ var ACTIVITY_RULES = [
 
   // ===== 推广产品 =====
   { id: 'keywordPromo', name: '关键词推广（原直通车）', category: '付费推广', source: '推广 > 关键词推广',
-    rules: {},
-    costType: 'paid', effort: 'high',
-    effect: '搜索广告位按点击付费，新手可 1 元抵 101 元试投',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥30 起 = 月支出约 ¥900+',
+    effect: '搜索广告位按点击付费，精准触达正在搜索你类目的买家',
+    reason: '买家搜"演出服"时你的商品出现在第一位，是获取精准流量最直接的方式。适合主推利润较高的款式。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/subway_new/'
   },
   { id: 'crowdPromo', name: '人群推广（原引力魔方）', category: '付费推广', source: '推广 > 人群推广',
-    rules: {},
-    costType: 'paid', effort: 'high',
-    effect: '推荐流广告按点击付费，适合主图视觉好的商品',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    effect: '推荐流广告（猜你喜欢），适合视觉效果好、有点击欲望的商品',
+    reason: '买家浏览其他商品时被动看到你的商品，适合有清晰主图和上身效果图的款式。和关键词推广配合效果更佳。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/display_new/'
   },
   { id: 'contentPromo', name: '内容推广', category: '付费推广', source: '推广 > 内容推广',
-    rules: {},
-    costType: 'paid', effort: 'high',
-    effect: '短视频+直播推广，需要内容制作能力',
+    rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    effect: '短视频+直播推广，展示演出服穿着效果和定制细节',
+    reason: '演出服上身效果和细节展示力远超图文，一条优质视频持续带来流量。需要拍摄和剪辑能力。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
   },
   { id: 'allStorePromo', name: '货品全站推', category: '付费推广', source: '推广 > 货品全站推',
-    rules: {},
-    costType: 'paid', effort: 'medium',
-    effect: '全站流量智能投放，系统自动匹配',
+    rules: {}, costType: 'paid', effort: 'medium', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+',
+    effect: '全站流量智能投放，系统自动匹配搜索+推荐+内容渠道',
+    reason: '不想分别管理多个推广工具的懒人方案。系统自动在各渠道分配预算，省心但可控性较低。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/alltaopromotion/'
   },
   { id: 'tbUnion', name: '淘宝联盟（淘客）', category: '付费推广', source: '推广 > 淘宝联盟',
-    rules: {},
-    costType: 'paid', effort: 'low',
-    effect: '按成交付费 CPS，不成交不花钱',
+    rules: {}, costType: 'paid', effort: 'low', monthlyCost: '按成交抽佣 5%~10%，不成交不花钱',
+    effect: '按成交付费，有人帮你推广，卖出才给佣金',
+    reason: '风险最低的付费方式——不成交不花钱。适合先试水，设定 5% 佣金起步，有人推就有成交。',
     howToImprove: null,
     url: 'https://myseller.taobao.com/home.htm/union-adv/'
   }
@@ -3055,6 +3056,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.data && e.data.type === 'tb-competitor-progress') {
       handleAutoProgress(e.data.step);
     }
+    if (e.data && e.data.type === 'tb-qianniu-data') {
+      handleQianniuData(e.data.data);
+    }
+    if (e.data && e.data.type === 'tb-qianniu-error') {
+      handleQianniuError(e.data.error);
+    }
   });
 
   // 初始化默认排除词
@@ -3187,13 +3194,21 @@ function renderAfResults() {
   var groups = { eligible: [], almost: [], ineligible: [], paused: [] };
   matched.forEach(function(m) { groups[m.group].push(m); });
 
+  // 计算付费渠道月度预算
+  var paidEligible = groups.eligible.filter(function(m) { return m.rule.costType === 'paid'; });
+  var paidBudget = paidEligible.length;
+
   $('afSummary').innerHTML =
     '<span style="font-size:13px;color:var(--text-muted);">' +
     '共 <strong>' + matched.length + '</strong> 项 · ' +
-    '可参加 <strong style="color:var(--green);">' + groups.eligible.length + '</strong> 项 · ' +
-    '差一步 <strong style="color:var(--amber);">' + groups.almost.length + '</strong> 项 · ' +
+    '可参加 <strong style="color:var(--green);">' + groups.eligible.length + '</strong> 项' +
+    (paidBudget > 0 ? '（其中 <strong style="color:var(--red);">' + paidBudget + ' 项付费</strong>）' : '') +
+    ' · 差一步 <strong style="color:var(--amber);">' + groups.almost.length + '</strong> 项 · ' +
     '数据更新于 ' + (data.scannedAt ? data.scannedAt.slice(0, 16).replace('T', ' ') : '未知') +
-    '</span>';
+    '</span>' +
+    (paidBudget > 0
+      ? '<br><span style="font-size:11px;color:var(--amber);">💡 付费渠道多了预算会叠加。建议先选 1 个免费工具试效果，确认有回报后再加付费。</span>'
+      : '');
 
   renderAfGroup('eligible', groups.eligible, 'afGroupEligible', 'afListEligible', 'afGroupEligibleCnt', true);
   renderAfGroup('almost', groups.almost, 'afGroupAlmost', 'afListAlmost', 'afGroupAlmostCnt', true);
@@ -3244,6 +3259,12 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
       ? '<div class="af-activity-improve">💡 ' + escHtml(r.howToImprove) + '</div>'
       : '';
 
+    var reasonHtml = r.reason
+      ? '<div class="af-activity-reason">💬 ' + escHtml(r.reason) + '</div>'
+      : '';
+    var costHtml = r.monthlyCost
+      ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
+      : '';
     var actionHtml = r.url
       ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;">去参加 →</a>'
       : '';
@@ -3254,7 +3275,8 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
         ' <span class="af-activity-tag ' + tagClass + '">' + escHtml(tagText) + '</span>' +
       '</div>' +
       '<div class="af-activity-effect">' + escHtml(r.effect) + '</div>' +
-      '<div class="af-activity-rules">' + rulesHtml + '</div>' +
+      reasonHtml +
+      '<div class="af-activity-rules">' + rulesHtml + ' ' + costHtml + '</div>' +
       improveHtml +
       '<div class="af-activity-action">' + actionHtml + '</div>' +
     '</div>';
@@ -3293,20 +3315,42 @@ function applyAfFilter() {
   });
 }
 
+function runQianniuScan() {
+  $('afScanStatus').style.display = '';
+  $('afScanStatus').style.background = '#fef5e7';
+  $('afScanStatus').innerHTML = '正在通过浏览器扩展扫描千牛后台，请稍候（约 10 秒）...';
+  window.postMessage({ type: 'tb-qianniu-scan' }, '*');
+}
+
+function handleQianniuData(data) {
+  saveAfData(data);
+  $('afScanStatus').style.display = 'none';
+  renderAfResults();
+}
+
+function handleQianniuError(err) {
+  $('afScanStatus').style.background = '#fce8e6';
+  $('afScanStatus').innerHTML =
+    '<span style="color:var(--red);">自动扫描失败: ' + err + '</span><br>' +
+    '<span style="font-size:10px;">请确认扩展已安装并开启「允许访问文件网址」<br>或使用手动方式：拖入 scan-qianniu.json 文件</span>';
+}
+
 function scanStore() {
   $('afScanStatus').style.display = '';
   $('afScanStatus').style.background = '#e8f0fe';
   $('afScanStatus').innerHTML =
-    '<strong>方式一（推荐）：拖入 JSON 文件</strong><br>' +
+    '<strong>方式一（推荐）：一键自动扫描</strong><br>' +
+    '<button class="btn btn-primary btn-sm" onclick="runQianniuScan()" style="margin-top:4px;">🔍 一键获取店铺数据</button>' +
+    '<span style="font-size:10px;color:var(--text-muted);display:block;margin-top:4px;">通过浏览器扩展自动读取千牛后台店铺状态</span>' +
+    '<hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">' +
+    '<strong>方式二：拖入 JSON 文件</strong><br>' +
     '<div id="afDropZone" style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;margin:8px 0;cursor:pointer;transition:border-color 0.2s;"' +
     ' ondrop="handleAfDrop(event)" ondragover="handleAfDragOver(event)" ondragleave="handleAfDragLeave(event)" onclick="document.getElementById(\'afFileInput\').click()">' +
     '<span style="font-size:24px;">📂</span><br>' +
     '<span style="font-size:12px;color:var(--text-muted);">将 scan-qianniu.json 拖到这里<br>或点击选择文件</span>' +
     '<input type="file" id="afFileInput" accept=".json" onchange="handleAfFile(event)" style="display:none;">' +
     '</div>' +
-    '<strong>方式二：终端扫描</strong><br>' +
-    '<code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;font-size:11px;">node scan-qianniu.js</code><br>' +
-    '<span style="font-size:10px;color:var(--text-muted);">然后拖入生成的 scan-qianniu.json 文件</span>';
+    '<span style="font-size:10px;color:var(--text-muted);">或终端运行: node scan-qianniu.js</span>';
 }
 
 function handleAfDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.background = '#e8f0fe'; }

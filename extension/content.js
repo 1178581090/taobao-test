@@ -728,14 +728,73 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true;
   }
 
+  if (message.action === 'autoExtract' && message.mode === 'qianniu') {
+    var body = (document.body || document.documentElement).textContent;
+
+    function extract(pattern) {
+      var m = body.match(pattern);
+      return m ? m[1].trim() : '';
+    }
+
+    var store = {
+      level: extract(/店铺成长层级\s*(Lv\.?\d+)/) || extract(/成长层级\s*(Lv\.?\d+)/),
+      expScore: extract(/真实体验分\s*(\d+[\.\d]*)/) || extract(/体验分\s*(\d+[\.\d]*)/),
+      deposit: extract(/保证金\s*(.{1,20}?)缴纳/) || extract(/保证金\s*(无需缴纳|已缴|未缴)/),
+      violations: extract(/违规\s*(\d+)/),
+      creditLevel: extract(/信用等级\s*(.{1,20}?)店铺保证金/) || extract(/信用等级\s*(.{1,10})/),
+    };
+
+    function panelNum(pattern) {
+      var m = body.match(pattern);
+      return m ? (parseInt(m[1]) || 0) : 0;
+    }
+    store.orders30d = panelNum(/支付子订单数\s*(\d+)/);
+    store.visitors = panelNum(/访客数\s*(\d+)/);
+    store.lastPayment = panelNum(/支付金额\s*(\d+)/);
+
+    // 活动列表（从链接提取）
+    var activities = [];
+    var seen = new Set();
+    var kw = ['活动', '报名', '促销', '大促', '折扣', '补贴', '秒杀', '立减', '狂欢', '特卖', '特价', '淘金币', '品牌新享', '消费券'];
+    document.querySelectorAll('a').forEach(function(a) {
+      var t = a.textContent.trim();
+      if (t.length < 2 || t.length > 80) return;
+      if (!kw.some(function(k) { return t.indexOf(k) >= 0; })) return;
+      var key = t.slice(0, 20);
+      if (seen.has(key)) return;
+      seen.add(key);
+      activities.push({ name: t, url: a.href });
+    });
+
+    sendResponse({
+      scannedAt: new Date().toISOString(),
+      store: store,
+      activities: activities
+    });
+    return true;
+  }
+
   // —— 主页面：收到结果后转发给页面 JS ——
-  if (message.action === 'searchResults' || message.action === 'searchError' || message.action === 'searchProgress') {
-    var eventType = message.action === 'searchResults' ? 'tb-competitor-result'
-      : message.action === 'searchError' ? 'tb-competitor-error'
-      : 'tb-competitor-progress';
-    var payload = message.action === 'searchResults' ? message.data
-      : message.action === 'searchError' ? message.error
-      : message.step;
+  if (message.action === 'searchResults' || message.action === 'searchError' || message.action === 'searchProgress' ||
+      message.action === 'qianniuData' || message.action === 'qianniuError') {
+    var eventType;
+    var payload;
+    if (message.action === 'qianniuData') {
+      eventType = 'tb-qianniu-data';
+      payload = message.data;
+    } else if (message.action === 'qianniuError') {
+      eventType = 'tb-qianniu-error';
+      payload = message.error;
+    } else if (message.action === 'searchResults') {
+      eventType = 'tb-competitor-result';
+      payload = message.data;
+    } else if (message.action === 'searchError') {
+      eventType = 'tb-competitor-error';
+      payload = message.error;
+    } else {
+      eventType = 'tb-competitor-progress';
+      payload = message.step;
+    }
     window.postMessage({ type: eventType, data: payload, error: message.error, step: message.step }, '*');
   }
 });
@@ -750,6 +809,9 @@ function setupMainPageRelay() {
         action: 'searchCompetitors',
         productUrl: e.data.productUrl
       });
+    }
+    if (e.data && e.data.type === 'tb-qianniu-scan') {
+      chrome.runtime.sendMessage({ action: 'scanQianniu' });
     }
   });
 }
