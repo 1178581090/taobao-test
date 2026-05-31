@@ -3479,13 +3479,30 @@ function openWithSteps(url, name, ruleId) {
   if (stepsEl) stepsEl.style.display = 'block';
   var stepsHtml = stepsEl ? stepsEl.innerHTML : '';
 
-  // 通过扩展打开两个标签页：千牛页面 + 步骤页面
+  // 显示加载提示
+  showStepToast('正在打开 ' + name + '，面板即将出现在千牛页面右侧...');
+
+  // 通过扩展打开千牛页面并注入面板
   window.postMessage({
     type: 'tb-open-with-steps',
     url: url,
     name: name,
     steps: stepsHtml
   }, '*');
+}
+
+function showStepToast(msg) {
+  var toast = document.getElementById('stepToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'stepToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 24px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() { toast.style.opacity = '0'; }, 4000);
 }
 </script>
 </body>
