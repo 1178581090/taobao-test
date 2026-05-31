@@ -613,6 +613,12 @@ body {
   color: var(--text);
   font-weight: 500;
 }
+.promo-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
 
 .promo-action-item {
   display: grid;
@@ -728,16 +734,7 @@ body {
   <div class="setup-panel">
     <div class="setup-section-title">搜索设置</div>
 
-    <div class="setup-mode-row" id="searchModeRow">
-      <button class="setup-mode-btn active" data-mode="keyword">关键词搜索</button>
-      <button class="setup-mode-btn" data-mode="product">商品链接搜索 <span style="font-size:10px;opacity:.6;">更精准</span></button>
-    </div>
-
-    <div id="inputGroupKeyword">
-      <label class="field-label">搜索关键词</label>
-      <input class="field-input" id="compKeyword" placeholder="如：古装演出服 定制">
-    </div>
-    <div id="inputGroupProduct" style="display:none;">
+    <div id="inputGroupProduct">
       <label class="field-label">我的商品链接</label>
       <input class="field-input" id="compProductUrl" placeholder="粘贴你自己的淘宝/天猫商品链接...">
     </div>
@@ -745,14 +742,13 @@ body {
     <div>
       <label class="field-label">我的成本（¥）<span style="color:var(--text-muted);font-weight:400;">选填</span></label>
       <input class="field-input" id="compMyCost" type="number" placeholder="用于利润测算">
+      <span id="costFeedback" style="display:none;font-size:11px;color:var(--green);margin-top:2px;"></span>
     </div>
 
-    <button class="btn btn-primary" id="btnCompSearch" style="width:100%;">搜索分析</button>
-
     <!-- 数据筛选 -->
-    <div class="card" id="compFilters" style="display:none;">
+    <div class="card" id="compFilters">
       <div class="card-header">
-        <h3><span class="card-dot"></span>数据筛选</h3>
+        <h3><span class="card-dot"></span>筛选条件</h3>
         <span style="font-size:12px;color:var(--text-muted);" id="filterSummary"></span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -773,28 +769,17 @@ body {
           <input id="filterExclude" type="text" placeholder="多个词用逗号分隔" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
         </div>
         <div>
-          <button class="btn btn-primary" onclick="reanalyzeWithFilters()" style="white-space:nowrap;">重新分析</button>
+          <button class="btn btn-primary" onclick="reanalyzeWithFilters()" style="white-space:nowrap;">应用筛选</button>
         </div>
       </div>
       <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">
-        已预设排除词：饰品,头饰,配件,道具,玩具,发饰,簪子,手链,项链,耳环,发绳,发夹,头花,假发 — 可按需增删
+        演出服类目常见干扰品类（饰品、玩具等），已预设排除。若你的商品涉及这些词请自行删除。
       </div>
     </div>
 
+    <button class="btn btn-primary" id="btnCompSearch" style="width:100%;margin-top:6px;">分析竞品</button>
 
-
-    <div class="data-source-guide" id="searchHint">
-      <div class="data-source-title">📋 如何获取竞品数据？</div>
-      <div class="data-source-steps">
-        <div class="data-source-step"><span class="data-source-num">1</span> 复制上面的搜索关键词</div>
-        <div class="data-source-step"><span class="data-source-num">2</span> 打开 <a href="https://s.taobao.com" target="_blank" style="color:var(--brand);">s.taobao.com</a>，粘贴关键词搜索</div>
-        <div class="data-source-step"><span class="data-source-num">3</span> 等待页面加载，页顶出现橙色操作条</div>
-        <div class="data-source-step"><span class="data-source-num">4</span> 点击橙色条中的 <strong>「复制到剪贴板」</strong></div>
-        <div class="data-source-step"><span class="data-source-num">5</span> 回到本页，在下方粘贴区 <strong>Ctrl+V</strong> 粘贴 JSON</div>
-        <div class="data-source-step"><span class="data-source-num">6</span> 点击 <strong>「分析数据」</strong> 查看结果</div>
-      </div>
-      <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">💡 如果页顶没有橙色条，说明浏览器扩展未安装。前往 <code>extension/</code> 目录加载扩展。</div>
-    </div>
+    <div class="data-source-guide" id="searchHint" style="display:none;"></div>
   </div>
 
   <!-- 右侧结果面板 -->
@@ -804,22 +789,16 @@ body {
     <div class="empty-state" id="emptyState">
       <div class="empty-icon">🔍</div>
       <div class="empty-title">开始你的竞品分析</div>
-      <div class="empty-desc">在左侧输入搜索关键词或粘贴商品链接，点击搜索按钮即可开始</div>
-    </div>
-
-    <!-- 粘贴数据卡片 -->
-    <div class="card" id="compPasteCard" style="display:none;">
-      <div class="card-header"><h3><span class="card-dot"></span>粘贴数据</h3></div>
-      <textarea id="compPasteArea" class="paste-area" placeholder="在淘宝搜索页点击「复制到剪贴板」后，回到这里按 Ctrl+V 粘贴 JSON 数据..."></textarea>
-      <div style="margin-top:8px;display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="readFromPaste()">分析数据</button>
-        <button class="btn btn-secondary" onclick="readFromClipboard()">自动读取剪贴板</button>
-      </div>
+      <div class="empty-desc">粘贴你的淘宝/天猫商品链接，点击「分析竞品」即可自动搜索同类商品并分析</div>
     </div>
 
     <!-- 加载中 -->
     <div class="card" id="compLoading" style="display:none;">
-      <div class="loading"><div class="spinner"></div><div>正在分析数据...</div></div>
+      <div class="loading">
+        <div class="spinner"></div>
+        <div id="compLoadingText">正在读取商品信息...</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;" id="compLoadingStep">步骤 1/3</div>
+      </div>
     </div>
 
     <!-- 分析结果 -->
@@ -917,28 +896,34 @@ body {
       <span class="field-label">服务工具</span>
     </div>
     <div id="promoCheckTools">
-      <label class="promo-check"><input type="checkbox" data-id="freightInsurance" onchange="savePromoStatus()"> 运费险</label>
-      <label class="promo-check"><input type="checkbox" data-id="goldCoins" onchange="savePromoStatus()"> 淘金币</label>
-      <label class="promo-check"><input type="checkbox" data-id="sevenDayReturn" onchange="savePromoStatus()"> 7天无理由</label>
-      <label class="promo-check"><input type="checkbox" data-id="fastRefund" onchange="savePromoStatus()"> 极速退款</label>
+      <label class="promo-check"><input type="checkbox" data-id="freightInsurance" onchange="savePromoStatus()"> 运费险 <span class="promo-hint">免费开通·按单收1-2%</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="goldCoins" onchange="savePromoStatus()"> 淘金币 <span class="promo-hint">免费开通·搜索加权</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="sevenDayReturn" onchange="savePromoStatus()"> 7天无理由 <span class="promo-hint">免费开通·退货保障</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="fastRefund" onchange="savePromoStatus()"> 极速退款 <span class="promo-hint">免费开通·提升信任</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="newProductGrowth" onchange="savePromoStatus()"> 新品成长 <span class="promo-hint">免费·新品专属流量</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="ifashion" onchange="savePromoStatus()"> iFashion <span class="promo-hint">免费入驻·时尚标签流量</span></label>
     </div>
 
     <div style="margin-top:12px;margin-bottom:4px;">
       <span class="field-label">付费推广</span>
     </div>
     <div id="promoCheckPaid">
-      <label class="promo-check"><input type="checkbox" data-id="zhitongche" onchange="savePromoStatus()"> 直通车</label>
-      <label class="promo-check"><input type="checkbox" data-id="yinlimofang" onchange="savePromoStatus()"> 引力魔方</label>
-      <label class="promo-check"><input type="checkbox" data-id="wanxiangtai" onchange="savePromoStatus()"> 万相台</label>
-      <label class="promo-check"><input type="checkbox" data-id="taoke" onchange="savePromoStatus()"> 淘客</label>
+      <label class="promo-check"><input type="checkbox" data-id="zhitongche" onchange="savePromoStatus()"> 直通车 <span class="promo-hint">按点击付费·搜索广告位</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="yinlimofang" onchange="savePromoStatus()"> 引力魔方 <span class="promo-hint">按点击付费·推荐流广告</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="wanxiangtai" onchange="savePromoStatus()"> 万相台 <span class="promo-hint">按点击付费·全渠道智能投放</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="taoke" onchange="savePromoStatus()"> 淘客 <span class="promo-hint">按成交付费·CPS佣金</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="jisutui" onchange="savePromoStatus()"> 极速推 <span class="promo-hint">按曝光付费·新品测款</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="superLive" onchange="savePromoStatus()"> 超级直播 <span class="promo-hint">按观看付费·直播推广</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="superShortVideo" onchange="savePromoStatus()"> 超级短视频 <span class="promo-hint">按观看付费·短视频推广</span></label>
     </div>
 
     <div style="margin-top:12px;margin-bottom:4px;">
       <span class="field-label">平台活动</span>
     </div>
     <div id="promoCheckActivity">
-      <label class="promo-check"><input type="checkbox" data-id="juhuasuan" onchange="savePromoStatus()"> 聚划算</label>
-      <label class="promo-check"><input type="checkbox" data-id="tiantitemai" onchange="savePromoStatus()"> 天天特卖</label>
+      <label class="promo-check"><input type="checkbox" data-id="juhuasuan" onchange="savePromoStatus()"> 聚划算 <span class="promo-hint">免费报名·限时团购</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="tiantitemai" onchange="savePromoStatus()"> 天天特卖 <span class="promo-hint">免费报名·限时折扣</span></label>
+      <label class="promo-check"><input type="checkbox" data-id="flashSale" onchange="savePromoStatus()"> 淘宝秒杀 <span class="promo-hint">免费报名·限时秒杀</span></label>
     </div>
 
     <div style="margin-top:14px;">
@@ -1102,6 +1087,66 @@ var CHANNEL_KNOWLEDGE = [
     path: '千牛卖家中心 → 营销中心 → 活动报名 → 天天特卖 → 提交申请',
     effectDesc: '日常特卖活动，门槛低于聚划算，适合清库存或引流款。',
     searchWeight: '活动流量'
+  },
+  {
+    id: 'newProductGrowth', name: '新品成长', type: '平台工具',
+    baseScore: 78, costLevel: 'low',
+    costDesc: '免费，平台扶持新品获得初始曝光',
+    threshold: '商品上架 ≤90 天即可，无销量门槛',
+    path: '千牛卖家中心 → 营销中心 → 新品成长 → 选择新品 → 启动加速',
+    effectDesc: '平台为新品提供搜索和推荐位额外曝光，帮助新品快速度过冷启动期。演出服款型多、上新频繁，非常适合用新品成长推新款。',
+    searchWeight: '搜索加权 + 推荐流量',
+    checkAfter: '加速 7 天后在「生意参谋 → 商品」看新品访客数是否增长'
+  },
+  {
+    id: 'ifashion', name: 'iFashion', type: '行业渠道',
+    baseScore: 70, costLevel: 'low',
+    costDesc: '免费入驻（需审核），无额外费用',
+    threshold: '服饰类目店铺，商品有设计感或风格统一',
+    path: '千牛卖家中心 → 营销中心 → iFashion → 提交入驻申请',
+    effectDesc: '淘宝服饰行业官方频道，入驻后商品获得行业专属推荐位。演出服属于服饰类目，可获取精准的舞台装/演出服流量入口。',
+    searchWeight: '行业频道流量 + 精准人群曝光',
+    checkAfter: '入驻后在iFashion频道搜索类目关键词，确认商品已展示'
+  },
+  {
+    id: 'flashSale', name: '淘宝秒杀', type: '平台活动',
+    baseScore: 65, costLevel: 'medium',
+    costDesc: '需设置活动价（通常 7~9 折），无额外扣点',
+    threshold: '店铺评分 ≥4.4，商品有一定销量基础',
+    path: '千牛卖家中心 → 营销中心 → 活动报名 → 淘宝秒杀 → 提交商品',
+    effectDesc: '淘宝日常秒杀频道，门槛低于聚划算，适合测试商品价格竞争力。可设置部分基础款参加秒杀为店铺引流。',
+    searchWeight: '秒杀频道流量',
+    checkAfter: '活动期间关注商品访客数和转化率，评估引流效果'
+  },
+  {
+    id: 'jisutui', name: '极速推', type: '付费推广',
+    baseScore: 62, costLevel: 'medium',
+    costDesc: '按曝光付费（CPM），建议日预算 ¥30~100',
+    threshold: '需充值，最低 ¥100 起',
+    path: '千牛卖家中心 → 营销中心 → 极速推 → 选商品 → 设预算 → 一键推广',
+    effectDesc: '操作比直通车更简单，系统自动匹配人群，无需手动设关键词。适合新手快速获取曝光、推广新品或测款。',
+    searchWeight: '推荐位 + 搜索位曝光',
+    checkAfter: '推广 3 天后在「生意参谋 → 流量」看新增访客来源'
+  },
+  {
+    id: 'superLive', name: '超级直播', type: '付费推广',
+    baseScore: 45, costLevel: 'medium',
+    costDesc: '按观看付费（CPV）或按点击付费，日预算 ¥50~200',
+    threshold: '需开播 + 充值',
+    path: '千牛卖家中心 → 营销中心 → 超级直播 → 创建直播推广',
+    effectDesc: '为直播间引流，演出服上身效果和定制细节在直播中展示力强。直播能有效提升转化率，但需主播和时间投入。',
+    searchWeight: '直播频道 + 搜索直播卡曝光',
+    checkAfter: '推广后在直播数据看板查看引流效果和成交转化'
+  },
+  {
+    id: 'superShortVideo', name: '超级短视频', type: '付费推广',
+    baseScore: 42, costLevel: 'medium',
+    costDesc: '按观看付费（CPV），建议日预算 ¥30~100',
+    threshold: '需制作短视频 + 充值',
+    path: '千牛卖家中心 → 营销中心 → 超级短视频 → 选视频 → 设预算出价',
+    effectDesc: '为短视频引流，演出服的穿着效果、细节展示在短视频中表现力强。一条优质短视频可持续带来免费+付费流量。',
+    searchWeight: '短视频推荐流曝光',
+    checkAfter: '推广后在视频数据看板查看播放量和商品点击率'
   }
 ];
 
@@ -1109,7 +1154,9 @@ var CHANNEL_KNOWLEDGE = [
 var PROMO_DEFAULT_STATUS = {
   freightInsurance: false, goldCoins: false, sevenDayReturn: false, fastRefund: false,
   zhitongche: false, yinlimofang: false, wanxiangtai: false, taoke: false,
-  juhuasuan: false, tiantitemai: false
+  juhuasuan: false, tiantitemai: false,
+  newProductGrowth: false, ifashion: false, flashSale: false,
+  jisutui: false, superLive: false, superShortVideo: false
 };
 
 function loadPromoStatus() {
@@ -1154,7 +1201,16 @@ var ACTIVITY_TAG_TO_CHANNEL = {
   '7天退换': 'sevenDayReturn',
   '极速退款': 'fastRefund',
   '聚划算': 'juhuasuan',
-  '天天特卖': 'tiantitemai'
+  '天天特卖': 'tiantitemai',
+  '新品成长': 'newProductGrowth',
+  'iFashion': 'ifashion',
+  'ifashion': 'ifashion',
+  '秒杀': 'flashSale',
+  '淘宝秒杀': 'flashSale',
+  '极速推': 'jisutui',
+  '直播': 'superLive',
+  '超级直播': 'superLive',
+  '短视频': 'superShortVideo'
 };
 
 function getPeerCoverage(peerData) {
@@ -1322,7 +1378,7 @@ function renderPromoSection(section, items, title, defaultOpen) {
       : '';
     html += '<div class="section-item">' +
       '<span class="section-item-name">' + peerTag + escHtml(ch.name) + '</span>' +
-      '<span class="section-item-desc">' + escHtml(ch.effectDesc).substring(0, 40) + '…</span>' +
+      '<span class="section-item-desc">' + escHtml(ch.effectDesc) + '</span>' +
       '<span class="section-item-cost">' + escHtml(ch.costDesc) + '</span>' +
       '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入清单</button>' +
     '</div>';
@@ -1420,79 +1476,98 @@ function addToChecklist(channelId) {
 }
 
 // ===== 搜索模式切换 =====
-document.getElementById('searchModeRow').addEventListener('click', function(e) {
-  var btn = e.target.closest('.setup-mode-btn');
-  if (!btn) return;
-  var mode = btn.dataset.mode;
-  this.querySelectorAll('.setup-mode-btn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  switchSearchMode(mode);
-});
-
-function switchSearchMode(mode) {
-  $('inputGroupKeyword').style.display = mode === 'keyword' ? '' : 'none';
-  $('inputGroupProduct').style.display = mode === 'product' ? '' : 'none';
-  var btn = $('btnCompSearch');
-  var hint = $('searchHint');
-  if (mode === 'product') {
-    btn.textContent = '打开商品页';
-    btn.onclick = startProductSearch;
-    hint.innerHTML = '点击后打开你的商品详情页 → 扩展自动识别标题、店铺、价格并拆解关键词 → 点击橙色条「搜索同类竞品」→ 搜索页中「复制到剪贴板」→ 回到本页粘贴分析<br><span style="color:#bbb;">用你商品的标题关键词去淘宝搜索同类商品，搜到的才是真正的竞品。</span>';
-  } else {
-    btn.textContent = '搜索分析';
-    btn.onclick = startCompeteSearch;
-    hint.innerHTML = '点击后打开淘宝搜索结果页 → 等待加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」';
-  }
-}
-
-// ===== 搜索触发 =====
-function startCompeteSearch() {
-  var keyword = $('compKeyword').value.trim();
-  if (!keyword) return alert('请输入搜索关键词');
-  $('compPasteCard').style.display = '';
-  hideResult();
-  $('compPasteArea').value = '';
-  $('compPasteArea').focus();
-  window.open('https://s.taobao.com/search?q=' + encodeURIComponent(keyword), '_blank');
-}
-
-function startProductSearch() {
-  var url = $('compProductUrl').value.trim();
-  if (!url) return alert('请粘贴淘宝商品链接');
-  if (!url.includes('item.taobao.com') && !url.includes('detail.tmall.com')) {
-    return alert('请输入有效的淘宝或天猫商品链接（item.taobao.com 或 detail.tmall.com）');
-  }
-  $('compPasteCard').style.display = '';
-  hideResult();
-  $('compPasteArea').value = '';
-  $('compPasteArea').focus();
-  window.open(url, '_blank');
-}
-
 function hideResult() {
   $('compResult').style.display = 'none';
   $('emptyState').style.display = 'none';
 }
 
-// ===== 粘贴读取 =====
-function readFromPaste() {
-  var raw = $('compPasteArea').value.trim();
-  if (!raw) return alert('请先在淘宝搜索页点击「复制到剪贴板」，然后回到这里粘贴 JSON 数据');
-  processData(raw);
+// ===== 自动化竞品分析 =====
+var _autoSearchTimeout = null;
+
+function startAutoAnalysis() {
+  var url = $('compProductUrl').value.trim();
+  if (!url) return alert('请输入淘宝商品链接');
+  if (!url.includes('item.taobao.com') && !url.includes('detail.tmall.com')) {
+    return alert('请输入有效的淘宝或天猫商品链接（item.taobao.com 或 detail.tmall.com）');
+  }
+
+  // 禁用按钮防重复点击
+  $('btnCompSearch').disabled = true;
+  $('btnCompSearch').textContent = '分析中...';
+
+  // 显示加载状态
+  hideResult();
+  $('emptyState').style.display = 'none';
+  $('costFeedback').style.display = 'none';
+  $('compLoading').style.display = '';
+  $('compLoadingText').textContent = '正在读取商品信息...';
+  $('compLoadingStep').textContent = '步骤 1/3';
+
+  // 向扩展发送请求
+  window.postMessage({ type: 'tb-competitor-search', productUrl: url }, '*');
+
+  // 超时检测：扩展未安装或未开启文件权限
+  _autoSearchTimeout = setTimeout(function() {
+    $('compLoading').style.display = 'none';
+    $('emptyState').style.display = '';
+    $('btnCompSearch').disabled = false;
+    $('btnCompSearch').textContent = '分析竞品';
+    alert(
+      '分析超时（10秒无响应）\n\n' +
+      '可能原因：\n' +
+      '1. 浏览器扩展未安装 → 在 chrome://extensions 开启开发者模式，加载 E:\\taobaoTest\\extension 目录\n' +
+      '2. 未开启文件访问权限 → 扩展卡片中开启「允许访问文件网址」\n' +
+      '3. 网络问题 → 检查是否能正常访问淘宝\n\n' +
+      '如已确认以上无误，请刷新页面后重试。'
+    );
+  }, 40000);
 }
 
-async function readFromClipboard() {
-  try {
-    var text = await navigator.clipboard.readText();
-    if (!text || text.length < 10) {
-      alert('剪贴板中没有有效数据，请先在淘宝搜索页点击「复制到剪贴板」');
-      return;
-    }
-    $('compPasteArea').value = text;
-    processData(text);
-  } catch (e) {
-    alert('无法读取剪贴板（file:// 协议限制）。请手动粘贴：在淘宝页复制后，回到这里按 Ctrl+V 粘贴，然后点击「分析数据」');
+function handleAutoResult(data) {
+  clearTimeout(_autoSearchTimeout);
+  $('compLoadingText').textContent = '正在分析数据...';
+  $('compLoadingStep').textContent = '步骤 3/3';
+
+  // 恢复按钮
+  $('btnCompSearch').disabled = false;
+  $('btnCompSearch').textContent = '分析竞品';
+
+  // 提取搜索关键词（从搜索 URL 中解析）
+  var searchQuery = '';
+  if (data.url) {
+    try {
+      var urlParams = new URL(data.url).searchParams;
+      searchQuery = urlParams.get('q') || '';
+    } catch (_) {}
   }
+
+  processData(JSON.stringify(data), searchQuery);
+}
+
+function handleAutoError(errorMsg) {
+  clearTimeout(_autoSearchTimeout);
+  $('compLoading').style.display = 'none';
+  $('emptyState').style.display = '';
+  $('costFeedback').style.display = 'none';
+  $('btnCompSearch').disabled = false;
+  $('btnCompSearch').textContent = '分析竞品';
+  alert('分析失败：' + errorMsg);
+}
+
+function handleAutoProgress(step) {
+  clearTimeout(_autoSearchTimeout);
+  if (step === 'search') {
+    $('compLoadingText').textContent = '正在搜索同类竞品...';
+    $('compLoadingStep').textContent = '步骤 2/3';
+  }
+  // 重置超时
+  _autoSearchTimeout = setTimeout(function() {
+    $('compLoading').style.display = 'none';
+    $('emptyState').style.display = '';
+    $('btnCompSearch').disabled = false;
+    $('btnCompSearch').textContent = '分析竞品';
+    alert('分析超时，请检查网络后重试');
+  }, 70000);
 }
 
 // ===== 数据筛选 =====
@@ -1545,6 +1620,15 @@ function reanalyzeWithFilters() {
     $('compLoading').style.display = 'none';
     $('compResult').style.display = '';
     $('compResultCount').textContent = '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
+    // 成本联动反馈
+    if (myCost > 0 && myPrice > 0) {
+      var margin = ((myPrice - myCost) / myPrice * 100).toFixed(0);
+      $('costFeedback').style.display = '';
+      $('costFeedback').textContent = '成本 ¥' + myCost + '，售价 ¥' + myPrice + '，毛利率 ' + margin + '%';
+    } else if (myCost > 0) {
+      $('costFeedback').style.display = '';
+      $('costFeedback').textContent = '成本 ¥' + myCost + '（未识别到你的售价，无法测算毛利率）';
+    }
   }, 300);
 }
 
@@ -1552,10 +1636,8 @@ function reanalyzeWithFilters() {
 var myProductInfo = null;
 var _currentSearchKeyword = '';
 
-function processData(raw) {
-  _currentSearchKeyword = $('compKeyword').value.trim();
-  $('compPasteCard').style.display = 'none';
-  $('compFilters').style.display = '';
+function processData(raw, searchKeyword) {
+  _currentSearchKeyword = searchKeyword || '';
   $('compLoading').style.display = '';
   $('compResult').style.display = 'none';
   $('emptyState').style.display = 'none';
@@ -1563,14 +1645,14 @@ function processData(raw) {
   var data;
   try { data = JSON.parse(raw); } catch (e) {
     $('compLoading').style.display = 'none';
-    $('compPasteCard').style.display = '';
-    return alert('JSON 解析失败，请确认粘贴的是从扩展复制的完整数据');
+    $('emptyState').style.display = '';
+    return alert('数据解析失败，请重试');
   }
 
   if (!data.products || !Array.isArray(data.products) || data.products.length === 0) {
     $('compLoading').style.display = 'none';
-    $('compPasteCard').style.display = '';
-    return alert('数据中没有商品列表，请确认已正确复制');
+    $('emptyState').style.display = '';
+    return alert('未找到同类竞品，请尝试其他商品链接');
   }
 
   rawProducts = data.products.filter(function(p) { return p.title && p.price > 0; });
@@ -1591,6 +1673,15 @@ function processData(raw) {
   var myPrice = (myProductInfo && myProductInfo.price) ? myProductInfo.price : 0;
   var myCost = parseFloat($('compMyCost').value) || 0;
 
+  // 从筛选面板读取条件（首次分析即应用）
+  filterConfig.priceMin = parseFloat($('filterPriceMin').value) || 0;
+  filterConfig.priceMax = parseFloat($('filterPriceMax').value) || 0;
+  filterConfig.include = $('filterInclude').value.split(/[,，、]/).map(function(s) { return s.trim(); }).filter(Boolean);
+  var excludeInput = $('filterExclude').value.trim();
+  if (excludeInput) {
+    filterConfig.exclude = excludeInput.split(/[,，、]/).map(function(s) { return s.trim(); }).filter(Boolean);
+  }
+
   var filtered = applyFilters(filterConfig);
   updateFilterSummary(rawProducts.length, filtered.length);
 
@@ -1602,6 +1693,15 @@ function processData(raw) {
     $('compResult').style.flexDirection = 'column';
     $('compResult').style.gap = '18px';
     $('compResultCount').textContent = '已分析 ' + filtered.length + ' 个商品（原始 ' + rawProducts.length + ' 个）';
+    // 成本联动反馈
+    if (myCost > 0 && myPrice > 0) {
+      var margin = ((myPrice - myCost) / myPrice * 100).toFixed(0);
+      $('costFeedback').style.display = '';
+      $('costFeedback').textContent = '成本 ¥' + myCost + '，售价 ¥' + myPrice + '，毛利率 ' + margin + '%';
+    } else if (myCost > 0) {
+      $('costFeedback').style.display = '';
+      $('costFeedback').textContent = '成本 ¥' + myCost + '（未识别到你的售价，无法测算毛利率）';
+    }
   }, 400);
 }
 
@@ -2696,19 +2796,24 @@ function dictReset() {
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', function() {
-  // 搜索按钮初始绑定
-  $('btnCompSearch').onclick = startCompeteSearch;
+  // 搜索按钮绑定
+  $('btnCompSearch').onclick = startAutoAnalysis;
 
-  // paste textarea 粘贴监听
-  var pasteArea = $('compPasteArea');
-  if (pasteArea) {
-    pasteArea.addEventListener('input', function() {
-      var btn = document.querySelector('#compPasteCard .btn-primary');
-      if (btn && pasteArea.value.trim()) {
-        btn.style.background = '#ff5000'; btn.style.color = '#fff';
-      }
-    });
-  }
+  // 监听扩展回传的消息
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'tb-competitor-result') {
+      handleAutoResult(e.data.data);
+    }
+    if (e.data && e.data.type === 'tb-competitor-error') {
+      handleAutoError(e.data.error);
+    }
+    if (e.data && e.data.type === 'tb-competitor-progress') {
+      handleAutoProgress(e.data.step);
+    }
+  });
+
+  // 初始化默认排除词
+  $('filterExclude').value = filterConfig.exclude.join(',');
 
   // 恢复成本价
   var savedCost = localStorage.getItem('tb_my_cost');

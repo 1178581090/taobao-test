@@ -10,10 +10,12 @@ target: index.html
 
 browser: edge
 
+# 跳过指定的检查类型（可选）
+skip_checks: []
+
+# 只报告包含指定标签的发现，空数组 = 全部（可选）
+include_tags: []
+
 operations:
   - tab: 竞品分析
-    action: 在输入框中粘贴已复制的竞品JSON数据，点击「分析数据」按钮
-  - tab: 标题诊断
-    action: 在输入框中输入"古装演出服女成人舞台定制"，点击「诊断」按钮
-  - tab: 推广分析
-    action: 勾选「运费险」和「淘金币」复选框，点击「生成推荐」按钮
+    action: 在我的商品链接输入框中粘贴https://item.taobao.com/item.htm?id=984528704511，点击「分析竞品」按钮

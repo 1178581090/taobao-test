@@ -9,6 +9,7 @@ function detectPageType() {
   if (location.hostname === 'item.taobao.com' || location.hostname === 'detail.tmall.com') {
     return 'product';
   }
+  if (location.protocol === 'file:') return 'main';
   return 'unknown';
 }
 
@@ -662,6 +663,97 @@ function showFallbackBar(fallback) {
   document.body.insertBefore(bar, document.body.firstChild);
 }
 
+// ===== 自动提取：响应 background 的消息，不显示 UI 栏 =====
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  // —— 商品页自动提取 ——
+  if (message.action === 'autoExtract' && message.mode === 'product') {
+    var title = getProductTitle();
+    var keywords = extractKeywords(title);
+    var shop = getProductShop();
+    var price = getProductPrice();
+    var sales = getProductSales();
+    var itemId = getItemId(location.href);
+    sendResponse({
+      action: 'productExtracted',
+      title: title,
+      keywords: keywords,
+      shop: shop,
+      price: price,
+      sales: sales,
+      itemId: itemId
+    });
+    return true;
+  }
+
+  // —— 搜索页自动提取 ——
+  if (message.action === 'autoExtract' && message.mode === 'search') {
+    var products = extractProducts();
+    var myProduct = message.myProduct || null;
+    if (myProduct) {
+      var myItemId = myProduct.itemId || '';
+      var matchIdx = myItemId ? products.findIndex(function(p) { return p.itemId === myItemId; }) : -1;
+      if (matchIdx < 0) {
+        var myShop = (myProduct.shop || '').trim();
+        if (myShop) {
+          matchIdx = products.findIndex(function(p) { return p.shop && p.shop.trim() === myShop; });
+          if (matchIdx < 0) {
+            matchIdx = products.findIndex(function(p) { return p.shop && (p.shop.indexOf(myShop) >= 0 || myShop.indexOf(p.shop) >= 0); });
+          }
+        }
+      }
+      if (matchIdx >= 0) {
+        var matched = products[matchIdx];
+        myProduct = {
+          title: matched.title, shop: matched.shop, price: matched.price,
+          sales: matched.sales, isTmall: matched.isTmall,
+          activityTags: matched.activityTags || [], promo: matched.promo || '',
+          matched: true
+        };
+        products.splice(matchIdx, 1);
+      } else {
+        myProduct.matched = false;
+      }
+    }
+    sendResponse({
+      action: 'searchExtracted',
+      data: {
+        source: 'taobao-search',
+        url: location.href,
+        count: products.length,
+        products: products,
+        myProduct: myProduct
+      }
+    });
+    return true;
+  }
+
+  // —— 主页面：收到结果后转发给页面 JS ——
+  if (message.action === 'searchResults' || message.action === 'searchError' || message.action === 'searchProgress') {
+    var eventType = message.action === 'searchResults' ? 'tb-competitor-result'
+      : message.action === 'searchError' ? 'tb-competitor-error'
+      : 'tb-competitor-progress';
+    var payload = message.action === 'searchResults' ? message.data
+      : message.action === 'searchError' ? message.error
+      : message.step;
+    window.postMessage({ type: eventType, data: payload, error: message.error, step: message.step }, '*');
+  }
+});
+
+// ===== 主页面事件中继 =====
+
+function setupMainPageRelay() {
+  window.addEventListener('message', function(e) {
+    if (e.source !== window) return;
+    if (e.data && e.data.type === 'tb-competitor-search') {
+      chrome.runtime.sendMessage({
+        action: 'searchCompetitors',
+        productUrl: e.data.productUrl
+      });
+    }
+  });
+}
+
 // ===== 入口 =====
 
 function init() {
@@ -677,4 +769,9 @@ function init() {
   }
 }
 
-setTimeout(init, 3000);
+var pageType = detectPageType();
+if (pageType === 'main') {
+  setupMainPageRelay();
+} else if (pageType !== 'unknown') {
+  setTimeout(init, 3000);
+}

@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
   }
 }
