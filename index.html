@@ -3479,24 +3479,12 @@ function openWithSteps(url, name, ruleId) {
   if (stepsEl) stepsEl.style.display = 'block';
   var stepsHtml = stepsEl ? stepsEl.innerHTML : '';
 
-  // 弹出一个独立的小窗口显示步骤，始终浮在千牛页面上方
-  var popup = window.open('', 'stepsPopup', 'width=340,height=500,left=' + (screen.width - 360) + ',top=100');
-  if (popup) {
-    popup.document.write(
-      '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>操作步骤</title>' +
-      '<style>body{font-family:-apple-system,PingFang SC,Microsoft YaHei,sans-serif;padding:16px;color:#1f2937;font-size:13px;line-height:2;overflow-y:auto;}h2{font-size:15px;color:#ff5000;margin:0 0 12px;}hr{border:none;border-top:1px solid #e8eaed;margin:12px 0;}.tip{font-size:10px;color:#9ca3af;}</style></head><body>' +
-      '<h2>📋 ' + escHtml(name) + '</h2>' +
-      stepsHtml +
-      '<hr><div class=\"tip\">此窗口浮于千牛页面上方，对照步骤操作</div>' +
-      '</body></html>'
-    );
-    popup.document.close();
-  }
-
-  // 用扩展开新标签页（不需要注入面板了）
+  // 通过扩展打开两个标签页：千牛页面 + 步骤页面
   window.postMessage({
-    type: 'tb-open-url',
-    url: url
+    type: 'tb-open-with-steps',
+    url: url,
+    name: name,
+    steps: stepsHtml
   }, '*');
 }
 </script>

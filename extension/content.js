@@ -878,6 +878,14 @@ function setupMainPageRelay() {
     if (e.data && e.data.type === 'tb-open-url') {
       chrome.runtime.sendMessage({ action: 'openUrl', url: e.data.url });
     }
+    if (e.data && e.data.type === 'tb-open-with-steps') {
+      chrome.runtime.sendMessage({
+        action: 'openWithSteps',
+        url: e.data.url,
+        name: e.data.name,
+        steps: e.data.steps
+      });
+    }
   });
 }
 

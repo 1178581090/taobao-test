@@ -187,11 +187,25 @@ function injectPanel(tabId, name, steps) {
 }
 
 async function openWithSteps(url, name, steps, requestingTabId) {
-  var tab = await chrome.tabs.create({ url: url, active: true });
-  _pendingSteps[tab.id] = { name: name, steps: steps };
-  await waitForTabLoad(tab.id);
-  await sleep(3000);
-  injectPanel(tab.id, name, steps);
+  // 打开千牛页面
+  var mainTab = await chrome.tabs.create({ url: url, active: true });
+
+  // 生成步骤页面 HTML
+  var stepsPage = '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>📋 ' + name + '</title>' +
+    '<style>body{font-family:-apple-system,PingFang SC,Microsoft YaHei,sans-serif;padding:20px;color:#1f2937;font-size:13px;line-height:2.2;max-width:500px;}' +
+    'h2{font-size:16px;color:#ff5000;margin:0 0 16px;border-bottom:2px solid #ff5000;padding-bottom:8px;}' +
+    '.tip{font-size:11px;color:#9ca3af;margin-top:20px;border-top:1px solid #e8eaed;padding-top:12px;}</style></head><body>' +
+    '<h2>📋 ' + name + '</h2>' +
+    steps +
+    '<div class=\"tip\">对照上方步骤在千牛页面操作（Alt+Tab 切换窗口）</div>' +
+    '</body></html>';
+
+  // 用 base64 data URL 打开步骤页面
+  var dataUrl = 'data:text/html;base64,' + btoa(unescape(encodeURIComponent(stepsPage)));
+  await chrome.tabs.create({ url: dataUrl, active: false });
+
+  // 切回千牛页面
+  await chrome.tabs.update(mainTab.id, { active: true });
 }
 
 // 标签页关闭时清理
