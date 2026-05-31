@@ -710,7 +710,101 @@ body {
 </div><!-- /main -->
 
 <div id="tabPromotion" class="main" style="display:none;">
-  <!-- 下一步填充 -->
+  <!-- 左侧面板 -->
+  <div class="setup-panel">
+
+    <!-- 数据状态提示 -->
+    <div id="promoDataStatus" class="setup-hint">
+      尚未搜索竞品数据。请先在「竞品分析」Tab 完成一次搜索，再回到这里查看推广建议。
+    </div>
+
+    <div class="setup-section-title">我的推广现状</div>
+
+    <div style="margin-bottom:4px;">
+      <span class="field-label">服务工具</span>
+    </div>
+    <div id="promoCheckTools">
+      <label class="promo-check"><input type="checkbox" data-id="freightInsurance" onchange="savePromoStatus()"> 运费险</label>
+      <label class="promo-check"><input type="checkbox" data-id="goldCoins" onchange="savePromoStatus()"> 淘金币</label>
+      <label class="promo-check"><input type="checkbox" data-id="sevenDayReturn" onchange="savePromoStatus()"> 7天无理由</label>
+      <label class="promo-check"><input type="checkbox" data-id="fastRefund" onchange="savePromoStatus()"> 极速退款</label>
+    </div>
+
+    <div style="margin-top:12px;margin-bottom:4px;">
+      <span class="field-label">付费推广</span>
+    </div>
+    <div id="promoCheckPaid">
+      <label class="promo-check"><input type="checkbox" data-id="zhitongche" onchange="savePromoStatus()"> 直通车</label>
+      <label class="promo-check"><input type="checkbox" data-id="yinlimofang" onchange="savePromoStatus()"> 引力魔方</label>
+      <label class="promo-check"><input type="checkbox" data-id="wanxiangtai" onchange="savePromoStatus()"> 万相台</label>
+      <label class="promo-check"><input type="checkbox" data-id="taoke" onchange="savePromoStatus()"> 淘客</label>
+    </div>
+
+    <div style="margin-top:12px;margin-bottom:4px;">
+      <span class="field-label">平台活动</span>
+    </div>
+    <div id="promoCheckActivity">
+      <label class="promo-check"><input type="checkbox" data-id="juhuasuan" onchange="savePromoStatus()"> 聚划算</label>
+      <label class="promo-check"><input type="checkbox" data-id="tiantitemai" onchange="savePromoStatus()"> 天天特卖</label>
+    </div>
+
+    <div style="margin-top:14px;">
+      <label class="field-label">月推广预算（¥）<span style="color:var(--text-muted);font-weight:400;">选填，后期使用</span></label>
+      <input class="field-input" id="promoMonthlyBudget" type="number" placeholder="如：2000" onchange="savePromoBudget()">
+    </div>
+
+    <button class="btn btn-primary" id="btnPromoGenerate" style="width:100%;margin-top:10px;" onclick="renderPromotionTab()">
+      生成推荐
+    </button>
+
+    <div class="setup-hint" style="margin-top:12px;">
+      勾选你已开通的渠道（开通状态自动保存）。工具会基于你未开通的渠道生成推荐清单。
+    </div>
+  </div>
+
+  <!-- 右侧面板 -->
+  <div class="result-panel">
+    <div id="promoEmpty" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">推广行动清单</div>
+      <div class="empty-desc">勾选左侧的推广现状，点击「生成推荐」查看你应该优先开通的渠道</div>
+    </div>
+
+    <div id="promoResult" style="display:none;">
+      <!-- 综合状态卡片 -->
+      <div class="result-strip" id="promoSummary"></div>
+
+      <!-- 行动清单 P0 -->
+      <div class="card-accent" id="promoListP0Card" style="display:none;">
+        <div class="card-header"><h3><span class="card-dot" style="background:var(--red);"></span>优先处理（P0）</h3></div>
+        <div class="improve-list" id="promoListP0"></div>
+      </div>
+
+      <!-- 行动清单 P1 -->
+      <div class="card-accent" id="promoListP1Card" style="display:none;">
+        <div class="card-header"><h3><span class="card-dot" style="background:var(--amber);"></span>尽快执行（P1）</h3></div>
+        <div class="improve-list" id="promoListP1"></div>
+      </div>
+
+      <!-- 行动清单 P2 -->
+      <div class="card-accent-green" id="promoListP2Card" style="display:none;">
+        <div class="card-header"><h3><span class="card-dot"></span>可选尝试（P2）</h3></div>
+        <div class="improve-list" id="promoListP2"></div>
+      </div>
+
+      <!-- 同行对标卡片 -->
+      <div class="card" id="promoPeerCard" style="display:none;">
+        <div class="card-header"><h3><span class="card-dot"></span>同行活动覆盖</h3></div>
+        <div id="promoPeerContent"></div>
+      </div>
+
+      <!-- 渠道详情（折叠） -->
+      <div class="toggle-bar open" id="promoDetailToggle" onclick="togglePromoDetail()">
+        <span class="arr" id="promoDetailToggleIcon">▶</span> 全部渠道知识库
+      </div>
+      <div class="toggle-content open" id="promoDetailContent"></div>
+    </div>
+  </div>
 </div>
 
 <script>
