@@ -92,13 +92,43 @@ if [ -n "$1" ]; then
   COMMIT_MSG="$1"
   ENTRY_TITLE=$(echo "$COMMIT_MSG" | sed 's/^[a-z]*: //')
 
+  # 生成变更文件摘要
+  CHANGED_FILES=$(git diff --name-only --diff-filter=AM 2>/dev/null; git diff --cached --name-only --diff-filter=AM 2>/dev/null)
+  FILE_LIST=$(echo "$CHANGED_FILES" | grep -v '^$' | sed 's/^/  - /' | sort -u)
+  ADDED=$(echo "$CHANGED_FILES" | grep -c '^' 2>/dev/null || echo 0)
+  DEL_STATS=$(git diff --stat 2>/dev/null | tail -1; git diff --cached --stat 2>/dev/null | tail -1)
+
+  # 构建日志条目
+  ENTRY="- ${ENTRY_TITLE}"
+  if [ -n "$FILE_LIST" ]; then
+    ENTRY="${ENTRY}\n    | 涉及文件 ($(echo "$CHANGED_FILES" | wc -l) 个)："
+    # 只取前 8 个文件
+    FILE_SHORT=$(echo "$FILE_LIST" | head -8)
+    ENTRY="${ENTRY}\n${FILE_SHORT}"
+    if [ "$(echo "$CHANGED_FILES" | wc -l)" -gt 8 ]; then
+      ENTRY="${ENTRY}\n    | ... 等"
+    fi
+  fi
+
   if grep -q "^## $TODAY" CHANGELOG.md 2>/dev/null; then
+    # 今天已有标题：在最后一条 - 条目后插入
+    awk -v today="$TODAY" -v entry="$ENTRY" '
+      { sub(/\r$/, "") }
+      /^## / && !done && NR > 1 {
+        # 检查是否已过今天的 section
+        if (lastWasToday) { print entry; done=1 }
+      }
+      { print; lastWasToday = ($0 == "## "today) }
+      END { if (!done && lastWasToday) print entry }
+    ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+    # 简单方案：在日期标题后插入
     awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
       { sub(/\r$/, "") }
       /^## / && $0 == "## "today && !done { print; print entry; done=1; next }
       { print }
     ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
   else
+    # 新的一天
     if grep -q "^## 20" CHANGELOG.md 2>/dev/null; then
       awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
         { sub(/\r$/, "") }
