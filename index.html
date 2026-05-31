@@ -926,11 +926,6 @@ body {
       <label class="promo-check"><input type="checkbox" data-id="flashSale" onchange="savePromoStatus()"> 淘宝秒杀 <span class="promo-hint">免费报名·限时秒杀</span></label>
     </div>
 
-    <div style="margin-top:14px;">
-      <label class="field-label">月推广预算（¥）<span style="color:var(--text-muted);font-weight:400;">选填，后期使用</span></label>
-      <input class="field-input" id="promoMonthlyBudget" type="number" placeholder="如：2000" onchange="savePromoBudget()">
-    </div>
-
     <button class="btn btn-primary" id="btnPromoGenerate" style="width:100%;margin-top:10px;" onclick="renderPromotionTab()">
       生成推荐
     </button>
@@ -1264,17 +1259,12 @@ function savePromoStatus() {
   localStorage.setItem('tb_promo_mystatus', JSON.stringify(status));
 }
 
-function savePromoBudget() {
-  localStorage.setItem('tb_promo_monthly_budget', $('promoMonthlyBudget').value);
-}
 
 function restorePromoCheckboxes() {
   var status = loadPromoStatus();
   document.querySelectorAll('#tabPromotion input[type="checkbox"][data-id]').forEach(function(cb) {
     cb.checked = !!status[cb.dataset.id];
   });
-  var savedBudget = localStorage.getItem('tb_promo_monthly_budget');
-  if (savedBudget) $('promoMonthlyBudget').value = savedBudget;
 }
 
 // ===== 同行标签匹配 =====
@@ -1436,7 +1426,7 @@ function renderPromoHero(item) {
       checkAfterHtml +
       '<div class="hero-action">' +
         '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
-        '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入明日清单</button>' +
+        '' +
       '</div>' +
     '</div>';
 }
@@ -1466,7 +1456,7 @@ function renderPromoSection(section, items, title, defaultOpen) {
       '<span class="section-item-name">' + peerTag + escHtml(ch.name) + '</span>' +
       '<span class="section-item-desc">' + escHtml(ch.effectDesc) + '</span>' +
       '<span class="section-item-cost">' + escHtml(ch.costDesc) + '</span>' +
-      '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入清单</button>' +
+      '' +
     '</div>';
   });
   $(listId).innerHTML = html;
@@ -1539,25 +1529,6 @@ function togglePromoDetail() {
   } else {
     content.classList.add('open');
     toggle.classList.add('open');
-  }
-}
-
-// ===== 写入明日清单 =====
-function addToChecklist(channelId) {
-  var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === channelId; });
-  if (!ch) return;
-
-  var taskText = '【推广】开通' + ch.name + '：' + ch.path + '（' + ch.costDesc + '）';
-
-  try {
-    var tasks = JSON.parse(localStorage.getItem('tb_checklist_tasks') || '[]');
-    var exists = tasks.some(function(t) { return t.text === taskText; });
-    if (exists) { alert('该任务已在明日清单中'); return; }
-    tasks.push({ text: taskText, done: false, createdAt: Date.now() });
-    localStorage.setItem('tb_checklist_tasks', JSON.stringify(tasks));
-    alert('已添加到明日清单 ✓');
-  } catch (_) {
-    alert('添加失败，请重试');
   }
 }
 
