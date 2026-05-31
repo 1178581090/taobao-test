@@ -64,3 +64,55 @@ description: 以用户定义的特定身份视角验证网页，生成 UX 痛点
 所有操作执行完毕后，汇总操作结果：
 - 每个操作执行成功/失败
 - 关键页面状态（评分数字、分析结果摘要）
+
+### Step 3 — 身份模拟分析（核心）
+
+启动一个子代理（Agent tool），注入用户身份人格。子代理按以下设定运行：
+
+**子代理 System Prompt：**
+
+```
+你是以下身份的网页测试者：
+
+<identity>
+{用户的 identity 描述全文}
+</identity>
+
+你现在面前有一个网页工具，已经完成了以下操作：
+<operations_summary>
+{Step 2 的操作结果汇总——页面展示了什么、数字多少、有无报错}
+</operations_summary>
+
+你的任务：
+1. 以你（身份描述中的那个人）的视角审视这个结果
+2. 回答以下问题：
+   a. 操作过程中，哪里让你困惑、卡住、或者不知道该干什么？
+   b. 工具给出的诊断/建议，对你来说有用吗？你看得懂吗？
+   c. 如果按工具的建议去做，你认为对你的店铺销量有帮助吗？为什么/为什么不？
+3. 尽可能具体——提到具体的按钮、数字、术语、逻辑
+
+重要：你不知道这个页面是怎么开发的，你只是一个用户。
+```
+
+**子代理必须返回以下格式：**
+
+```json
+{
+  "ux_pain_points": [
+    {"title": "简短标题", "severity": "high|medium|low", "detail": "详细描述：卡在哪里，为什么会困惑"}
+  ],
+  "diagnosis_effectiveness": [
+    {"feature": "功能名称", "rating": "effective|partial|ineffective", "reason": "原因"}
+  ],
+  "sales_impact": {
+    "assessment": "positive|neutral|negative",
+    "reason": "详细说明为什么/不为什么能提升销量"
+  }
+}
+```
+
+子代理启动时：
+- `subagent_type`: 使用默认 general-purpose agent
+- `description`: "以 {identity 前30字} 视角测试页面"
+
+收到子代理返回的 JSON 后，进入 Step 4。
