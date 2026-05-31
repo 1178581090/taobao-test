@@ -689,31 +689,21 @@ function showStepsPanel(name, stepsHtml) {
   };
 }
 
-// 页面加载时自动恢复 + MutationObserver 监听 DOM 替换后恢复
+// 页面加载时自动恢复 + 定时轮询（SPA 切换后 body 被替换时也能恢复）
 (function() {
   function restorePanel() {
     try {
       var savedName = sessionStorage.getItem('tb_inject_steps_name');
       var savedHtml = sessionStorage.getItem('tb_inject_steps_html');
       if (savedName && savedHtml && !document.getElementById('tb-step-panel')) {
-        showStepsPanel(savedName, savedHtml);
+        if (document.body) showStepsPanel(savedName, savedHtml);
       }
     } catch(_) {}
   }
-  // 页面首次加载
+  // 首次
   setTimeout(restorePanel, 1500);
-  // 监听 body 子元素变化（SPA 页面切换时 DOM 会重置）
-  var observer = new MutationObserver(function() {
-    if (!document.getElementById('tb-step-panel')) restorePanel();
-  });
-  var startObserve = function() {
-    if (document.body) {
-      observer.observe(document.body, { childList: true, subtree: false });
-    } else {
-      setTimeout(startObserve, 500);
-    }
-  };
-  startObserve();
+  // 每 3 秒轮询（SPA 切换后 body 变了，之前的 observer 失效，用轮询兜底）
+  setInterval(restorePanel, 3000);
 })();
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
