@@ -191,6 +191,38 @@ body {
   padding: 12px;
   background: #f9fafb;
   border-radius: var(--radius-sm);
+}
+.data-source-guide {
+  background: #fff7f0;
+  border: 1.5px solid var(--brand-light);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+.data-source-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+.data-source-steps { display: flex; flex-direction: column; gap: 3px; }
+.data-source-step {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+.data-source-num {
+  display: inline-flex;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   border: 1px dashed var(--border);
 }
 
@@ -311,6 +343,8 @@ body {
   color: var(--brand); line-height: 1;
 }
 .diag-ring-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+.diag-benchmark { font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.diag-dim-ref { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
 .diag-dims {
   background: var(--surface);
@@ -404,6 +438,43 @@ body {
   font-family: var(--font-mono);
 }
 .ev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.imp-action {
+  font-size: 11px; color: #6b7280;
+  background: #fefce8; border: 1px solid #fde68a;
+  padding: 6px 10px; border-radius: 6px;
+  margin: 6px 0;
+  line-height: 1.6;
+}
+/* ── 术语 tooltip ── */
+.term {
+  border-bottom: 1px dashed var(--brand-light);
+  cursor: help;
+  position: relative;
+  color: var(--text);
+}
+.term:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0; bottom: calc(100% + 6px);
+  background: #1f2937; color: #fff;
+  font-size: 11px; font-weight: 400;
+  padding: 8px 12px; border-radius: 6px;
+  width: 260px;
+  line-height: 1.6;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  white-space: normal;
+}
+.term:hover::before {
+  content: '';
+  position: absolute;
+  left: 12px; bottom: calc(100%);
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+  z-index: 1001;
+  pointer-events: none;
+}
 .improve-action { padding: 14px 18px 14px 0; display: flex; align-items: flex-start; }
 .imp-badge {
   display: inline-flex; font-size: 9px; font-weight: 700;
@@ -598,6 +669,51 @@ body {
   .promo-action-item { grid-template-columns: 36px 1fr; }
   .promo-action-side { grid-column: 1/-1; padding: 0 16px 12px; }
 }
+
+/* ── 英雄推荐卡片 ── */
+.hero-card {
+  background: var(--brand-light);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.hero-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand);
+  padding: 5px 14px;
+}
+.hero-body { padding: 18px 20px 16px; }
+.hero-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.hero-why { font-size: 13px; color: var(--text); line-height: 1.7; margin-bottom: 10px; }
+.hero-cost { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.hero-checkafter { font-size: 11px; color: var(--amber); margin-bottom: 14px; }
+.hero-action {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff; border-radius: var(--radius-sm);
+  padding: 10px 14px; gap: 12px;
+}
+.hero-path { font-size: 11px; color: var(--text-secondary); flex:1; }
+.hero-action .btn-sm { white-space: nowrap; }
+
+/* ── 分组卡片内的紧凑条目 ── */
+.section-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 18px; border-top: 1px solid var(--border);
+  gap: 12px;
+}
+.section-item:first-child { border-top: none; }
+.section-item-name { font-weight: 600; font-size: 13px; white-space: nowrap; }
+.section-item-desc { font-size: 11px; color: var(--text-secondary); flex:1; min-width: 0; }
+.section-item-cost { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.section-item .btn-sm { white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .section-item { flex-wrap: wrap; }
+  .section-item-desc { order: 5; width: 100%; }
+  .hero-action { flex-direction: column; align-items: flex-start; }
+}
 </style>
 </head>
 <body>
@@ -671,8 +787,17 @@ body {
 
 
 
-    <div class="setup-hint" id="searchHint">
-      点击后打开淘宝搜索结果页 → 等待加载 → 点击页顶橙色条「复制到剪贴板」→ 回到本页粘贴 JSON 后点击「分析数据」
+    <div class="data-source-guide" id="searchHint">
+      <div class="data-source-title">📋 如何获取竞品数据？</div>
+      <div class="data-source-steps">
+        <div class="data-source-step"><span class="data-source-num">1</span> 复制上面的搜索关键词</div>
+        <div class="data-source-step"><span class="data-source-num">2</span> 打开 <a href="https://s.taobao.com" target="_blank" style="color:var(--brand);">s.taobao.com</a>，粘贴关键词搜索</div>
+        <div class="data-source-step"><span class="data-source-num">3</span> 等待页面加载，页顶出现橙色操作条</div>
+        <div class="data-source-step"><span class="data-source-num">4</span> 点击橙色条中的 <strong>「复制到剪贴板」</strong></div>
+        <div class="data-source-step"><span class="data-source-num">5</span> 回到本页，在下方粘贴区 <strong>Ctrl+V</strong> 粘贴 JSON</div>
+        <div class="data-source-step"><span class="data-source-num">6</span> 点击 <strong>「分析数据」</strong> 查看结果</div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">💡 如果页顶没有橙色条，说明浏览器扩展未安装。前往 <code>extension/</code> 目录加载扩展。</div>
     </div>
   </div>
 
@@ -846,22 +971,25 @@ body {
       <!-- 综合状态卡片 -->
       <div class="result-strip" id="promoSummary"></div>
 
-      <!-- 行动清单 P0 -->
-      <div class="card-accent" id="promoListP0Card" style="display:none;">
-        <div class="card-header"><h3><span class="card-dot" style="background:var(--red);"></span>优先处理（P0）</h3></div>
-        <div class="improve-list" id="promoListP0"></div>
+      <!-- 英雄推荐卡片 -->
+      <div id="promoHeroCard" style="display:none;"></div>
+
+      <!-- 立刻免费开通 -->
+      <div class="card" id="promoQuickWinsCard" style="display:none;">
+        <div class="card-header"><h3>开了就有用，全部免费</h3></div>
+        <div id="promoQuickWins"></div>
       </div>
 
-      <!-- 行动清单 P1 -->
-      <div class="card-accent" id="promoListP1Card" style="display:none;">
-        <div class="card-header"><h3><span class="card-dot" style="background:var(--amber);"></span>尽快执行（P1）</h3></div>
-        <div class="improve-list" id="promoListP1"></div>
+      <!-- 花小钱加速 -->
+      <div class="card" id="promoPaidCard" style="display:none;">
+        <div class="card-header"><h3>花点小钱，加速增长</h3></div>
+        <div id="promoPaidList"></div>
       </div>
 
-      <!-- 行动清单 P2 -->
-      <div class="card-accent-green" id="promoListP2Card" style="display:none;">
-        <div class="card-header"><h3><span class="card-dot"></span>可选尝试（P2）</h3></div>
-        <div class="improve-list" id="promoListP2"></div>
+      <!-- 等有基础再试 -->
+      <div class="card" id="promoLaterCard" style="display:none;">
+        <div class="card-header"><h3>需要资质或预算充足再试 <span style="font-weight:400;font-size:11px;color:var(--text-muted);">（点击展开）</span></h3></div>
+        <div id="promoLaterList"></div>
       </div>
 
       <!-- 同行对标卡片 -->
@@ -892,7 +1020,8 @@ var CHANNEL_KNOWLEDGE = [
     threshold: '无门槛，千牛一键开通',
     path: '千牛卖家中心 → 商家保障 → 运费险 → 立即加入',
     effectDesc: '退货补运费，买家下单顾虑降低。演出服定制类退货率偏高，开通后转化率通常提升 10-20%。',
-    searchWeight: '搜索加权 + 转化率提升'
+    searchWeight: '搜索加权 + 转化率提升',
+    checkAfter: '开通后在「生意参谋 → 交易」看转化率是否提升'
   },
   {
     id: 'goldCoins', name: '淘金币', type: '服务工具',
@@ -901,7 +1030,8 @@ var CHANNEL_KNOWLEDGE = [
     threshold: '无门槛，千牛一键开通',
     path: '千牛卖家中心 → 营销中心 → 淘金币 → 立即开通',
     effectDesc: '淘宝最大积分体系，开通后商品在淘金币频道有额外曝光，搜索有加权。',
-    searchWeight: '搜索加权 + 淘金币频道流量'
+    searchWeight: '搜索加权 + 淘金币频道流量',
+    checkAfter: '开通后在「生意参谋 → 流量」看淘金币频道是否有新增访客'
   },
   {
     id: 'sevenDayReturn', name: '7天无理由', type: '服务工具',
@@ -910,7 +1040,8 @@ var CHANNEL_KNOWLEDGE = [
     threshold: '无门槛，千牛一键开通',
     path: '千牛卖家中心 → 消费者保障 → 7天无理由退换货 → 加入',
     effectDesc: '基础信任标识，无此标识的商品搜索排序靠后，买家下单率降低。',
-    searchWeight: '搜索基础加权'
+    searchWeight: '搜索基础加权',
+    checkAfter: '开通后搜索自己的商品，确认「7天无理由」标识已展示'
   },
   {
     id: 'fastRefund', name: '极速退款', type: '服务工具',
@@ -919,7 +1050,8 @@ var CHANNEL_KNOWLEDGE = [
     threshold: '需店铺信用达标',
     path: '千牛卖家中心 → 消费者保障 → 极速退款 → 开通',
     effectDesc: '缩短买家退款等待时间，提升购物体验和复购率。',
-    searchWeight: '轻度搜索加权'
+    searchWeight: '轻度搜索加权',
+    checkAfter: '开通后在商品详情页确认「极速退款」标识已展示'
   },
   {
     id: 'zhitongche', name: '直通车', type: '付费推广',
@@ -968,7 +1100,7 @@ var CHANNEL_KNOWLEDGE = [
   },
   {
     id: 'tiantitemai', name: '天天特卖', type: '平台活动',
-    baseScore: 40, costLevel: 'medium',
+    baseScore: 40, costLevel: 'high',
     costDesc: '需让利（活动价要求）+ 佣金扣点',
     threshold: '商品需有一定销量和好评基础',
     path: '千牛卖家中心 → 营销中心 → 活动报名 → 天天特卖 → 提交申请',
@@ -1043,64 +1175,56 @@ function getPeerCoverage(peerData) {
 }
 
 // ===== 推荐引擎 =====
-function generateRecommendations() {
+function getPromoPlan() {
   var myStatus = loadPromoStatus();
   var peerData = window._lastAnalysis;
   var peerCoverage = peerData ? getPeerCoverage(peerData) : {};
-  var hasPeerData = peerData && peerData.total >= 10;
 
-  var recommendations = [];
-
+  var unopened = [];
   CHANNEL_KNOWLEDGE.forEach(function(ch) {
     if (myStatus[ch.id]) return;
-
-    var pri;
-    if (ch.costLevel === 'low' && ch.baseScore >= 75) {
-      pri = 'P0';
-    } else if (ch.costLevel === 'medium' || ch.baseScore >= 55) {
-      pri = 'P1';
-    } else {
-      pri = 'P2';
-    }
-
     var peerCov = peerCoverage[ch.id];
-    var peerText = '';
-    if (peerCov && peerCov.count >= 3) {
-      peerText = '同行 <strong>' + peerCov.pct + '%</strong> 已开通（' + peerCov.count + '/' + peerData.total + ' 个商品）。';
-    } else if (hasPeerData) {
-      peerText = '同行样本不足（仅 ' + peerData.total + ' 个商品中有活动标签），以下基于行业经验推荐。';
-    } else {
-      peerText = '';
-    }
-
-    var whyText = (peerText ? peerText + ' ' : '') + ch.effectDesc;
-
-    recommendations.push({
+    unopened.push({
       channel: ch,
-      priority: pri,
-      whyText: whyText,
-      hasPeer: !!(peerCov && peerCov.count >= 3)
+      peerPct: (peerCov && peerCov.count >= 3) ? peerCov.pct : null,
+      peerCount: (peerCov && peerCov.count >= 3) ? peerCov.count : 0
     });
   });
 
-  var priOrder = { P0: 0, P1: 1, P2: 2 };
-  recommendations.sort(function(a, b) {
-    if (priOrder[a.priority] !== priOrder[b.priority]) return priOrder[a.priority] - priOrder[b.priority];
-    return b.channel.baseScore - a.channel.baseScore;
+  unopened.sort(function(a, b) { return b.channel.baseScore - a.channel.baseScore; });
+
+  // Hero: 免费 + 一键开通 + baseScore 最高的那个
+  var hero = null;
+  for (var i = 0; i < unopened.length; i++) {
+    if (unopened[i].channel.costLevel === 'low' && unopened[i].channel.baseScore >= 75) {
+      hero = unopened[i]; break;
+    }
+  }
+  if (!hero && unopened.length > 0) { hero = unopened[0]; }
+
+  // 分组（hero 从各分组中排除）
+  var quickWins = unopened.filter(function(item) {
+    return item !== hero && item.channel.costLevel === 'low' && item.channel.baseScore >= 70;
+  });
+  var paid = unopened.filter(function(item) {
+    return item !== hero && item.channel.costLevel === 'medium';
+  });
+  var later = unopened.filter(function(item) {
+    return item !== hero && item.channel.costLevel === 'high';
   });
 
-  return recommendations;
+  return { hero: hero, quickWins: quickWins, paid: paid, later: later };
 }
 
 // ===== 推广分析渲染 =====
+var _lastPromoRenderTs = 0;
+
 function renderPromotionTab() {
   restorePromoCheckboxes();
-  var recs = generateRecommendations();
-  var myStatus = loadPromoStatus();
+  var plan = getPromoPlan();
   var peerData = window._lastAnalysis;
-  var hasPeer = peerData && peerData.total > 0;
 
-  if (recs.length === 0) {
+  if (!plan.hero) {
     $('promoEmpty').style.display = '';
     $('promoResult').style.display = 'none';
     $('promoEmpty').querySelector('.empty-title').textContent = '全部渠道已开通';
@@ -1113,8 +1237,11 @@ function renderPromotionTab() {
   $('promoResult').style.flexDirection = 'column';
   $('promoResult').style.gap = '18px';
 
+  // 数据状态提示
+  var hasPeer = peerData && peerData.total > 0;
   if (hasPeer) {
-    $('promoDataStatus').innerHTML = '已读取竞品搜索数据（' + peerData.total + ' 个商品），同行标签用于辅助推荐。';
+    var kwPart = peerData.keyword ? '「<strong>' + escHtml(peerData.keyword) + '</strong>」' : '';
+    $('promoDataStatus').innerHTML = '已读取竞品搜索数据' + kwPart + '（' + peerData.total + ' 个商品），同行标签用于辅助推荐。';
     $('promoDataStatus').style.background = '#eafaf1';
     $('promoDataStatus').style.borderColor = 'var(--green)';
   } else {
@@ -1123,60 +1250,103 @@ function renderPromotionTab() {
     $('promoDataStatus').style.borderColor = 'var(--amber)';
   }
 
+  _lastPromoRenderTs = peerData ? peerData.timestamp : 0;
+
+  // 综合状态条（简化）
+  var myStatus = loadPromoStatus();
   var enabledCount = Object.values(myStatus).filter(Boolean).length;
   var totalCount = CHANNEL_KNOWLEDGE.length;
-  var p0Count = recs.filter(function(r) { return r.priority === 'P0'; }).length;
-  var p1Count = recs.filter(function(r) { return r.priority === 'P1'; }).length;
-  var p2Count = recs.filter(function(r) { return r.priority === 'P2'; }).length;
-
+  var remaining = plan.quickWins.length + plan.paid.length + plan.later.length;
   $('promoSummary').innerHTML =
     '<span style="font-size:13px;color:var(--text-muted);">' +
-    '已开通 <strong style="color:var(--green);">' + enabledCount + '</strong> / ' + totalCount + ' 项' +
-    ' · 推荐开通 <strong style="color:var(--brand);">' + recs.length + '</strong> 项' +
-    '（P0: <strong style="color:var(--red);">' + p0Count + '</strong> · P1: <strong style="color:var(--amber);">' + p1Count + '</strong> · P2: ' + p2Count + '）' +
+    '你已开通 <strong style="color:var(--green);">' + enabledCount + '</strong> / ' + totalCount + ' 项。' +
+    '建议先从 <strong style="color:var(--brand);">' + escHtml(plan.hero.channel.name) + '</strong> 开始——免费、一键开通、效果最确定。' +
+    '还有 <strong>' + remaining + '</strong> 项可后续尝试。' +
     '</span>';
 
-  renderPromoGroup('P0', recs.filter(function(r) { return r.priority === 'P0'; }));
-  renderPromoGroup('P1', recs.filter(function(r) { return r.priority === 'P1'; }));
-  renderPromoGroup('P2', recs.filter(function(r) { return r.priority === 'P2'; }));
+  // 英雄推荐卡片
+  renderPromoHero(plan.hero);
 
+  // 三类分组
+  renderPromoSection('quickWins', plan.quickWins, '开了就有用，全部免费', true);
+  renderPromoSection('paid', plan.paid, '花点小钱，加速增长', true);
+  renderPromoSection('later', plan.later, '需要资质或预算充足再试', false);
+
+  // 同行对标（仅在数据充足时显示）
   renderPromoPeerCard();
+
   renderPromoDetail();
 }
 
-var PROMO_PRI_COLORS = { P0: '#e74c3c', P1: '#f5a623', P2: '#27ae60' };
+function renderPromoHero(item) {
+  var ch = item.channel;
+  var peerTag = item.peerPct !== null
+    ? '<span class="promo-why-tag peer">同行 ' + item.peerPct + '% 已开通</span> '
+    : '<span class="promo-why-tag knowledge">行业经验推荐</span> ';
 
-function renderPromoGroup(pri, items) {
-  var cardEl = $('promoList' + pri + 'Card');
-  var listEl = $('promoList' + pri);
-  if (items.length === 0) { cardEl.style.display = 'none'; return; }
-  cardEl.style.display = '';
+  var checkAfterHtml = ch.checkAfter
+    ? '<div class="hero-checkafter">📊 ' + escHtml(ch.checkAfter) + '</div>'
+    : '';
 
-  var html = '';
-  items.forEach(function(item, i) {
-    var ch = item.channel;
-    var color = PROMO_PRI_COLORS[pri];
-    var whyTagClass = item.hasPeer ? 'peer' : 'knowledge';
-    var whyTagText = item.hasPeer ? '同行验证' : '行业经验';
-    html += '<div class="promo-action-item">' +
-      '<div class="promo-action-rank" style="color:' + color + ';">' + (i + 1) + '</div>' +
-      '<div class="promo-action-body">' +
-        '<div class="act-title"><span class="promo-why-tag ' + whyTagClass + '">' + whyTagText + '</span>' + escHtml(ch.name) + ' · ' + escHtml(ch.type) + '</div>' +
-        '<div class="act-desc">' + item.whyText + '</div>' +
-        '<div class="act-meta">' +
-          '<span class="promo-action-meta-item">💰 ' + escHtml(ch.costDesc) + '</span>' +
-          '<span class="promo-action-meta-item">📋 ' + escHtml(ch.threshold) + '</span>' +
-          '<span class="promo-action-meta-item">🚀 ' + escHtml(ch.searchWeight) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="promo-action-side">' +
-        '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入清单</button>' +
+  $('promoHeroCard').style.display = '';
+  $('promoHeroCard').innerHTML =
+    '<div class="hero-badge">建议你从这里开始</div>' +
+    '<div class="hero-body">' +
+      '<div class="hero-name">' + peerTag + escHtml(ch.name) + ' · ' + escHtml(ch.type) + '</div>' +
+      '<div class="hero-why">' + escHtml(ch.effectDesc) + '</div>' +
+      '<div class="hero-cost">💰 ' + escHtml(ch.costDesc) + ' · 📋 ' + escHtml(ch.threshold) + '</div>' +
+      checkAfterHtml +
+      '<div class="hero-action">' +
+        '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
+        '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入明日清单</button>' +
       '</div>' +
     '</div>';
-  });
-  listEl.innerHTML = html;
 }
 
+function renderPromoSection(section, items, title, defaultOpen) {
+  var cardId, listId;
+  if (section === 'quickWins') { cardId = 'promoQuickWinsCard'; listId = 'promoQuickWins'; }
+  else if (section === 'paid')    { cardId = 'promoPaidCard'; listId = 'promoPaidList'; }
+  else                            { cardId = 'promoLaterCard'; listId = 'promoLaterList'; }
+
+  if (items.length === 0) { $(cardId).style.display = 'none'; return; }
+  $(cardId).style.display = '';
+
+  // 默认折叠的后组
+  if (!defaultOpen) {
+    $(cardId).querySelector('.card-header h3').style.cursor = 'pointer';
+    $(cardId).querySelector('.card-header h3').onclick = function() { togglePromoSection(listId); };
+  }
+
+  var html = '';
+  items.forEach(function(item) {
+    var ch = item.channel;
+    var peerTag = item.peerPct !== null
+      ? '<span class="promo-why-tag peer">同行 ' + item.peerPct + '%</span> '
+      : '';
+    html += '<div class="section-item">' +
+      '<span class="section-item-name">' + peerTag + escHtml(ch.name) + '</span>' +
+      '<span class="section-item-desc">' + escHtml(ch.effectDesc).substring(0, 40) + '…</span>' +
+      '<span class="section-item-cost">' + escHtml(ch.costDesc) + '</span>' +
+      '<button class="btn btn-primary btn-sm" onclick="addToChecklist(\'' + ch.id + '\')">+ 写入清单</button>' +
+    '</div>';
+  });
+  $(listId).innerHTML = html;
+
+  // 折叠组的初始状态
+  if (!defaultOpen) {
+    $(listId).style.display = 'none';
+    $(listId).classList.add('promo-collapsible');
+  }
+}
+
+function togglePromoSection(listId) {
+  var el = $(listId);
+  if (el.style.display === 'none') { el.style.display = ''; }
+  else { el.style.display = 'none'; }
+}
+
+// 收紧同行对标：仅 ≥3 个标签渠道有 ≥3 个商品数据才显示
 function renderPromoPeerCard() {
   var peerData = window._lastAnalysis;
   if (!peerData || peerData.total === 0) { $('promoPeerCard').style.display = 'none'; return; }
@@ -1184,8 +1354,10 @@ function renderPromoPeerCard() {
   var coverage = getPeerCoverage(peerData);
   var tools = ['freightInsurance', 'goldCoins', 'sevenDayReturn', 'fastRefund'];
   var myStatus = loadPromoStatus();
-  var hasAny = tools.some(function(id) { return coverage[id] && coverage[id].count >= 3; });
-  if (!hasAny) { $('promoPeerCard').style.display = 'none'; return; }
+
+  // 至少 2 个渠道有 ≥3 个商品的数据才显示卡片，避免"数据不足"半成品
+  var validTools = tools.filter(function(id) { return coverage[id] && coverage[id].count >= 3; });
+  if (validTools.length < 2) { $('promoPeerCard').style.display = 'none'; return; }
 
   $('promoPeerCard').style.display = '';
 
@@ -1194,12 +1366,12 @@ function renderPromoPeerCard() {
     var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === id; });
     if (!ch) return;
     var cov = coverage[id];
-    var covText = (cov && cov.count >= 3) ? cov.pct + '%（' + cov.count + '/' + peerData.total + '）' : '数据不足';
+    var covText = (cov && cov.count >= 3) ? cov.pct + '%（' + cov.count + '/' + peerData.total + '）' : '—';
     var myText = myStatus[id] ? '<span style="color:var(--green);font-weight:600;">已开通</span>' : '<span style="color:var(--red);">未开通</span>';
     html += '<tr><td style="font-weight:600;">' + escHtml(ch.name) + '</td><td>' + covText + '</td><td>' + myText + '</td></tr>';
   });
   html += '</tbody></table>';
-  html += '<p style="font-size:10px;color:var(--text-muted);margin-top:6px;">基于「竞品分析」Tab 最新搜索结果（' + peerData.total + ' 个商品）。覆盖率 ≥ 3 个商品才显示数字，否则显示"数据不足"。</p>';
+  html += '<p style="font-size:10px;color:var(--text-muted);margin-top:6px;">基于「竞品分析」Tab 最新搜索结果（' + peerData.total + ' 个商品）。仅显示数据充足的渠道。</p>';
 
   $('promoPeerContent').innerHTML = html;
 }
@@ -1382,8 +1554,10 @@ function reanalyzeWithFilters() {
 
 // ===== 数据解析入口 =====
 var myProductInfo = null;
+var _currentSearchKeyword = '';
 
 function processData(raw) {
+  _currentSearchKeyword = $('compKeyword').value.trim();
   $('compPasteCard').style.display = 'none';
   $('compFilters').style.display = '';
   $('compLoading').style.display = '';
@@ -1474,7 +1648,8 @@ function analyzeAndRender(products, myPrice, myCost) {
     activityCount: activityCount,
     total: valid.length,
     products: valid,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    keyword: _currentSearchKeyword
   };
 }
 
@@ -1520,14 +1695,15 @@ function renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgP
     '<div class="diag-score">' +
       '<div class="diag-ring-wrap">' + svg + '<div class="diag-ring-val">' + overall + '</div></div>' +
       '<div class="diag-ring-desc">竞争力综合评分</div>' +
+      '<div class="diag-benchmark">同类目参考：≥80 优秀 · 60-79 中等 · 45-59 需改进 · &lt;45 严重不足</div>' +
     '</div>' +
     '<div class="diag-dims">' +
       '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">价格定位</span><span class="diag-dim-val">' + priceScore + ' 分</span></div>' +
-        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (priceScore >= 75 ? 'lo' : priceScore >= 40 ? 'md' : 'hi') + '" style="width:' + priceScore + '%;"></div></div></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (priceScore >= 75 ? 'lo' : priceScore >= 40 ? 'md' : 'hi') + '" style="width:' + priceScore + '%;"></div></div><div class="diag-dim-ref">' + (priceScore >= 75 ? '优于' : priceScore >= 40 ? '接近' : '低于') + '同行中位</div></div>' +
       '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">标题关键词覆盖</span><span class="diag-dim-val">' + titleScore + ' 分 · ' + covered + '/' + topWords.length + '</span></div>' +
-        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (titleScore >= 70 ? 'lo' : titleScore >= 40 ? 'md' : 'hi') + '" style="width:' + titleScore + '%;"></div></div></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill ' + (titleScore >= 70 ? 'lo' : titleScore >= 40 ? 'md' : 'hi') + '" style="width:' + titleScore + '%;"></div></div><div class="diag-dim-ref">覆盖 ' + covered + '/' + topWords.length + ' 个同行高频词</div></div>' +
       '<div class="diag-dim"><div class="diag-dim-head"><span class="diag-dim-name">活动竞争力</span><span class="diag-dim-val">' + activityScore + ' 分</span></div>' +
-        '<div class="diag-dim-track"><div class="diag-dim-fill md" style="width:' + activityScore + '%;"></div></div></div>' +
+        '<div class="diag-dim-track"><div class="diag-dim-fill md" style="width:' + activityScore + '%;"></div></div><div class="diag-dim-ref">' + (sortedActivities.length >= 4 ? '同行活动丰富，建议跟进' : sortedActivities.length >= 2 ? '同行活动适中' : '同行活动较少') + '</div></div>' +
     '</div>' +
     renderFinding(products, myPrice, topKeywords, avgPrice, myTitle, topWords, covered, titleScore, priceScore, sortedActivities, total, valid);
 
@@ -1646,20 +1822,38 @@ function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivi
     var diff = Math.round((myPrice - avgPrice) / avgPrice * 100);
     var absDiff = Math.abs(diff);
     if (absDiff > 20) {
+      var sugLow = Math.round(avgPrice * 0.92), sugHigh = Math.round(avgPrice * 1.05);
+      var costWarning = '';
+      if (myCost > 0 && sugLow < myCost) {
+        costWarning = ' ⚠️ 建议价下限 ¥' + sugLow + ' 低于你的成本 ¥' + myCost + '，按此调整将亏损。请核实同行低价商品是否为出租/配件/非定制类，可在「数据筛选」中排除非同类商品后重新分析。如成本确实偏高，建议优化供应链或通过差异化（材质/工艺）支撑定价。';
+        sugLow = myCost; // 不推荐低于成本的售价
+      }
+      var marginNote = '';
+      if (myCost > 0 && sugLow >= myCost) {
+        var marginPct = Math.round((sugLow - myCost) / sugLow * 100);
+        marginNote = ' 按建议价下限 ¥' + sugLow + ' 计算，毛利率约 ' + marginPct + '%。';
+      }
       items.push({
         status: 'need', num: num,
         title: '定价偏离较大 — 建议' + (diff > 0 ? '降价' : '提价'),
         desc: '你的 ¥' + myPrice + ' 比同行均价 ¥' + Math.round(avgPrice) + ' ' + (diff > 0 ? '高' : '低') + ' ' + absDiff + '%。同行 75% 定价在 ¥' + p25 + '–' + p75 + '。' +
-          (diff > 0 ? '偏高会降低点击率，建议调至 ¥' + Math.round(avgPrice * 0.92) + '–' + Math.round(avgPrice * 1.05) + '。' : '偏低可能被怀疑质量，可提至 ¥' + Math.round(avgPrice * 0.95) + '–' + Math.round(avgPrice * 1.08) + '。'),
-        data: '均价 ¥' + Math.round(avgPrice) + ' · P25 ¥' + p25 + ' · P50 ¥' + p50 + ' · P75 ¥' + p75,
+          (diff > 0 ? '偏高会降低点击率，建议调至 ¥' + sugLow + '–' + sugHigh + '。' : '偏低可能被怀疑质量，可提至 ¥' + Math.round(avgPrice * 0.95) + '–' + Math.round(avgPrice * 1.08) + '。') + costWarning + marginNote,
+        action: (diff > 0 ? '千牛卖家中心 → 商品管理 → 编辑商品 → 修改一口价。建议分步降价（每次降 5-10%），观察点击率变化。' : '千牛卖家中心 → 商品管理 → 编辑商品 → 修改一口价。提价时建议同步优化主图和详情页，强化品质感。'),
+        data: '均价 ¥' + Math.round(avgPrice) + ' · P25 ¥' + p25 + ' · P50 ¥' + p50 + ' · P75 ¥' + p75 + (myCost > 0 ? ' · 你的成本 ¥' + myCost : ''),
         dot: '#ef5350'
       });
     } else if (absDiff > 10) {
+      var mlow = Math.round(avgPrice * 0.95), mhigh = Math.round(avgPrice * 1.05);
+      var mcostWarning = '';
+      if (myCost > 0 && mlow < myCost) {
+        mcostWarning = ' ⚠️ 建议价下限低于你的成本 ¥' + myCost + '。如成本无法降低，建议保持当前定价并通过标题优化和活动提升竞争力。';
+        mlow = myCost;
+      }
       items.push({
         status: 'maybe', num: num,
         title: '定价略有偏差 — 建议微调',
-        desc: '你的 ¥' + myPrice + ' 偏离同行均价 ' + absDiff + '%，幅度不大但可优化。建议调至 ¥' + Math.round(avgPrice * 0.95) + '–' + Math.round(avgPrice * 1.05) + ' 以接近市场中位。',
-        data: '均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 ' + (diff > 0 ? '+' : '') + diff + '%',
+        desc: '你的 ¥' + myPrice + ' 偏离同行均价 ' + absDiff + '%，幅度不大但可优化。建议调至 ¥' + mlow + '–' + mhigh + ' 以接近市场中位。' + mcostWarning,
+        data: '均价 ¥' + Math.round(avgPrice) + ' · 中位价 ¥' + p50 + ' · 偏离 ' + (diff > 0 ? '+' : '') + diff + '%' + (myCost > 0 ? ' · 你的成本 ¥' + myCost : ''),
         dot: '#ff9800'
       });
     } else {
@@ -1686,18 +1880,23 @@ function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivi
   if (myTitle && topKeywords.length > 0) {
     var missing = topKeywords.slice(0, 10).filter(function(k) { return myTitle.indexOf(k.word) < 0; });
     if (missing.length >= 5) {
+      var suggestWords = missing.slice(0, 3).map(function(k) { return k.word; }).join('」「');
+      var optimizedTitle = myTitle ? '「' + myTitle.substring(0, 28) + ' ' + suggestWords + (myTitle.length > 28 ? '…' : '') + '」' : '';
       items.push({
         status: 'need', num: num,
         title: '关键词覆盖不足 — 建议补充 ' + missing.length + ' 个高频词',
         desc: '你未覆盖的高频词：<strong>' + missing.slice(0, 5).map(function(k) { return k.word + '(' + k.pct + '%)'; }).join('、') + '</strong>。缺失超过半数同行高频词会严重降低搜索曝光。在千牛编辑标题，把这些词自然嵌入。',
+        action: '建议改为：' + optimizedTitle + '。在千牛卖家中心 → 商品管理 → 编辑商品 → 修改标题，将缺失词自然嵌入现有标题中。',
         data: '已覆盖 ' + covered + '/' + topWords.length + ' 个 · 缺失率 ' + Math.round(missing.length / topWords.length * 100) + '% · 标题得分 ' + titleScore,
         dot: '#ef5350'
       });
     } else if (missing.length >= 2) {
+      var sWords = missing.map(function(k) { return k.word; }).join('」「');
       items.push({
         status: 'maybe', num: num,
         title: '关键词覆盖一般 — 可补充 ' + missing.length + ' 个词',
         desc: '未覆盖的词：' + missing.map(function(k) { return k.word + '(' + k.pct + '%)'; }).join('、') + '。补充后可增加长尾搜索入口。',
+        action: '建议在标题中加入「' + sWords + '」。路径：千牛卖家中心 → 商品管理 → 编辑商品标题。',
         data: '已覆盖 ' + covered + '/' + topWords.length + ' 个 · 标题得分 ' + titleScore,
         dot: '#ff9800'
       });
@@ -1769,7 +1968,8 @@ function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivi
       items.push({
         status: 'need', num: num,
         title: '同行活动覆盖高 — 建议开通「' + topActName + '」',
-        desc: '同行热门活动：' + allActNames.join('、') + '。超半数竞品已开通活动，未参加可能被搜索降权。路径：千牛 → 营销中心 → 活动报名。',
+        desc: '同行热门活动：' + allActNames.join('、') + '。超半数竞品已开通活动，未参加可能被搜索降权。',
+        action: getActivityAction(topActName),
         data: topActName + ' 覆盖率 ' + topActCov + '% · ' + sortedActivities[0][1] + '/' + total + ' 家 · 共 ' + sortedActivities.length + ' 种活动',
         dot: '#ef5350'
       });
@@ -1778,6 +1978,7 @@ function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivi
         status: 'maybe', num: num,
         title: '同行活动较分散 — 可选开通「' + topActName + '」',
         desc: '同行活动分布：' + allActNames.join('、') + '。无单一活动占绝对优势，可根据利润空间选择性参加。',
+        action: getActivityAction(topActName),
         data: '最高覆盖率 ' + topActCov + '% · 共 ' + sortedActivities.length + ' 种活动',
         dot: '#ff9800'
       });
@@ -1943,13 +2144,31 @@ function renderImprovements(products, myPrice, myCost, topKeywords, sortedActivi
     html += '<div class="improve-item p-' + pri + '">' +
       '<div class="improve-rank" style="color:' + item.dot + ';">' + item.num + '</div>' +
       '<div class="improve-body">' +
-        '<div class="title"><span class="imp-badge ' + pri + '">' + statusLabels[item.status] + '</span>' + item.title + '</div>' +
-        '<div class="desc">' + item.desc + '</div>' +
+        '<div class="title"><span class="imp-badge ' + pri + '">' + statusLabels[item.status] + '</span>' + explainTerms(item.title) + '</div>' +
+        '<div class="desc">' + explainTerms(item.desc) + '</div>' +
+        (item.action ? '<div class="imp-action">🛠 ' + explainTerms(item.action) + '</div>' : '') +
         '<span class="evidence"><span class="ev-dot" style="background:' + item.dot + ';"></span>' + escHtml(item.data) + '</span>' +
       '</div>' +
     '</div>';
   });
   $('improveList').innerHTML = html;
+}
+
+function getActivityAction(tagName) {
+  var mappings = {
+    '退货宝': '千牛卖家中心 → 商家保障 → 退货宝 → 立即加入。免费开通，退回货品运费由平台承担。',
+    '包邮': '千牛卖家中心 → 商品管理 → 编辑商品 → 运费模板 → 设置包邮。也可在千牛 → 物流工具中批量设置。',
+    '淘金币': '千牛卖家中心 → 营销中心 → 淘金币 → 立即开通。买家使用淘金币抵扣 2-5%，卖家承担费用（单均几分到几毛），有搜索加权。',
+    '官方立减': '千牛卖家中心 → 营销中心 → 活动报名 → 搜索"官方立减"→ 查看符合条件的活动并报名。平台自动为商品打标，按比例立减。',
+    '运费险': '千牛卖家中心 → 商家保障 → 运费险 → 立即加入。按售价 1-2% 收费，退货补运费，转化率通常提升 10-20%。',
+    '7天无理由': '千牛卖家中心 → 消费者保障 → 7天无理由退换货 → 加入。基础信任标识，无此标识搜索排序靠后。',
+    '极速退款': '千牛卖家中心 → 消费者保障 → 极速退款 → 开通。缩短退款等待时间，提升购物体验。',
+    '优惠': '千牛卖家中心 → 营销中心 → 优惠券 → 创建优惠券。可设店铺券/商品券，提升转化率。'
+  };
+  for (var key in mappings) {
+    if (tagName.indexOf(key) >= 0 || (key.indexOf(tagName) >= 0)) return mappings[key];
+  }
+  return '千牛卖家中心 → 营销中心 → 活动报名，搜索相关活动并报名。';
 }
 
 function formatPercent(value, sortedArr) {
@@ -2328,6 +2547,37 @@ function getKeywordFrequency(titles) {
 
 function escHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ===== 术语解释 =====
+var TERM_GLOSSARY = {
+  '淘金币': '淘宝积分体系。买家购物攒金币，下单时抵扣 2-5%。卖家承担抵扣费用（单均几分到几毛）。开通有搜索加权。',
+  '运费险': '退货运费补偿。买家退货后由保险公司赔付运费。按售价 1-2% 收费，转化率通常提升 10-20%。',
+  '官方立减': '平台官方促销工具。商品报名后自动打标并按比例立减（如立减 15%），费用由卖家承担。',
+  '退货宝': '升级版运费险，平台补贴退货运费。免费开通，退货补运费。',
+  '包邮': '卖家承担运费。淘宝搜索有"包邮"筛选入口，包邮商品曝光更高。',
+  '直通车': '淘宝搜索广告（按点击付费 CPC）。在搜索结果页首位/前几位展示。建议日预算 ¥30-100 起步。',
+  '引力魔方': '淘宝推荐流量广告。在"猜你喜欢"、购后推荐等位置展示。按点击付费。',
+  '万相台': '阿里妈妈智能投放平台。自动在搜索+推荐+内容多渠道分配预算。适合不想手动调价的卖家。',
+  '淘客': '按成交付费（CPS）的推广渠道。淘宝客帮你在站外推广，成交后付佣金。佣金比例自行设定（建议 5-20%）。',
+  '聚划算': '淘宝大型团购活动。需要店铺资质审核和商品销量基础。活动有流量扶持和搜索加权。',
+  '天天特卖': '日常特卖活动，门槛低于聚划算。适合清库存或引流款。需要让利（活动价要求）。',
+  '7天无理由': '基础消费者保障标识。买家收到货 7 天内可无理由退货（非质量问题买家承担运费）。无此标识搜索排序靠后。',
+  '极速退款': '缩短买家退款等待时间。开通后符合条件的退款自动处理。',
+  '千牛': '淘宝卖家后台管理工具（千牛卖家中心）。商品管理、订单处理、营销推广等操作都在千牛进行。'
+};
+
+function explainTerms(text) {
+  if (!text) return text;
+  var result = text;
+  // 按术语长度从长到短替换，避免短词覆盖长词
+  var terms = Object.keys(TERM_GLOSSARY).sort(function(a, b) { return b.length - a.length; });
+  terms.forEach(function(term) {
+    if (result.indexOf(term) >= 0) {
+      result = result.split(term).join('<span class="term" data-tip="' + escHtml(TERM_GLOSSARY[term]) + '">' + term + '</span>');
+    }
+  });
+  return result;
 }
 
 // ===== 领域词典管理 =====
