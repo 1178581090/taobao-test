@@ -54,25 +54,26 @@ body {
   z-index: 100;
   backdrop-filter: blur(8px);
 }
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  text-decoration: none;
-}
-.topbar-dot {
-  width: 10px; height: 10px;
-  border-radius: 3px;
-  background: var(--brand);
-}
 .topbar-sub {
   font-size: 12px;
   color: var(--text-muted);
   font-weight: 400;
 }
+
+.topbar-tabs { display: flex; gap: 4px; }
+.topbar-tab {
+  padding: 6px 16px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .2s;
+}
+.topbar-tab:hover { background: #f3f4f6; color: var(--text); }
+.topbar-tab.active { background: var(--brand-light); color: var(--brand); }
 
 /* ── Main Layout ── */
 .main {
@@ -530,11 +531,14 @@ body {
 <body>
 
 <div class="topbar">
-  <a class="topbar-brand" href="#"><span class="topbar-dot"></span>竞品分析</a>
+  <div class="topbar-tabs">
+    <button class="topbar-tab active" data-tab="competitor">竞品分析</button>
+    <button class="topbar-tab" data-tab="promotion">推广分析</button>
+  </div>
   <span class="topbar-sub">淘宝演出服定制类目</span>
 </div>
 
-<div class="main">
+<div id="tabCompetitor" class="main">
 
   <!-- 左侧设置面板 -->
   <div class="setup-panel">
@@ -704,6 +708,10 @@ body {
     </div><!-- /compResult -->
   </div><!-- /resultPanel -->
 </div><!-- /main -->
+
+<div id="tabPromotion" class="main" style="display:none;">
+  <!-- 下一步填充 -->
+</div>
 
 <script>
 // ===== 通用工具 =====
@@ -1893,6 +1901,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // 保存成本价
 document.addEventListener('change', function(e) {
   if (e.target.id === 'compMyCost') { localStorage.setItem('tb_my_cost', e.target.value); }
+});
+
+// ===== Tab 切换 =====
+document.querySelector('.topbar-tabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.topbar-tab');
+  if (!tab) return;
+  var target = tab.dataset.tab;
+  document.querySelectorAll('.topbar-tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  document.querySelectorAll('.main').forEach(function(m) { m.style.display = 'none'; });
+  if (target === 'competitor') {
+    $('tabCompetitor').style.display = 'grid';
+  } else {
+    $('tabPromotion').style.display = 'grid';
+    renderPromotionTab();
+  }
 });
 </script>
 </body>
