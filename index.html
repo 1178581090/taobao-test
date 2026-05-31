@@ -1354,7 +1354,7 @@ var ACTIVITY_RULES = [
     rules: {}, costType: 'free', effort: 'low',
     effect: 'AI自动发奖，积累有效评价，提升商品转化',
     howToImprove: null,
-    scope: 'store', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
+    scope: 'store', selectionTip: '选主图清晰、价格低于同行10%的款式。避开0销量品，有基础销量的商品通过率更高。', url: 'https://myseller.taobao.com/home.htm/starb/nebula/mkt-tools/mkt-tools-home/home'
   },
   { id: 'coupon', name: '优惠券', category: '营销工具', source: '营销 > 营销工具',
     rules: {}, costType: 'free', effort: 'low',
@@ -1417,13 +1417,13 @@ var ACTIVITY_RULES = [
     costType: 'free', effort: 'medium',
     effect: '秒杀频道流量，适合测款引流',
     howToImprove: '积累 10 单真实交易 + 体验分 ≥ 4.2 后解锁',
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/ltao-home/'
+    scope: 'product', selectionTip: '选主图清晰、价格低于同行10%的款式。避开0销量品，有基础销量的商品通过率更高。', url: 'https://myseller.taobao.com/home.htm/ltao-home/'
   },
   { id: 'superReduce', name: '超级立减', category: '常驻活动', source: '营销 > 超级立减',
     rules: {}, costType: 'free', effort: 'medium',
     effect: '单品立减券，平台补贴部分金额',
     howToImprove: null,
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/ttmjpt.htm',
+    scope: 'product', selectionTip: '选有价格优势的商品。平台补贴后更吸引人，建议选利润空间较大的款。', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/ttmjpt.htm',
     note: '大促期间（如618）暂停，预计大促结束后恢复'
   },
   { id: 'dailyDeal', name: '天天特价', category: '常驻活动', source: '营销 > 活动报名',
@@ -1431,21 +1431,21 @@ var ACTIVITY_RULES = [
     costType: 'free', effort: 'medium',
     effect: '日常特卖频道，门槛低，适合清库存或引流款',
     howToImprove: '积累 5 单真实交易 + 体验分 ≥ 4.2 后解锁',
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/homepage.htm'
+    scope: 'product', selectionTip: '选基础款或引流款，价格要有竞争力。0销量报名通过率低，先积累3-5单再报。', url: 'https://myseller.taobao.com/home.htm/starb/tmc-next/sale/seller/homepage.htm'
   },
   { id: 'bybt', name: '百亿补贴', category: '常驻活动', source: '营销 > 百亿补贴',
     rules: { expScore: { min: 4.5 }, orders30d: { min: 50 } },
     costType: 'free', effort: 'high',
     effect: '平台级补贴流量，需有价格竞争力',
     howToImprove: '体验分 ≥ 4.5 且近30天 ≥ 50单后解锁。当前差距较大，先积累基础销量',
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/qn-jhs-bybt-seller/bybt'
+    scope: 'product', selectionTip: '需要极强价格竞争力的爆款。当前店铺暂无符合条件商品，先冲销量再考虑。', url: 'https://myseller.taobao.com/home.htm/qn-jhs-bybt-seller/bybt'
   },
   { id: 'brandNew', name: '品牌新享', category: '常驻活动', source: '营销 > 品牌新享',
     rules: { storeLevel: { min: 'Lv.3' } },
     costType: 'free', effort: 'medium',
     effect: '品牌新品扶持流量，适合有品牌资质的店铺',
     howToImprove: '提升店铺层级到 Lv.3 后解锁',
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/qianniu-alimama-ppxx/'
+    scope: 'product', selectionTip: '需品牌资质。选有设计感的新品上传，突出演出服的舞台效果和定制特色。', url: 'https://myseller.taobao.com/home.htm/qianniu-alimama-ppxx/'
   },
   { id: 'couponMarketing', name: '消费券', category: '常驻活动', source: '营销 > 消费券',
     rules: {},
@@ -1459,7 +1459,7 @@ var ACTIVITY_RULES = [
     costType: 'free', effort: 'high',
     effect: '爆款竞价排名，适合已有爆款的店铺',
     howToImprove: '需近30天 ≥ 100单。当前差距很大，暂时不需要考虑',
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/starb/bidding/sale/race/market?biddingCode=all'
+    scope: 'product', selectionTip: '已有爆款的店铺才能参与，当前差距较大，暂时跳过。', url: 'https://myseller.taobao.com/home.htm/starb/bidding/sale/race/market?biddingCode=all'
   },
 
   // ===== 推广产品 =====
@@ -1468,35 +1468,35 @@ var ACTIVITY_RULES = [
     effect: '搜索广告位按点击付费，精准触达正在搜索你类目的买家',
     reason: '买家搜"演出服"时你的商品出现在第一位，是获取精准流量最直接的方式。适合主推利润较高的款式。',
     howToImprove: null,
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/subway_new/'
+    scope: 'product', selectionTip: '选主图清晰、价格有优势的主打款。标题包含演出服舞台装等热搜词效果更好。先测1-2个款。', url: 'https://myseller.taobao.com/home.htm/subway_new/'
   },
   { id: 'crowdPromo', name: '人群推广（原引力魔方）', category: '付费推广', source: '推广 > 人群推广',
     rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（预计每天 100-300 次推荐曝光）',
     effect: '推荐流广告（猜你喜欢），适合视觉效果好、有点击欲望的商品',
     reason: '买家浏览其他商品时被动看到你的商品，适合有清晰主图和上身效果图的款式。和关键词推广配合效果更佳。',
     howToImprove: null,
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/display_new/'
+    scope: 'product', selectionTip: '选主图视觉好、有模特上身图的款式。演出服的上身效果是点击率的关键。', url: 'https://myseller.taobao.com/home.htm/display_new/'
   },
   { id: 'contentPromo', name: '内容推广', category: '付费推广', source: '推广 > 内容推广',
     rules: {}, costType: 'paid', effort: 'high', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（直播回放持续引流）',
     effect: '短视频+直播推广，展示演出服穿着效果和定制细节',
     reason: '演出服上身效果和细节展示力远超图文，一条优质视频持续带来流量。需要拍摄和剪辑能力。',
     howToImprove: null,
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
+    scope: 'product', selectionTip: '选有上身视频或细节展示的商品。展示穿着效果和定制细节，演出服在视频中说服力远超图文。', url: 'https://myseller.taobao.com/home.htm/adstrategy_content/'
   },
   { id: 'allStorePromo', name: '货品全站推', category: '付费推广', source: '推广 > 货品全站推',
     rules: {}, costType: 'paid', effort: 'medium', monthlyCost: '日预算 ¥50 起 = 月支出约 ¥1500+（系统自动分配各渠道曝光）',
     effect: '全站流量智能投放，系统自动匹配搜索+推荐+内容渠道',
     reason: '不想分别管理多个推广工具的懒人方案。系统自动在各渠道分配预算，省心但可控性较低。',
     howToImprove: null,
-    scope: 'both', url: 'https://myseller.taobao.com/home.htm/alltaopromotion/'
+    scope: 'both', selectionTip: '系统自动推荐商品，建议先选1-2个主推款测试效果。', url: 'https://myseller.taobao.com/home.htm/alltaopromotion/'
   },
   { id: 'tbUnion', name: '淘宝联盟（淘客）', category: '付费推广', source: '推广 > 淘宝联盟',
     rules: {}, costType: 'paid', effort: 'low', monthlyCost: '按成交抽佣 5%~10%，不成交不花钱',
     effect: '按成交付费，有人帮你推广，卖出才给佣金',
     reason: '风险最低的付费方式——不成交不花钱。适合先试水，设定 5% 佣金起步，有人推就有成交。',
     howToImprove: null,
-    scope: 'product', url: 'https://myseller.taobao.com/home.htm/union-adv/'
+    scope: 'product', selectionTip: '设置佣金后全店商品自动生效，也可指定商品单独设佣金。先选销量好的款设置较高佣金吸引淘客。', url: 'https://myseller.taobao.com/home.htm/union-adv/'
   }
 ];
 
@@ -3306,6 +3306,9 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
     var reasonHtml = r.reason
       ? '<div class="af-activity-reason">💬 ' + escHtml(r.reason) + '</div>'
       : '';
+    var selectionHtml = (r.scope === 'product' || r.scope === 'both') && r.selectionTip
+      ? '<div style="font-size:11px;color:#1967d2;margin-bottom:6px;background:#e8f0fe;padding:6px 8px;border-radius:4px;">🎯 <strong>选品建议：</strong>' + escHtml(r.selectionTip) + '</div>'
+      : '';
     var costHtml = r.monthlyCost
       ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
       : '';
@@ -3320,6 +3323,7 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
       '</div>' +
       '<div class="af-activity-effect">' + escHtml(r.effect) + '</div>' +
       reasonHtml +
+      selectionHtml +
       '<div class="af-activity-rules">' + rulesHtml + ' ' + costHtml + '</div>' +
       improveHtml +
       '<div class="af-activity-action">' + actionHtml + '</div>' +
