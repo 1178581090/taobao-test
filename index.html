@@ -690,6 +690,7 @@ body {
 .hero-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .hero-why { font-size: 13px; color: var(--text); line-height: 1.7; margin-bottom: 10px; }
 .hero-cost { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.hero-effort { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
 .hero-checkafter { font-size: 11px; color: var(--amber); margin-bottom: 14px; }
 .hero-action {
   display: flex; align-items: center; justify-content: space-between;
@@ -1423,6 +1424,7 @@ function renderPromoHero(item) {
       '<div class="hero-name">' + peerTag + escHtml(ch.name) + ' · ' + escHtml(ch.type) + '</div>' +
       '<div class="hero-why">' + escHtml(ch.effectDesc) + '</div>' +
       '<div class="hero-cost">💰 ' + escHtml(ch.costDesc) + ' · 📋 ' + escHtml(ch.threshold) + '</div>' +
+      '<div class="hero-effort">⏱ 精力投入：' + ({ low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' }[ch.effortLevel] || ch.effortLevel) + '</div>' +
       checkAfterHtml +
       '<div class="hero-action">' +
         '<span class="hero-path">🚀 ' + escHtml(ch.path) + '</span>' +
@@ -1504,14 +1506,35 @@ function renderPromoPeerCard() {
 
 function renderPromoDetail() {
   var html = '';
+  var effortLabels = { low: '一键搞定 · 几乎不费精力', medium: '偶尔维护 · 每周看一眼即可', high: '持续投入 · 需要经常看数据调整' };
+  var effortColors = { low: 'var(--green)', medium: 'var(--amber)', high: 'var(--red)' };
+
   CHANNEL_KNOWLEDGE.forEach(function(ch) {
+    var effortLabel = effortLabels[ch.effortLevel] || ch.effortLevel;
+    var effortColor = effortColors[ch.effortLevel] || 'var(--text-muted)';
+
+    var actionHtml = ch.directUrl
+      ? '<a class="btn btn-outline btn-sm" href="' + escHtml(ch.directUrl) + '" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block;">在千牛打开</a>'
+      : '<button class="btn btn-outline btn-sm" onclick="showOcrZone(\'' + ch.id + '\')" style="margin-top:8px;">截图辅助定位</button>';
+
+    var checkAfterHtml = ch.checkAfter
+      ? '<br><strong>效果验证：</strong>' + escHtml(ch.checkAfter)
+      : '';
+
+    var stepsHtml = escHtml(ch.detailedSteps).replace(/\n/g, '<br>');
+
     html += '<div class="a-card" style="margin-bottom:10px;">' +
       '<div class="a-card-hd"><h4>' + escHtml(ch.name) + ' <span style="font-size:10px;color:var(--text-muted);font-weight:400;">' + escHtml(ch.type) + '</span></h4></div>' +
       '<div class="a-card-bd">' +
+        '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
+        '<strong>适合谁：</strong>' + escHtml(ch.suitableFor) + '<br>' +
+        '<strong>不适合：</strong>' + escHtml(ch.notSuitableFor) + '<br>' +
+        '<strong>操作步骤：</strong><br>' + stepsHtml + '<br>' +
         '<strong>费用：</strong>' + escHtml(ch.costDesc) + '<br>' +
         '<strong>门槛：</strong>' + escHtml(ch.threshold) + '<br>' +
-        '<strong>效果：</strong>' + escHtml(ch.effectDesc) + '<br>' +
-        '<strong>路径：</strong>' + escHtml(ch.path) +
+        '<strong>精力投入：</strong><span style="color:' + effortColor + ';font-weight:600;">' + effortLabel + '</span>' +
+        checkAfterHtml +
+        '<br>' + actionHtml +
       '</div>' +
     '</div>';
   });
