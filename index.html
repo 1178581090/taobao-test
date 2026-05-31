@@ -3325,18 +3325,25 @@ function handleAfFile(e) {
 }
 
 function readAfFile(file) {
-  var reader = new FileReader();
-  reader.onload = function(ev) {
+  if (!file) {
+    $('afScanStatus').innerHTML = '<span style="color:var(--red);">未选择文件</span>';
+    return;
+  }
+  $('afScanStatus').innerHTML = '<span style="color:var(--text-muted);">读取中...</span>';
+  file.text().then(function(text) {
     try {
-      var json = JSON.parse(ev.target.result);
+      var json = JSON.parse(text);
       saveAfData(json);
       $('afScanStatus').style.display = 'none';
       renderAfResults();
     } catch (err) {
-      $('afScanStatus').innerHTML = '<span style="color:var(--red);">文件格式错误: ' + err.message + '</span>';
+      $('afScanStatus').innerHTML =
+        '<span style="color:var(--red);">JSON 格式错误: ' + err.message + '</span><br>' +
+        '<span style="font-size:10px;color:var(--text-muted);">请确认拖入的是 scan-qianniu.json 文件</span>';
     }
-  };
-  reader.readAsText(file);
+  }).catch(function() {
+    $('afScanStatus').innerHTML = '<span style="color:var(--red);">文件读取失败，请重试</span>';
+  });
 }
 
 function importAfJson() {
