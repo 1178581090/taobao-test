@@ -3313,12 +3313,12 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
       ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
       : '';
     var stepsHtml = r.detailedSteps
-      ? '<div style="margin-top:6px;font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="var s=this.nextElementSibling;s.style.display=s.style.display===\'none\'?\'block\':\'none\';">📋 查看操作步骤 ▾</div>' +
-        '<div style="display:none;font-size:11px;line-height:1.8;padding:8px;background:#f9fafb;border-radius:4px;margin-top:4px;">' +
+      ? '<div style="margin-top:8px;padding:6px 10px;background:#fef5e7;border:1px solid var(--amber);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--amber);" onclick="var s=this.nextElementSibling;var arrow=this.querySelector(\'.af-step-arrow\');if(s.style.display===\'none\'){s.style.display=\'block\';arrow.textContent=\'▴\'}else{s.style.display=\'none\';arrow.textContent=\'▾\'}">📋 操作步骤（点击展开，跳转后可对照操作）<span class=\"af-step-arrow\">▾</span></div>' +
+        '<div style="display:none;font-size:12px;line-height:2;padding:10px;background:#fffbf0;border:1px solid var(--amber);border-top:none;border-radius:0 0 6px 6px;margin-bottom:4px;">' +
         escHtml(r.detailedSteps).replace(/\n/g, '<br>') + '</div>'
       : '';
     var actionHtml = r.url
-      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;margin-top:6px;display:inline-block;">去参加 →</a>'
+      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;margin-top:6px;display:inline-block;">去参加 →（新标签页打开，可对照步骤操作）</a>'
       : '';
 
     html += '<div class="af-activity-card">' +
