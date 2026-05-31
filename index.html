@@ -1572,6 +1572,11 @@ function renderPromotionTab() {
   restorePromoCheckboxes();
   var peerData = window._lastAnalysis;
 
+  $('promoEmpty').style.display = 'none';
+  $('promoResult').style.display = 'flex';
+  $('promoResult').style.flexDirection = 'column';
+  $('promoResult').style.gap = '18px';
+
   var hasPeer = peerData && peerData.total > 0;
   if (hasPeer) {
     var kwPart = peerData.keyword ? '「<strong>' + escHtml(peerData.keyword) + '</strong>」' : '';
@@ -3292,22 +3297,50 @@ function scanStore() {
   $('afScanStatus').style.display = '';
   $('afScanStatus').style.background = '#e8f0fe';
   $('afScanStatus').innerHTML =
-    '请在终端运行：<br><code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;">node scan-qianniu.js</code><br>' +
-    '然后将生成的 scan-qianniu.json 内容粘贴到下方：<br>' +
-    '<textarea id="afJsonInput" style="width:100%;height:80px;margin-top:4px;font-size:11px;" placeholder="粘贴 scan-qianniu.json 内容..."></textarea>' +
-    '<button class="btn btn-primary btn-sm" onclick="importAfJson()" style="margin-top:4px;">导入数据</button>';
+    '<strong>方式一（推荐）：拖入 JSON 文件</strong><br>' +
+    '<div id="afDropZone" style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;margin:8px 0;cursor:pointer;transition:border-color 0.2s;"' +
+    ' ondrop="handleAfDrop(event)" ondragover="handleAfDragOver(event)" ondragleave="handleAfDragLeave(event)" onclick="document.getElementById(\'afFileInput\').click()">' +
+    '<span style="font-size:24px;">📂</span><br>' +
+    '<span style="font-size:12px;color:var(--text-muted);">将 scan-qianniu.json 拖到这里<br>或点击选择文件</span>' +
+    '<input type="file" id="afFileInput" accept=".json" onchange="handleAfFile(event)" style="display:none;">' +
+    '</div>' +
+    '<strong>方式二：终端扫描</strong><br>' +
+    '<code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;font-size:11px;">node scan-qianniu.js</code><br>' +
+    '<span style="font-size:10px;color:var(--text-muted);">然后拖入生成的 scan-qianniu.json 文件</span>';
+}
+
+function handleAfDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.background = '#e8f0fe'; }
+function handleAfDragLeave(e) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = ''; }
+
+function handleAfDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'var(--border)';
+  var file = e.dataTransfer.files[0];
+  if (file) { readAfFile(file); }
+}
+
+function handleAfFile(e) {
+  var file = e.target.files[0];
+  if (file) { readAfFile(file); }
+}
+
+function readAfFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var json = JSON.parse(ev.target.result);
+      saveAfData(json);
+      $('afScanStatus').style.display = 'none';
+      renderAfResults();
+    } catch (err) {
+      $('afScanStatus').innerHTML = '<span style="color:var(--red);">文件格式错误: ' + err.message + '</span>';
+    }
+  };
+  reader.readAsText(file);
 }
 
 function importAfJson() {
-  try {
-    var json = JSON.parse($('afJsonInput').value);
-    saveAfData(json);
-    $('afScanStatus').style.display = 'none';
-    renderAfResults();
-  } catch (e) {
-    $('afScanStatus').textContent = 'JSON 格式错误，请检查: ' + e.message;
-    $('afScanStatus').style.background = '#fce8e6';
-  }
+  // 保留兼容，但不再使用 textarea
 }
 
 function initActivityFilter() {
