@@ -200,10 +200,16 @@ async function openWithSteps(url, name, steps, requestingTabId) {
   };
   chrome.tabs.onUpdated.addListener(updateListener);
 
-  // 监听从原标签页打开的新标签页
-  var createListener = function(newTab) {
-    if (newTab.openerTabId === tab.id) {
-      _pendingSteps[newTab.id] = { name: name, steps: steps };
+  // 监听从原标签页打开的新标签页（递归追踪多级跳转）
+  var createListener = async function(newTab) {
+    var tid = newTab.openerTabId;
+    while (tid) {
+      if (_pendingSteps[tid]) {
+        _pendingSteps[newTab.id] = { name: _pendingSteps[tid].name, steps: _pendingSteps[tid].steps };
+        return;
+      }
+      try { var p = await chrome.tabs.get(tid); tid = p.openerTabId; }
+      catch(e) { break; }
     }
   };
   chrome.tabs.onCreated.addListener(createListener);
