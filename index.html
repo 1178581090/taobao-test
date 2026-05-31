@@ -883,6 +883,100 @@ body {
 // ===== 通用工具 =====
 function $(id) { return document.getElementById(id); }
 
+// ===== 渠道知识库 =====
+var CHANNEL_KNOWLEDGE = [
+  {
+    id: 'freightInsurance', name: '运费险', type: '服务工具',
+    baseScore: 95, costLevel: 'low',
+    costDesc: '按售价 1%~2%，单均约 ¥0.5~2',
+    threshold: '无门槛，千牛一键开通',
+    path: '千牛卖家中心 → 商家保障 → 运费险 → 立即加入',
+    effectDesc: '退货补运费，买家下单顾虑降低。演出服定制类退货率偏高，开通后转化率通常提升 10-20%。',
+    searchWeight: '搜索加权 + 转化率提升'
+  },
+  {
+    id: 'goldCoins', name: '淘金币', type: '服务工具',
+    baseScore: 85, costLevel: 'low',
+    costDesc: '买家抵扣 2%~5%，卖家承担费用，单均几分到几毛',
+    threshold: '无门槛，千牛一键开通',
+    path: '千牛卖家中心 → 营销中心 → 淘金币 → 立即开通',
+    effectDesc: '淘宝最大积分体系，开通后商品在淘金币频道有额外曝光，搜索有加权。',
+    searchWeight: '搜索加权 + 淘金币频道流量'
+  },
+  {
+    id: 'sevenDayReturn', name: '7天无理由', type: '服务工具',
+    baseScore: 80, costLevel: 'low',
+    costDesc: '免费开通，退货由买家承担运费（非质量问题）',
+    threshold: '无门槛，千牛一键开通',
+    path: '千牛卖家中心 → 消费者保障 → 7天无理由退换货 → 加入',
+    effectDesc: '基础信任标识，无此标识的商品搜索排序靠后，买家下单率降低。',
+    searchWeight: '搜索基础加权'
+  },
+  {
+    id: 'fastRefund', name: '极速退款', type: '服务工具',
+    baseScore: 75, costLevel: 'low',
+    costDesc: '免费开通',
+    threshold: '需店铺信用达标',
+    path: '千牛卖家中心 → 消费者保障 → 极速退款 → 开通',
+    effectDesc: '缩短买家退款等待时间，提升购物体验和复购率。',
+    searchWeight: '轻度搜索加权'
+  },
+  {
+    id: 'zhitongche', name: '直通车', type: '付费推广',
+    baseScore: 70, costLevel: 'medium',
+    costDesc: '按点击付费（CPC），类目均价约 ¥0.5~2/次，建议日预算 ¥30~100 起步',
+    threshold: '需充值，最低 ¥200 起充',
+    path: '千牛卖家中心 → 营销中心 → 直通车 → 新建推广计划 → 选商品 → 设关键词出价',
+    effectDesc: '搜索关键词精准流量，是最直接的获客方式。按点击付费，不成交不扣费（仅扣点击费）。',
+    searchWeight: '搜索首位曝光'
+  },
+  {
+    id: 'yinlimofang', name: '引力魔方', type: '付费推广',
+    baseScore: 60, costLevel: 'medium',
+    costDesc: '按点击付费（CPC），建议日预算 ¥50~200',
+    threshold: '需充值',
+    path: '千牛卖家中心 → 营销中心 → 引力魔方 → 新建计划 → 选商品 → 设人群定向',
+    effectDesc: '推荐流量（猜你喜欢、购后推荐等），适合获取非搜索的被动曝光。',
+    searchWeight: '推荐位曝光'
+  },
+  {
+    id: 'wanxiangtai', name: '万相台', type: '付费推广',
+    baseScore: 55, costLevel: 'medium',
+    costDesc: '按点击付费，建议日预算 ¥50~300',
+    threshold: '需充值',
+    path: '千牛卖家中心 → 营销中心 → 万相台 → 新建推广',
+    effectDesc: '阿里妈妈智能投放平台，自动在搜索+推荐+内容多渠道分配预算。适合不想手动调价的卖家。',
+    searchWeight: '多渠道智能投放'
+  },
+  {
+    id: 'taoke', name: '淘客', type: '付费推广',
+    baseScore: 50, costLevel: 'medium',
+    costDesc: '按成交付费（CPS），佣金比例自行设定（建议 5%~20%）',
+    threshold: '需设置佣金计划',
+    path: '千牛卖家中心 → 营销中心 → 淘宝客 → 设置佣金 → 推广计划',
+    effectDesc: '按成交付费，不成交不花钱。适合让利换量，但注意佣金会压缩利润。演出服客单价高，佣金金额大，需谨慎设置比例。',
+    searchWeight: '淘客渠道额外流量'
+  },
+  {
+    id: 'juhuasuan', name: '聚划算', type: '平台活动',
+    baseScore: 45, costLevel: 'high',
+    costDesc: '活动保证金 + 佣金扣点（通常 2%~5%）+ 活动价要求',
+    threshold: '需店铺资质审核，商品需有销量基础',
+    path: '千牛卖家中心 → 营销中心 → 活动报名 → 聚划算 → 提交申请',
+    effectDesc: '淘宝最大团购IP，单品爆发力强。但定制类目商品周期长，需评估产能能否支撑活动单量。',
+    searchWeight: '活动流量 + 搜索加权'
+  },
+  {
+    id: 'tiantitemai', name: '天天特卖', type: '平台活动',
+    baseScore: 40, costLevel: 'medium',
+    costDesc: '需让利（活动价要求）+ 佣金扣点',
+    threshold: '商品需有一定销量和好评基础',
+    path: '千牛卖家中心 → 营销中心 → 活动报名 → 天天特卖 → 提交申请',
+    effectDesc: '日常特卖活动，门槛低于聚划算，适合清库存或引流款。',
+    searchWeight: '活动流量'
+  }
+];
+
 // ===== 搜索模式切换 =====
 document.getElementById('searchModeRow').addEventListener('click', function(e) {
   var btn = e.target.closest('.setup-mode-btn');
