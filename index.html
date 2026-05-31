@@ -837,10 +837,12 @@ body {
 
 /* 预算计算器 */
 #afBudgetCard input[type="number"] { font-family: inherit; }
-.af-budget-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; line-height: 1.6; border-bottom: 1px solid #f0f0f0; }
+.af-budget-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #f0f0f0; }
 .af-budget-item:last-child { border-bottom: none; }
 .af-budget-item input[type="checkbox"] { accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
-.af-budget-item .af-budget-cost { color: var(--text-muted); white-space: nowrap; font-size: 11px; }
+.af-budget-item .af-budget-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-budget-item .af-budget-cost { color: var(--text-muted); font-size: 10px; white-space: nowrap; flex-shrink: 0; }
+.af-budget-item .af-budget-link { width: 100%; font-size: 10px; padding-left: 22px; }
 .af-budget-warn { color: var(--red); font-weight: 600; }
 .af-budget-ok { color: var(--green); font-weight: 600; }
 </style>
@@ -3652,12 +3654,12 @@ function updateBudgetCalc() {
       }
     }
 
-    itemsHtml += '<label class="af-budget-item" style="padding:4px 0;cursor:pointer;">' +
+    itemsHtml += '<label class="af-budget-item" style="cursor:pointer;">' +
       '<input type="checkbox" ' + (checked ? 'checked' : '') +
       ' onchange="toggleBudgetItem(\'' + rule.id + '\')">' +
-      '<span style="flex:1;">' + escHtml(rule.name) + '</span>' +
-      '<span class="af-budget-cost" style="margin-right:6px;">' + escHtml(costText) + '</span>' +
-      (checked ? '<a href="#" onclick="scrollToActivity(\'' + rule.id + '\');return false;" style="font-size:10px;color:var(--brand);text-decoration:none;white-space:nowrap;">去参加 →</a>' : '') +
+      '<span class="af-budget-name">' + escHtml(rule.name) + '</span>' +
+      '<span class="af-budget-cost">' + escHtml(costText) + '</span>' +
+      (checked ? '<a class="af-budget-link" href="#" onclick="scrollToActivity(\'' + rule.id + '\');return false;" style="color:var(--brand);text-decoration:none;">→ 去参加</a>' : '') +
       '</label>';
   });
 
