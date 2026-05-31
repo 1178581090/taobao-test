@@ -717,6 +717,48 @@ body {
   .section-item-desc { order: 5; width: 100%; }
   .hero-action { flex-direction: column; align-items: flex-start; }
 }
+/* OCR 截图辅助 */
+.ocr-zone {
+  background: var(--card-bg);
+  border: 2px dashed var(--amber);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  margin-top: 12px;
+}
+.ocr-zone-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.ocr-channel-name {
+  font-size: 12px;
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+.ocr-paste-box {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 40px 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.ocr-paste-box:hover { border-color: var(--brand); }
+.ocr-preview-img {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.ocr-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  line-height: 1.6;
+}
 </style>
 </head>
 <body>
@@ -980,6 +1022,19 @@ body {
         <span class="arr" id="promoDetailToggleIcon">▶</span> 全部渠道知识库
       </div>
       <div class="toggle-content open" id="promoDetailContent"></div>
+      <!-- OCR 截图辅助区域（默认隐藏） -->
+      <div id="ocrZone" class="ocr-zone" style="display:none;">
+        <div class="ocr-zone-title">截图辅助定位</div>
+        <div class="ocr-channel-name" id="ocrChannelName"></div>
+        <div id="ocrPasteBox" class="ocr-paste-box">
+          在千牛打开对应页面后截图（Win+Shift+S）<br>回到此页面，点击此处后 Ctrl+V 粘贴截图
+        </div>
+        <img id="ocrPreview" class="ocr-preview-img" style="display:none;" alt="截图预览">
+        <a id="ocrSaveBtn" class="btn btn-primary btn-sm" style="display:none;" download="qianniu-screenshot.png">下载截图</a>
+        <div id="ocrHint" class="ocr-hint" style="display:none;">
+          截图已就绪。请下载截图并告诉我文件路径，<br>我会识别截图中的千牛界面并告诉你具体操作步骤。
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1552,6 +1607,47 @@ function togglePromoDetail() {
     toggle.classList.add('open');
   }
 }
+
+// ===== OCR 截图辅助 =====
+var _ocrChannelId = null;
+
+function showOcrZone(channelId) {
+  _ocrChannelId = channelId;
+  var ch = CHANNEL_KNOWLEDGE.find(function(c) { return c.id === channelId; });
+  $('ocrChannelName').textContent = ch ? '正在定位：' + ch.name : '';
+  $('ocrZone').style.display = '';
+  $('ocrPasteBox').style.display = '';
+  $('ocrPreview').style.display = 'none';
+  $('ocrSaveBtn').style.display = 'none';
+  $('ocrHint').style.display = 'none';
+  $('ocrZone').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.addEventListener('paste', function(e) {
+  var ocrZone = $('ocrZone');
+  if (!ocrZone || ocrZone.style.display === 'none') return;
+
+  var items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData)).items;
+  if (!items) return;
+
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      e.preventDefault();
+      var blob = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        $('ocrPreview').src = ev.target.result;
+        $('ocrPreview').style.display = '';
+        $('ocrSaveBtn').href = ev.target.result;
+        $('ocrSaveBtn').style.display = '';
+        $('ocrHint').style.display = '';
+        $('ocrPasteBox').style.display = 'none';
+      };
+      reader.readAsDataURL(blob);
+      break;
+    }
+  }
+});
 
 // ===== 搜索模式切换 =====
 function hideResult() {
