@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 单个 `index.html` 内联所有 CSS/JS，两个 Tab 面板：
 
 - **竞品分析** — 粘贴自己的商品链接 → 一键自动搜索同类竞品并分析（标题关键词、价格竞争力、活动优惠、利润测算），支持价格/关键词筛选，分析结果联动推广分析 Tab
-- **推广分析** — 基于竞品分析结果，勾选已开通的推广渠道 → 生成推荐清单（未开通的高价值渠道优先排序），支持写入明日清单
+- **推广分析** — 基于竞品分析结果，勾选已开通的推广渠道 → 生成推荐清单（未开通的高价值渠道优先排序）。每个渠道包含适合/不适合判断、分步操作指引、精力投入度、千牛直达链接；无链接渠道提供截图 OCR 辅助定位功能
 
 ## 浏览器扩展（数据抓取）
 
@@ -45,12 +45,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `renderDataTable(valid)` — 渲染原始商品数据表格
 - `getKeywordFrequency(titles)` — N-gram 分词统计，取 2-4 字片段，去停用词
 
+## 推广分析核心函数
+
+- `CHANNEL_KNOWLEDGE` — 16 个推广渠道的知识库数组，每个含 id/name/type/baseScore/costLevel/costDesc/effortLevel/threshold/path/detailedSteps/suitableFor/notSuitableFor/directUrl/effectDesc/searchWeight/checkAfter
+- `renderPromotionTab()` — 入口：恢复勾选状态 → `getPromoPlan()` 生成推荐 → 渲染各卡片
+- `getPromoPlan()` — 推荐引擎：过滤未开通渠道 → 按 baseScore 排序 → 分组（hero/quickWins/paid/later）
+- `renderPromoHero(item)` — 渲染英雄推荐卡片（最高优先级）
+- `renderPromoSection(section, items, title, defaultOpen)` — 渲染三组分渠道列表
+- `renderPromoDetail()` — 渲染底部知识库，展示所有渠道完整信息（适合/不适合、分步步骤、精力投入度）
+- `renderPromoPeerCard()` — 同行对标卡片（服务工具覆盖率对比）
+- `loadPromoStatus()` / `savePromoStatus()` / `restorePromoCheckboxes()` — 渠道勾选状态持久化
+- `getPeerCoverage(peerData)` — 从竞品数据中计算各渠道的同行使用覆盖率
+- `ACTIVITY_TAG_TO_CHANNEL` — 竞品活动标签到渠道 ID 的映射表
+
 ## localStorage 键名
 
-- `tb_checklist_tasks` — 明日清单任务数组（含 `done` 字段）
 - `tb_my_cost` — 用户填写的成本价，跨会话保留
 - `tb_promo_status` — 推广渠道勾选状态（通过 `savePromoStatus()` / `restorePromoCheckboxes()` 持久化）
-- `tb_promo_budget` — 月推广预算
 - `tb_domain_dict` — 自定义领域词典（标题生成用）
 
 ## 重要参考文件
