@@ -826,7 +826,7 @@ body {
   <div class="topbar-tabs">
     <button class="topbar-tab active" data-tab="competitor">竞品分析</button>
     <button class="topbar-tab" data-tab="promotion">推广分析</button>
-    <button class="tab-btn" onclick="switchTab('activityFilter')">活动筛选</button>
+    <button class="topbar-tab" data-tab="activityFilter">活动筛选</button>
   </div>
   <span class="topbar-sub">淘宝演出服定制类目</span>
 </div>
@@ -3332,11 +3332,242 @@ document.querySelector('.topbar-tabs').addEventListener('click', function(e) {
   document.querySelectorAll('.main').forEach(function(m) { m.style.display = 'none'; });
   if (target === 'competitor') {
     $('tabCompetitor').style.display = 'grid';
+  } else if (target === 'activityFilter') {
+    $('tabActivityFilter').style.display = 'grid';
+    initActivityFilter();
   } else {
     $('tabPromotion').style.display = 'grid';
     renderPromotionTab();
   }
 });
+
+// ===== Tab 切换函数 =====
+// ===== 活动筛选 =====
+var _afData = null;
+
+function loadAfData() {
+  if (_afData) return _afData;
+  try {
+    var raw = localStorage.getItem('tb_af_scan');
+    if (raw) { _afData = JSON.parse(raw); }
+  } catch (_) {}
+  return _afData;
+}
+
+function saveAfData(data) {
+  _afData = data;
+  localStorage.setItem('tb_af_scan', JSON.stringify(data));
+}
+
+function compareLevel(current, required) {
+  var curNum = parseFloat((current || '').replace(/[^0-9.]/g, '')) || 0;
+  var reqNum = parseFloat((required || '').replace(/[^0-9.]/g, '')) || 0;
+  return curNum >= reqNum;
+}
+
+function matchRule(rule, store) {
+  var failed = [];
+  if (rule.rules.storeLevel) {
+    if (!compareLevel(store.level, rule.rules.storeLevel.min)) {
+      failed.push({ field: '店铺层级', current: store.level || '未知', required: rule.rules.storeLevel.min });
+    }
+  }
+  if (rule.rules.expScore) {
+    var curScore = parseFloat(store.expScore) || 0;
+    if (curScore < rule.rules.expScore.min) {
+      failed.push({ field: '体验分', current: curScore, required: rule.rules.expScore.min });
+    }
+  }
+  if (rule.rules.orders30d) {
+    var curOrders = parseInt(store.orders30d) || 0;
+    if (curOrders < rule.rules.orders30d.min) {
+      failed.push({ field: '近30天订单', current: curOrders, required: rule.rules.orders30d.min });
+    }
+  }
+  if (rule.rules.violations) {
+    var curViolations = parseInt(store.violations) || 0;
+    if (curViolations > rule.rules.violations.max) {
+      failed.push({ field: '违规次数', current: curViolations, required: '≤ ' + rule.rules.violations.max });
+    }
+  }
+  return failed;
+}
+
+function matchAllRules(store) {
+  var results = [];
+  ACTIVITY_RULES.forEach(function(rule) {
+    var failed = matchRule(rule, store);
+    var group;
+    if (failed.length === 0) { group = 'eligible'; }
+    else if (failed.length <= 2) { group = 'almost'; }
+    else { group = 'ineligible'; }
+    if (rule.note && rule.note.includes('暂停')) { group = 'paused'; }
+    results.push({ rule: rule, group: group, failed: failed });
+  });
+  var order = { eligible: 0, almost: 1, paused: 2, ineligible: 3 };
+  results.sort(function(a, b) {
+    if (order[a.group] !== order[b.group]) return order[a.group] - order[b.group];
+    return (a.rule.name || '').localeCompare(b.rule.name || '');
+  });
+  return results;
+}
+
+var TAG_CLASS = {
+  '营销工具': 'af-tag-tool',
+  '常驻活动': 'af-tag-resident',
+  '大促活动': 'af-tag-campaign',
+  '付费推广': 'af-tag-paid'
+};
+
+function renderAfResults() {
+  var data = loadAfData();
+  if (!data || !data.store) {
+    $('afEmpty').style.display = '';
+    $('afResult').style.display = 'none';
+    return;
+  }
+
+  $('afEmpty').style.display = 'none';
+  $('afResult').style.display = 'flex';
+  $('afResult').style.flexDirection = 'column';
+  $('afResult').style.gap = '18px';
+
+  var matched = matchAllRules(data.store);
+  var groups = { eligible: [], almost: [], ineligible: [], paused: [] };
+  matched.forEach(function(m) { groups[m.group].push(m); });
+
+  $('afSummary').innerHTML =
+    '<span style="font-size:13px;color:var(--text-muted);">' +
+    '共 <strong>' + matched.length + '</strong> 项 · ' +
+    '可参加 <strong style="color:var(--green);">' + groups.eligible.length + '</strong> 项 · ' +
+    '差一步 <strong style="color:var(--amber);">' + groups.almost.length + '</strong> 项 · ' +
+    '数据更新于 ' + (data.scannedAt ? data.scannedAt.slice(0, 16).replace('T', ' ') : '未知') +
+    '</span>';
+
+  renderAfGroup('eligible', groups.eligible, 'afGroupEligible', 'afListEligible', 'afGroupEligibleCnt', true);
+  renderAfGroup('almost', groups.almost, 'afGroupAlmost', 'afListAlmost', 'afGroupAlmostCnt', true);
+  renderAfGroup('ineligible', groups.ineligible, 'afGroupIneligible', 'afListIneligible', 'afGroupIneligibleCnt', false);
+  renderAfGroup('paused', groups.paused, 'afGroupPaused', 'afListPaused', 'afGroupPausedCnt', false);
+
+  $('afCntEligible').textContent = groups.eligible.length;
+  $('afCntAlmost').textContent = groups.almost.length;
+  $('afCntIneligible').textContent = groups.ineligible.length;
+  $('afCntPaused').textContent = groups.paused.length;
+
+  renderAfStoreCard(data.store);
+}
+
+function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
+  if (items.length === 0) { $(cardId).style.display = 'none'; return; }
+  $(cardId).style.display = '';
+  $(cntId).textContent = items.length;
+
+  if (!defaultOpen) {
+    var header = $(cardId).querySelector('.card-header h3');
+    if (header) { header.onclick = function() { toggleAfSection(listId); }; }
+  } else {
+    $(listId).style.display = '';
+  }
+
+  var html = '';
+  items.forEach(function(item) {
+    var r = item.rule;
+    var tagClass = TAG_CLASS[r.category] || 'af-tag-tool';
+    var tagText = r.costType === 'paid' ? r.category + ' · 付费' : r.category;
+
+    var rulesHtml = '';
+    if (item.group === 'eligible') {
+      rulesHtml += '<span class="af-rule-pass">✓ ' +
+        (r.costType === 'free' ? '免费' : '付费') + ' · ' +
+        ({ low: '低精力', medium: '中等精力', high: '高精力' }[r.effort] || r.effort) +
+        '</span>';
+    } else if (item.group === 'paused') {
+      rulesHtml += '<span class="af-rule-fail">⏸ ' + (r.note || '平台暂停中') + '</span>';
+    } else {
+      item.failed.forEach(function(f) {
+        rulesHtml += '<span class="af-rule-fail">✗ ' + f.field + ': 需 ' + f.required + ', 当前 ' + f.current + '</span><br>';
+      });
+    }
+
+    var improveHtml = r.howToImprove
+      ? '<div class="af-activity-improve">💡 ' + escHtml(r.howToImprove) + '</div>'
+      : '';
+
+    var actionHtml = r.url
+      ? '<a class="btn-xs btn-xs-primary" href="' + escHtml(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;">去参加 →</a>'
+      : '';
+
+    html += '<div class="af-activity-card">' +
+      '<div class="af-activity-name">' +
+        escHtml(r.name) +
+        ' <span class="af-activity-tag ' + tagClass + '">' + escHtml(tagText) + '</span>' +
+      '</div>' +
+      '<div class="af-activity-effect">' + escHtml(r.effect) + '</div>' +
+      '<div class="af-activity-rules">' + rulesHtml + '</div>' +
+      improveHtml +
+      '<div class="af-activity-action">' + actionHtml + '</div>' +
+    '</div>';
+  });
+  $(listId).innerHTML = html;
+}
+
+function toggleAfSection(listId) {
+  var el = $(listId);
+  if (el.style.display === 'none') { el.style.display = ''; }
+  else { el.style.display = 'none'; }
+}
+
+function renderAfStoreCard(store) {
+  function val(v, cls) { return '<span class="af-value ' + (cls || '') + '">' + escHtml(String(v)) + '</span>'; }
+  var expCls = (parseFloat(store.expScore) || 0) >= 4.2 ? 'good' : 'bad';
+  $('afStoreContent').innerHTML =
+    '<div class="af-field"><span class="af-label">店铺层级</span>' + val(store.level) + '</div>' +
+    '<div class="af-field"><span class="af-label">体验分</span>' + val(store.expScore || '暂无', expCls) + '</div>' +
+    '<div class="af-field"><span class="af-label">保证金</span>' + val(store.deposit || '未知') + '</div>' +
+    '<div class="af-field"><span class="af-label">信用等级</span>' + val(store.creditLevel || '未知') + '</div>' +
+    '<div class="af-field"><span class="af-label">违规次数</span>' + val(store.violations || '0') + '</div>' +
+    '<div class="af-field"><span class="af-label">近30天订单</span>' + val(store.orders30d || '0') + '</div>' +
+    '<div class="af-field"><span class="af-label">昨日访客</span>' + val(store.visitors || '0') + '</div>' +
+    '<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">数据来源: scan-qianniu.js</div>';
+}
+
+function applyAfFilter() {
+  var filters = {};
+  document.querySelectorAll('#afFilters input[data-filter]').forEach(function(cb) {
+    filters[cb.dataset.filter] = cb.checked;
+  });
+  ['eligible', 'almost', 'ineligible', 'paused'].forEach(function(g) {
+    var card = $('afGroup' + g.charAt(0).toUpperCase() + g.slice(1));
+    if (card) { card.style.display = filters[g] ? '' : 'none'; }
+  });
+}
+
+function scanStore() {
+  $('afScanStatus').style.display = '';
+  $('afScanStatus').style.background = '#e8f0fe';
+  $('afScanStatus').innerHTML =
+    '请在终端运行：<br><code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;">node scan-qianniu.js</code><br>' +
+    '然后将生成的 scan-qianniu.json 内容粘贴到下方：<br>' +
+    '<textarea id="afJsonInput" style="width:100%;height:80px;margin-top:4px;font-size:11px;" placeholder="粘贴 scan-qianniu.json 内容..."></textarea>' +
+    '<button class="btn btn-primary btn-sm" onclick="importAfJson()" style="margin-top:4px;">导入数据</button>';
+}
+
+function importAfJson() {
+  try {
+    var json = JSON.parse($('afJsonInput').value);
+    saveAfData(json);
+    $('afScanStatus').style.display = 'none';
+    renderAfResults();
+  } catch (e) {
+    $('afScanStatus').textContent = 'JSON 格式错误，请检查: ' + e.message;
+    $('afScanStatus').style.background = '#fce8e6';
+  }
+}
+
+function initActivityFilter() {
+  var data = loadAfData();
+  if (data) { renderAfResults(); }
+}
 </script>
 </body>
 </html>
