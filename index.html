@@ -449,32 +449,27 @@ body {
 .term {
   border-bottom: 1.5px dashed var(--brand);
   cursor: help;
-  position: relative;
   color: var(--brand);
   font-weight: 500;
 }
-.term:hover::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: 0; bottom: calc(100% + 6px);
+.term-tooltip {
+  position: fixed;
   background: #1f2937; color: #fff;
   font-size: 11px; font-weight: 400;
   padding: 8px 12px; border-radius: 6px;
   width: 260px;
   line-height: 1.6;
-  z-index: 1000;
+  z-index: 99999;
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0,0,0,.25);
   white-space: normal;
 }
-.term:hover::before {
+.term-tooltip::after {
   content: '';
   position: absolute;
-  left: 12px; bottom: calc(100%);
+  top: 100%; left: 14px;
   border: 5px solid transparent;
   border-top-color: #1f2937;
-  z-index: 1001;
-  pointer-events: none;
 }
 .improve-action { padding: 14px 18px 14px 0; display: flex; align-items: flex-start; }
 .imp-badge {
@@ -2582,6 +2577,35 @@ function explainTerms(text) {
   });
   return result;
 }
+
+// ===== 术语 tooltip（JS 实现，挂在 body 上避免 overflow:hidden 裁剪） =====
+var _termTooltipEl = null;
+function _showTermTooltip(e) {
+  var term = e.target.closest('.term');
+  if (!term) return;
+  if (_termTooltipEl) _hideTermTooltip();
+  var tip = term.getAttribute('data-tip');
+  if (!tip) return;
+  var el = document.createElement('div');
+  el.className = 'term-tooltip';
+  el.textContent = tip;
+  document.body.appendChild(el);
+  var rect = term.getBoundingClientRect();
+  var top = rect.top - el.offsetHeight - 8;
+  var left = Math.max(4, Math.min(rect.left, window.innerWidth - el.offsetWidth - 4));
+  // 如果上方空间不够，显示在下方
+  if (top < 4) top = rect.bottom + 8;
+  el.style.top = top + 'px';
+  el.style.left = left + 'px';
+  _termTooltipEl = el;
+}
+function _hideTermTooltip() {
+  if (_termTooltipEl) { _termTooltipEl.remove(); _termTooltipEl = null; }
+}
+document.addEventListener('mouseover', _showTermTooltip);
+document.addEventListener('mouseout', function(e) {
+  if (e.target.closest && e.target.closest('.term')) _hideTermTooltip();
+});
 
 // ===== 领域词典管理 =====
 var DOMAIN_DICT_DEFAULT = [
