@@ -837,9 +837,10 @@ body {
 
 /* 预算计算器 */
 #afBudgetCard input[type="number"] { font-family: inherit; }
-.af-budget-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 11px; }
-.af-budget-item input[type="checkbox"] { accent-color: var(--brand); width: 13px; height: 13px; cursor: pointer; }
-.af-budget-item .af-budget-cost { margin-left: auto; color: var(--text-muted); white-space: nowrap; }
+.af-budget-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; line-height: 1.6; border-bottom: 1px solid #f0f0f0; }
+.af-budget-item:last-child { border-bottom: none; }
+.af-budget-item input[type="checkbox"] { accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.af-budget-item .af-budget-cost { color: var(--text-muted); white-space: nowrap; font-size: 11px; }
 .af-budget-warn { color: var(--red); font-weight: 600; }
 .af-budget-ok { color: var(--green); font-weight: 600; }
 </style>
@@ -3433,9 +3434,9 @@ function renderAfGroup(groupKey, items, cardId, listId, cntId, defaultOpen) {
     var qnRecsForThis = window._qnRecommendations && window._qnRecommendations[r.id];
     if (qnRecsForThis && qnRecsForThis.length > 0) {
       var rec = qnRecsForThis[0];
-      returnHtml = '<div style="font-size:11px;color:#1967d2;margin-bottom:6px;background:#e8f0fe;padding:4px 8px;border-radius:4px;">📊 千牛推荐：为「' + escHtml(rec.productName) + '」匹配了' + escHtml(r.name) + '，' + escHtml(rec.priceInfo) + '试投</div>';
+      returnHtml = '<div style="font-size:11px;color:#1967d2;margin-bottom:6px;background:#e8f0fe;padding:6px 10px;border-radius:4px;">📊 千牛推荐：为「' + escHtml(rec.productName) + '」匹配了' + escHtml(r.name) + '，' + escHtml(rec.priceInfo) + '试投</div>';
     } else if (r.expectedReturn) {
-      returnHtml = '<div style="font-size:11px;color:#137333;margin-bottom:6px;background:#e6f4ea;padding:4px 8px;border-radius:4px;">📊 ' + escHtml(r.expectedReturn) + '</div>';
+      returnHtml = '<div style="font-size:11px;color:#137333;margin-bottom:6px;background:#e6f4ea;padding:6px 10px;border-radius:4px;">📊 预估效果：' + escHtml(r.expectedReturn) + '</div>';
     }
     var costHtml = r.monthlyCost
       ? '<span style="font-size:10px;color:var(--red);">⚠ ' + escHtml(r.monthlyCost) + '</span>'
@@ -3651,11 +3652,12 @@ function updateBudgetCalc() {
       }
     }
 
-    itemsHtml += '<label class="af-budget-item">' +
+    itemsHtml += '<label class="af-budget-item" style="padding:4px 0;cursor:pointer;">' +
       '<input type="checkbox" ' + (checked ? 'checked' : '') +
       ' onchange="toggleBudgetItem(\'' + rule.id + '\')">' +
-      escHtml(rule.name) +
-      '<span class="af-budget-cost">' + escHtml(costText) + '</span>' +
+      '<span style="flex:1;">' + escHtml(rule.name) + '</span>' +
+      '<span class="af-budget-cost" style="margin-right:6px;">' + escHtml(costText) + '</span>' +
+      (checked ? '<a href="#" onclick="scrollToActivity(\'' + rule.id + '\');return false;" style="font-size:10px;color:var(--brand);text-decoration:none;white-space:nowrap;">去参加 →</a>' : '') +
       '</label>';
   });
 
@@ -3693,6 +3695,34 @@ function toggleBudgetItem(id) {
   var current = localStorage.getItem(key) === '1';
   localStorage.setItem(key, current ? '0' : '1');
   updateBudgetCalc();
+  // 勾选后滚动到对应活动卡片
+  if (!current) scrollToActivity(id);
+}
+
+function scrollToActivity(ruleId) {
+  // 在活动列表中查找对应的卡片并高亮
+  var allCards = document.querySelectorAll('.af-activity-card');
+  for (var i = 0; i < allCards.length; i++) {
+    var card = allCards[i];
+    // 通过卡片内容匹配（名称在 .af-activity-name 中）
+    var nameEl = card.querySelector('.af-activity-name');
+    if (nameEl && nameEl.textContent.indexOf(ruleId) === -1) continue;
+    // 简单方案：遍历 ACTIVITY_RULES 找 name，在卡片中匹配
+  }
+  // 更可靠的方式：找到 ACTIVITY_RULES 中的条目名，在页面查找
+  var rule = ACTIVITY_RULES.find(function(r) { return r.id === ruleId; });
+  if (!rule) return;
+  var name = rule.name;
+  // 在所有活动卡片中找包含此名称的
+  var cards = document.querySelectorAll('.af-activity-card');
+  for (var j = 0; j < cards.length; j++) {
+    if (cards[j].textContent.indexOf(name) >= 0) {
+      cards[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cards[j].style.boxShadow = '0 0 0 3px var(--brand)';
+      setTimeout(function() { cards[j].style.boxShadow = ''; }, 2000);
+      break;
+    }
+  }
 }
 
 function initBudgetCalc() {
