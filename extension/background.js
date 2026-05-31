@@ -106,106 +106,97 @@ async function scanQianniuStore(requestingTabId) {
   }
 }
 
+// 此函数会被序列化注入到千牛页面，必须自包含
+function injectStepPanel(name, stepsHtml) {
+  // 移除旧面板
+  var old = document.getElementById('tb-step-panel');
+  if (old) old.remove();
+
+  // 创建浮动面板
+  var panel = document.createElement('div');
+  panel.id = 'tb-step-panel';
+  panel.innerHTML =
+    '<div id=\"tb-step-inner\" style=\"position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:2147483647;font-family:system-ui,PingFang SC,Microsoft YaHei,sans-serif;\">' +
+      '<div style=\"display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;\">' +
+        '<strong style=\"font-size:14px;color:#ff5000;\">📋 ' + name + '</strong>' +
+        '<button id=\"tb-step-close\" style=\"background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;\">✕</button>' +
+      '</div>' +
+      '<div style=\"padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;\">' + stepsHtml + '</div>' +
+      '<div style=\"padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;\">对照步骤在当前页面操作</div>' +
+    '</div>';
+
+  // 把面板加到 html 元素上（body 可能被 SPA 替换）
+  if (document.body) {
+    document.body.appendChild(panel);
+  } else {
+    (document.documentElement || document).appendChild(panel);
+  }
+
+  // 关闭按钮
+  var closeBtn = document.getElementById('tb-step-close');
+  if (closeBtn) {
+    closeBtn.onclick = function() {
+      var p = document.getElementById('tb-step-panel');
+      if (p) { p.remove(); clearInterval(window._tbRestoreTimer); }
+    };
+  }
+
+  // 启动轮询：SPA 导航后 body 可能被替换，面板消失时自动恢复
+  if (window._tbRestoreTimer) clearInterval(window._tbRestoreTimer);
+  window._tbRestoreTimer = setInterval(function() {
+    var p = document.getElementById('tb-step-panel');
+    var inner = document.getElementById('tb-step-inner');
+    if ((!p || !inner) && document.body) {
+      // 面板被 SPA 移除了，重新创建
+      if (p) p.remove();
+      var newPanel = document.createElement('div');
+      newPanel.id = 'tb-step-panel';
+      newPanel.innerHTML = panel.innerHTML;
+      document.body.appendChild(newPanel);
+      var cb = document.getElementById('tb-step-close');
+      if (cb) cb.onclick = function() {
+        var pp = document.getElementById('tb-step-panel');
+        if (pp) { pp.remove(); clearInterval(window._tbRestoreTimer); }
+      };
+    }
+  }, 2000);
+}
+
 // 存储待注入的步骤（tabId → steps），支持跨页面跳转持久注入
 var _pendingSteps = {};
 
-// 此函数会被 chrome.scripting.executeScript 序列化注入到目标页面
-function showPanelFn(name, stepsHtml) {
-  try {
-    var oldPanel = document.getElementById('tb-step-panel');
-    if (oldPanel) oldPanel.remove();
-
-    if (!document.body) return false;
-
-    var panel = document.createElement('div');
-    panel.id = 'tb-step-panel';
-    panel.innerHTML =
-      '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
-          '<strong style="font-size:14px;color:#ff5000;">📋 ' + (name || '操作步骤') + '</strong>' +
-          '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
-        '</div>' +
-        '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (stepsHtml || '') + '</div>' +
-        '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
-      '</div>';
-    document.body.appendChild(panel);
-    document.getElementById('tb-step-close').onclick = function() { panel.remove(); };
-
-    // 轮询自愈：SPA 切换后 body 被替换时自动恢复面板
-    if (!window._tbStepRestoreRunning) {
-      window._tbStepRestoreRunning = true;
-      window._tbStepName = name;
-      window._tbStepHtml = stepsHtml;
-      setInterval(function() {
-        if (!document.getElementById('tb-step-panel') && document.body && window._tbStepName) {
-          var p = document.createElement('div'); p.id = 'tb-step-panel';
-          p.innerHTML =
-            '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:2147483647;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
-                '<strong style="font-size:14px;color:#ff5000;">📋 ' + (window._tbStepName || '') + '</strong>' +
-                '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
-              '</div>' +
-              '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + (window._tbStepHtml || '') + '</div>' +
-              '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
-            '</div>';
-          document.body.appendChild(p);
-          document.getElementById('tb-step-close').onclick = function() { p.remove(); };
-        }
-      }, 3000);
-    }
-    return true;
-  } catch(e) { return false; }
-}
-
-// 监听标签页 URL 变化，直接 scripting 注入
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-  if (changeInfo.status === 'complete' && _pendingSteps[tabId]) {
-    var s = _pendingSteps[tabId];
-    setTimeout(function() { injectPanel(tabId, s.name, s.steps); }, 3000);
-  }
-});
-
-function injectPanel(tabId, name, steps) {
-  chrome.scripting.executeScript({
-    target: { tabId: tabId },
-    func: showPanelFn,
-    args: [name, steps]
-  }).then(function(res) {
-    if (res && res[0] && res[0].result === false) {
-      // 重试
-      setTimeout(function() {
-        chrome.scripting.executeScript({
-          target: { tabId: tabId },
-          func: showPanelFn,
-          args: [name, steps]
-        }).catch(function() {});
-      }, 2000);
-    }
-  }).catch(function(err) {
-    console.error('[steps] scripting注入失败:', err.message);
-  });
-}
 
 async function openWithSteps(url, name, steps, requestingTabId) {
+  // 存到 chrome.storage.local，content script 启动时读取
+  chrome.storage.local.set({ tb_pending_steps: { name: name, steps: steps } });
+
   // 打开千牛页面
-  var mainTab = await chrome.tabs.create({ url: url, active: true });
+  var tab = await chrome.tabs.create({ url: url, active: true });
 
-  // 生成步骤页面 HTML
-  var stepsPage = '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>📋 ' + name + '</title>' +
-    '<style>body{font-family:-apple-system,PingFang SC,Microsoft YaHei,sans-serif;padding:20px;color:#1f2937;font-size:13px;line-height:2.2;max-width:500px;}' +
-    'h2{font-size:16px;color:#ff5000;margin:0 0 16px;border-bottom:2px solid #ff5000;padding-bottom:8px;}' +
-    '.tip{font-size:11px;color:#9ca3af;margin-top:20px;border-top:1px solid #e8eaed;padding-top:12px;}</style></head><body>' +
-    '<h2>📋 ' + name + '</h2>' +
-    steps +
-    '<div class=\"tip\">对照上方步骤在千牛页面操作（Alt+Tab 切换窗口）</div>' +
-    '</body></html>';
+  // 等页面加载完后注入面板脚本
+  await waitForTabLoad(tab.id);
+  await sleep(3000);
 
-  // 用 base64 data URL 打开步骤页面
-  var dataUrl = 'data:text/html;base64,' + btoa(unescape(encodeURIComponent(stepsPage)));
-  await chrome.tabs.create({ url: dataUrl, active: false });
+  // 用 scripting.executeScript 注入面板
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: injectStepPanel,
+    args: [name, steps]
+  }).catch(function() {});
 
-  // 切回千牛页面
-  await chrome.tabs.update(mainTab.id, { active: true });
+  // 监听标签页变化，SPA 路由改变时重新注入
+  var listener = function(tabId, changeInfo) {
+    if (tabId === tab.id && changeInfo.status === 'complete') {
+      chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: injectStepPanel,
+        args: [name, steps]
+      }).catch(function() {});
+    }
+  };
+  chrome.tabs.onUpdated.addListener(listener);
+  // 5 分钟后清理监听
+  setTimeout(function() { chrome.tabs.onUpdated.removeListener(listener); }, 300000);
 }
 
 // 标签页关闭时清理
