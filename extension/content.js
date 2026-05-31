@@ -875,6 +875,9 @@ function setupMainPageRelay() {
         steps: e.data.steps
       });
     }
+    if (e.data && e.data.type === 'tb-open-url') {
+      chrome.runtime.sendMessage({ action: 'openUrl', url: e.data.url });
+    }
   });
 }
 

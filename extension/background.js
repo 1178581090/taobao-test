@@ -214,6 +214,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     });
     return true; // 保持异步通道
   }
+  if (message.action === 'openUrl') {
+    chrome.tabs.create({ url: message.url, active: true });
+    return;
+  }
   if (message.action === 'scanQianniu') {
     scanQianniuStore(sender.tab.id).catch(function(err) {
       chrome.tabs.sendMessage(sender.tab.id, {
