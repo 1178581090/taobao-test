@@ -447,10 +447,11 @@ body {
 }
 /* ── 术语 tooltip ── */
 .term {
-  border-bottom: 1px dashed var(--brand-light);
+  border-bottom: 1.5px dashed var(--brand);
   cursor: help;
   position: relative;
-  color: var(--text);
+  color: var(--brand);
+  font-weight: 500;
 }
 .term:hover::after {
   content: attr(data-tip);
@@ -1790,7 +1791,7 @@ function renderDiagnostic(products, myPrice, topKeywords, sortedActivities, avgP
       contextNote = '<div style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.6;">另 ' + (issues.length - 1) + ' 项改进建议见下方清单</div>';
     }
 
-    return '<div class="diag-finding" style="border-left-color:' + actionColor + ';"><div class="diag-finding-tag" style="color:' + actionColor + ';">' + (topIssue ? '立即行动' : '诊断结论') + '</div><div class="diag-finding-text" style="font-size:14px;">' + actionText + '</div><div class="diag-finding-stats">' + actionStats + '</div>' + contextNote + '</div>';
+    return '<div class="diag-finding" style="border-left-color:' + actionColor + ';"><div class="diag-finding-tag" style="color:' + actionColor + ';">' + (topIssue ? '立即行动' : '诊断结论') + '</div><div class="diag-finding-text" style="font-size:14px;">' + explainTerms(actionText) + '</div><div class="diag-finding-stats">' + actionStats + '</div>' + contextNote + '</div>';
   }
 }
 
@@ -2384,7 +2385,7 @@ function renderTitleCard(topKeywords, total) {
   $('titleBody').innerHTML = html;
   var missing = topKeywords.filter(function(k) { return k.pct > 25; }).slice(0, 5).map(function(k) { return k.word; });
   if (missing.length > 0) {
-    $('titleSuggestion').innerHTML = '<strong>优化方向：</strong>如果标题中缺少这些词，考虑加入：' + missing.join('、');
+    $('titleSuggestion').innerHTML = explainTerms('<strong>优化方向：</strong>如果标题中缺少这些词，考虑加入：' + missing.join('、'));
     $('titleSuggestion').style.display = '';
   } else {
     $('titleSuggestion').style.display = 'none';
@@ -2426,7 +2427,7 @@ function renderPriceCard(myPrice, avgPrice, minPrice, maxPrice) {
   } else if (myPrice > 0) {
     suggestion = '<strong>提示：</strong>定价接近同行均价，竞争力良好。';
   }
-  $('priceSuggestion').innerHTML = suggestion;
+  $('priceSuggestion').innerHTML = explainTerms(suggestion);
 }
 
 function renderActivityCard(sortedActivities, total) {
@@ -2444,7 +2445,7 @@ function renderActivityCard(sortedActivities, total) {
 
   if (sortedActivities.length > 0) {
     var top = sortedActivities[0];
-    $('activitySuggestion').innerHTML = '<strong>建议：</strong>同行最常用「' + escHtml(top[0]) + '」（' + Math.round(top[1] / total * 100) + '% 覆盖率），建议去千牛开通。';
+    $('activitySuggestion').innerHTML = explainTerms('<strong>建议：</strong>同行最常用「' + escHtml(top[0]) + '」（' + Math.round(top[1] / total * 100) + '% 覆盖率），建议去千牛开通。');
   } else {
     $('activitySuggestion').innerHTML = '';
   }
@@ -2574,7 +2575,9 @@ function explainTerms(text) {
   var terms = Object.keys(TERM_GLOSSARY).sort(function(a, b) { return b.length - a.length; });
   terms.forEach(function(term) {
     if (result.indexOf(term) >= 0) {
-      result = result.split(term).join('<span class="term" data-tip="' + escHtml(TERM_GLOSSARY[term]) + '">' + term + '</span>');
+      // 只转义双引号，CSS attr() 不解码 HTML 实体
+      var tip = TERM_GLOSSARY[term].replace(/"/g, '&quot;');
+      result = result.split(term).join('<span class="term" data-tip="' + tip + '">' + term + '</span>');
     }
   });
   return result;
