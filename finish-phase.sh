@@ -2,7 +2,7 @@
 # finish-phase.sh — 阶段收尾：清理 + 文档检查 + 提交 + 推送
 # 用法:
 #   ./finish-phase.sh                    仅清理并展示变更，不提交
-#   ./finish-phase.sh ":sparkles: 词典管理和标题优化"  清理 → 文档检查 → 提交 → 推送
+#   ./finish-phase.sh "提交信息"          清理 → 文档检查 → 提交 → 推送
 
 set -e
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -22,7 +22,7 @@ if [ -d "docs/superpowers" ]; then
   echo "  docs/superpowers/ 已清理"
 fi
 
-# 清理测试图片目录中的临时截图 (文件名含 temp/暂存/截图的)
+# 清理测试图片目录中的临时截图
 if [ -d "测试图片" ]; then
   find "测试图片" -type f \( -name "*temp*" -o -name "*暂存*" -o -name "*临时*" \) -delete 2>/dev/null || true
 fi
@@ -34,8 +34,6 @@ echo "===== 2. 变更文件 ====="
 
 if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
   echo "工作区干净，没有需要提交的变更。"
-  echo ""
-  echo "可手动更新 CHANGELOG.md 后重新运行本脚本。"
   exit 0
 fi
 
@@ -60,30 +58,30 @@ fi
 # ===== 2.5 文档同步检查 =====
 echo "===== 2.5 文档同步检查 ====="
 
-# 本次变更中涉及代码的文件（index.html 或 extension/ 目录下）
+# 本次变更中涉及代码的文件
 CODE_CHANGED=$(git diff --name-only; git diff --cached --name-only; git ls-files --others --exclude-standard)
 HAS_CODE_CHANGE=$(echo "$CODE_CHANGED" | grep -E '^(index\.html|extension/)' || true)
-# 本次变更中涉及文档的文件
-HAS_DOC_CHANGE=$(echo "$CODE_CHANGED" | grep -E '(CLAUDE\.md|设计文档\.md|CHANGELOG\.md)' || true)
+# CLAUDE.md 是否在变更中
+CLAUDE_UPDATED=$(echo "$CODE_CHANGED" | grep 'CLAUDE\.md' || true)
 
-if [ -n "$HAS_CODE_CHANGE" ] && [ -z "$HAS_DOC_CHANGE" ]; then
+if [ -n "$HAS_CODE_CHANGE" ] && [ -z "$CLAUDE_UPDATED" ]; then
   echo ""
-  echo "  ⚠️  ════════════════════════════════════════════════"
-  echo "  ⚠️  检测到代码变更但前端文档未更新："
-  echo "  ⚠️"
-  echo "  ⚠️  代码变更："
-  echo "$HAS_CODE_CHANGE" | while read f; do echo "  ⚠️    $f"; done
-  echo "  ⚠️"
-  echo "  ⚠️  以下文档可能需同步更新："
-  echo "  ⚠️    - CLAUDE.md      （项目概述/架构/函数列表）"
-  echo "  ⚠️    - 设计文档.md     （功能模块/布局/数据流）"
-  echo "  ⚠️    - CHANGELOG.md   （开发日志）"
-  echo "  ⚠️"
-  echo "  ⚠️  如果本次改动无需更新文档，请忽略此提醒。"
-  echo "  ⚠️  ════════════════════════════════════════════════"
+  echo "  ================================================"
+  echo "  检测到 index.html / extension/ 代码变更，但 CLAUDE.md 未更新"
   echo ""
-else
-  echo "  文档同步状态正常 ✓"
+  echo "  请先更新 CLAUDE.md 中的函数列表和架构说明，然后重新运行本脚本"
+  echo "  如本次改动无需更新文档，在 CLAUDE.md 末尾加一行 # skip-doc-check 并提交"
+  echo "  ================================================"
+  echo ""
+  exit 1
+fi
+
+if [ -n "$CLAUDE_UPDATED" ]; then
+  echo "  CLAUDE.md 已同步更新"
+fi
+
+if [ -z "$HAS_CODE_CHANGE" ]; then
+  echo "  无代码变更，跳过文档检查"
 fi
 
 echo ""
@@ -92,19 +90,15 @@ echo ""
 if [ -n "$1" ]; then
   TODAY=$(date +%Y-%m-%d)
   COMMIT_MSG="$1"
-
-  # 去掉 convential commit 前缀 (如 "feat: " → "")
   ENTRY_TITLE=$(echo "$COMMIT_MSG" | sed 's/^[a-z]*: //')
 
   if grep -q "^## $TODAY" CHANGELOG.md 2>/dev/null; then
-    # 今天已有标题：在标题行后插入新条目
     awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
       { sub(/\r$/, "") }
       /^## / && $0 == "## "today && !done { print; print entry; done=1; next }
       { print }
     ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
   else
-    # 今天还没有标题：在第一个日期标题前插入
     if grep -q "^## 20" CHANGELOG.md 2>/dev/null; then
       awk -v today="$TODAY" -v entry="- ${ENTRY_TITLE}" '
         { sub(/\r$/, "") }
