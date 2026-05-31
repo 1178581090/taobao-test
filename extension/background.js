@@ -106,6 +106,27 @@ async function scanQianniuStore(requestingTabId) {
   }
 }
 
+// 存储待注入的步骤（tabId → steps）
+var _pendingSteps = {};
+
+async function openWithSteps(url, name, steps, requestingTabId) {
+  var tab = await chrome.tabs.create({ url: url, active: true });
+  _pendingSteps[tab.id] = { name: name, steps: steps };
+  // 等页面加载完成后注入
+  try {
+    await waitForTabLoad(tab.id);
+    await sleep(2000);
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'injectSteps',
+      name: name,
+      steps: steps
+    }).catch(function() {});
+    delete _pendingSteps[tab.id];
+  } catch (e) {
+    delete _pendingSteps[tab.id];
+  }
+}
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.action === 'searchCompetitors') {
     var productUrl = message.productUrl;
@@ -128,6 +149,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         error: err.message || '千牛扫描失败'
       }).catch(function() {});
     });
+    return true;
+  }
+  if (message.action === 'openWithSteps') {
+    openWithSteps(message.url, message.name, message.steps, sender.tab.id)
+      .catch(function(err) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          action: 'qianniuError', error: err.message
+        }).catch(function() {});
+      });
     return true;
   }
 });

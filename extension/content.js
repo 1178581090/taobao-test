@@ -774,6 +774,29 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true;
   }
 
+  // —— 步骤注入（千牛页面显示操作浮窗）——
+  if (message.action === 'injectSteps') {
+    // 移除旧面板
+    var oldPanel = document.getElementById('tb-step-panel');
+    if (oldPanel) oldPanel.remove();
+
+    var stepsHtml = message.steps.replace(/\n/g, '<br>');
+    var panel = document.createElement('div');
+    panel.id = 'tb-step-panel';
+    panel.innerHTML =
+      '<div style="position:fixed;top:80px;right:16px;width:320px;max-height:70vh;overflow-y:auto;background:#fff;border:2px solid #ff5000;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:99999;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e8eaed;background:#fff1eb;border-radius:10px 10px 0 0;">' +
+          '<strong style="font-size:14px;color:#ff5000;">📋 ' + message.name + '</strong>' +
+          '<button id="tb-step-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">✕</button>' +
+        '</div>' +
+        '<div style="padding:14px 16px;font-size:13px;line-height:2;color:#1f2937;">' + stepsHtml + '</div>' +
+        '<div style="padding:8px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e8eaed;">对照上方步骤在当前页面操作</div>' +
+      '</div>';
+    document.body.appendChild(panel);
+    document.getElementById('tb-step-close').onclick = function() { panel.remove(); };
+    return;
+  }
+
   // —— 主页面：收到结果后转发给页面 JS ——
   if (message.action === 'searchResults' || message.action === 'searchError' || message.action === 'searchProgress' ||
       message.action === 'qianniuData' || message.action === 'qianniuError') {
@@ -812,6 +835,14 @@ function setupMainPageRelay() {
     }
     if (e.data && e.data.type === 'tb-qianniu-scan') {
       chrome.runtime.sendMessage({ action: 'scanQianniu' });
+    }
+    if (e.data && e.data.type === 'tb-open-steps') {
+      chrome.runtime.sendMessage({
+        action: 'openWithSteps',
+        url: e.data.url,
+        name: e.data.name,
+        steps: e.data.steps
+      });
     }
   });
 }
