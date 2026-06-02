@@ -3464,6 +3464,9 @@ document.querySelector('.topbar-tabs').addEventListener('click', function(e) {
   } else if (target === 'activityFilter') {
     $('tabActivityFilter').style.display = 'grid';
     initActivityFilter();
+  } else if (target === 'diagnosis') {
+    $('tabDiagnosis').style.display = 'grid';
+    initDiagnosisTab();
   } else {
     $('tabPromotion').style.display = 'grid';
     renderPromotionTab();
