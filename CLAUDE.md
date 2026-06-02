@@ -14,10 +14,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 架构
 
-单个 `index.html` 内联所有 CSS/JS，两个 Tab 面板：
+单个 `index.html` 内联所有 CSS/JS，四个 Tab 面板：
 
 - **竞品分析** — 粘贴自己的商品链接 → 一键自动搜索同类竞品并分析（标题关键词、价格竞争力、活动优惠、利润测算），支持价格/关键词筛选，分析结果联动推广分析 Tab
-- **推广分析** — 基于竞品分析结果，勾选已开通的推广渠道 → 生成推荐清单（未开通的高价值渠道优先排序）。每个渠道包含适合/不适合判断、分步操作指引、精力投入度、千牛直达链接；无链接渠道提供截图 OCR 辅助定位功能
+- **推广分析** — 基于竞品分析结果，勾选已开通的推广渠道 → 展示渠道操作手册。每个渠道包含适合/不适合判断、分步操作指引、精力投入度、千牛直达链接；无链接渠道提供截图 OCR 辅助定位功能。已降级为工具手册模式，不再做推荐排序
+- **活动筛选** — 基于千牛真实店铺数据 + 资格匹配规则的个性化活动推荐。四组结果（可参加/差一步/暂不可参加/平台暂停）+ 预算计算器
+- **店铺诊断** — 两个子模块：店铺激活向导（8 项清单 + 进度条）帮新手完成基础搭建；标题工作台（抓取竞品关键词 → 三级标签分级 → 生成 3 个候选标题 ≤30 字）帮新手优化搜索排名
 
 ## 浏览器扩展（数据抓取）
 
@@ -85,6 +87,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `tb_af_budget` — 月预算上限
 - `tb_af_budget_<id>` — 单个活动的预算勾选状态
 - `tb_promo_visited` — 首次访问标记
+- `tb_store_checklist` — 店铺激活清单勾选状态
+- `tb_title_prefs` — 标题工作台输入偏好（按商品名分组）
+- `tb_title_history` — 标题生成历史（最多 20 条）
+- `tb_title_keywords` — 关键词缓存（含抓取时间，7 天过期提示）
+
+## 店铺诊断核心函数
+
+- `initDiagnosisTab()` — 入口：渲染清单 + 初始化标题工作台
+- `renderChecklist()` — 渲染 8 项激活清单 + 进度条
+- `toggleChecklistItem(id, checkbox)` — 清单项勾选（200ms 防抖）+ localStorage 持久化
+- `initTitleWorkbench()` — 初始化面料/场景芯片 + 事件监听 + 偏好恢复
+- `startTitleAnalysis()` — 发起关键词抓取 → 加载态 → 40s 超时 → 手动降级
+- `handleTitleAnalysisResult(data)` — 处理扩展回传 → 词频分析 → 三级关键词分级（强推/防守/长尾）
+- `renderKeywordTags(keywords, totalCount)` — 渲染关键词标签（绿/黄/灰）+ 竞争度判断
+- `generateTitles()` / `buildTitle(strategy, sortedWords)` — 3 策略标题生成（搜索/点击/均衡），30 字硬约束
+- `renderTitleCandidates()` / `copyTitle()` / `showTwToast()` — 候选渲染 + 复制反馈
+- `loadTitleHistory()` / `addTitleHistory()` / `renderHistoryList()` — 历史记录（按商品分组）
+- `switchToTab(target)` — Tab 间跳转辅助函数
+
+## 最近修复
+
+- 扩展安装引导 — 首次访问显示安装指南卡（可关闭）
+- Tab 跳转链接 — 「未设置成本」「请先搜索竞品」改为可点击跳转
+- 推广新手推荐 — 醒目渐变卡片 + 直接勾选「标记已开通」
+- 预算计算器 — 默认 ¥300，首次根据成本自动推荐起步预算
+- 性能优化 — 输入防抖 200ms + localStorage 内存缓存 + CSS transition 精确化
 
 ## 重要参考文件
 
@@ -102,6 +130,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `scanQianniu` — 一键扫描店铺数据（background.js 开 myseller 后台标签页 → content.js qianniu 模式提取数据）
 - `openWithSteps` — 打开千牛页面并在页面内注入步骤跟随浮动面板（支持递归多级标签页跳转）
 - `injectStepPanel` — 被 chrome.scripting.executeScript 序列化注入到千牛页面的面板函数，自带 setInterval 轮询自愈
+- `searchCompetitors(keyword)` — 纯关键词搜索（标题工作台），background.js 直接调用 extractFromSearchPage，跳过产品页提取流程
+- `extractSearchTotalCount()` — content.js 搜索页提取搜索结果总数，用于关键词竞争度分级
+- 消息路由新增：`tb-search-competitors` / `tb-title-analysis-result` / `tb-title-analysis-error`
 
 ## 技术约束
 

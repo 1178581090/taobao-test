@@ -2,7 +2,33 @@
 
 ## 2026-06-02
 
-- 项目文件结构整理+persona-verify修复+性能优化
+### 店铺诊断 Tab（新增）
+- 店铺激活向导：8 项清单（装修/权重/内容）→ 进度条追踪 → 勾选收起 + localStorage 持久化 + 200ms 防抖
+- 标题工作台：商品选择器 → 舞种/性别/面料/场景输入 → 抓取竞品关键词 → 三级标签分级（强推/防守/长尾）→ 3 策略标题生成（搜索导向/点击导向/均衡导向，≤30 字）→ 复制/编辑 → 按商品分组历史记录
+- 关键词抓取通过扩展直搜淘宝（纯关键词路径，跳过产品页提取），40s 超时 + 手动降级模式
+- 缓存 7 天过期提示
+
+### 扩展增强
+- content.js 新增 `extractSearchTotalCount()` 提取搜索结果总数
+- background.js `searchCompetitors` 支持纯关键词搜索路径
+- 消息路由新增 `tb-search-competitors` / `tb-title-analysis-result` / `tb-title-analysis-error`
+
+### Persona 验证修复（6 项）
+- P0: 扩展安装引导（首次显示安装指南卡，可关闭）+ 千牛扫描前置登录提示
+- P1: Tab 跳转链接（未设置成本/请先搜索 → 点击跳转对应 Tab）+ 新手推广推荐强化（渐变卡片 + 勾选标记）
+- P2: 预算计算器推荐（默认 ¥300，根据成本自动推荐）+ 标题工作台 SEO 术语 tooltip
+
+### 性能优化
+- 商品名输入 200ms 防抖 + localStorage 内存缓存
+- CSS `transition: all` → 精确属性（opacity/background/border-color/box-shadow）
+
+### 文件结构整理
+- `scripts/`（finish-phase.sh / scan-qianniu.js）
+- `assets/screenshots/`（budget-screenshot.png / image.png）
+- `data/`（ocr-result.json / qianniu-explore.json）
+- `temp/`（design-demo.html）
+- `docs/设计文档.md`
+- CLAUDE.md / CHANGELOG.md / .gitignore 同步更新
 
 ## 2026-06-01
 
