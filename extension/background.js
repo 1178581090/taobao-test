@@ -231,9 +231,24 @@ chrome.tabs.onRemoved.addListener(function(tabId) {
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.action === 'searchCompetitors') {
+    if (message.keyword) {
+      // 纯关键词搜索（标题工作台用）
+      extractFromSearchPage([message.keyword], null).then(function(data) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          action: 'titleAnalysisResult',
+          data: data
+        }).catch(function() {});
+      }).catch(function(err) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          action: 'titleAnalysisError',
+          error: err.message || '搜索失败'
+        }).catch(function() {});
+      });
+      return true;
+    }
     var productUrl = message.productUrl;
     if (!productUrl) {
-      sendResponse({ error: '未提供商品链接' });
+      sendResponse({ error: '未提供商品链接或关键词' });
       return;
     }
     runPipeline(productUrl, sender.tab.id).catch(function(err) {
@@ -242,7 +257,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         error: err.message || '未知错误'
       }).catch(function() {});
     });
-    return true; // 保持异步通道
+    return true;
   }
   if (message.action === 'openUrl') {
     chrome.tabs.create({ url: message.url, active: true });
