@@ -76,6 +76,154 @@ body {
 .topbar-tab:hover { color: var(--text); }
 .topbar-tab.active { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
+/* ── 店铺诊断 Tab ── */
+
+/* 清单进度条 */
+.diag-progress-bar {
+  height: 6px;
+  background: #e8eaed;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.diag-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
+  transition: width .3s;
+}
+.diag-progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* 清单项 */
+.diag-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  background: #f9fafb;
+  transition: all .2s;
+}
+.diag-item.done {
+  opacity: .5;
+  background: #f0fdf4;
+}
+.diag-item input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.diag-item-body { flex: 1; min-width: 0; }
+.diag-item-title { font-size: 13px; font-weight: 600; }
+.diag-item-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.diag-item-link {
+  font-size: 11px;
+  color: var(--brand);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.diag-item-link:hover { text-decoration: underline; }
+.diag-complete-msg {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px;
+}
+
+/* 芯片/标签 */
+.tw-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: #f9fafb;
+  user-select: none;
+  transition: all .15s;
+}
+.tw-chip:hover { border-color: var(--brand); }
+.tw-chip.selected { background: #fff1eb; border-color: var(--brand); color: var(--brand); font-weight: 600; }
+
+/* 关键词标签 */
+.tw-kw-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  margin: 3px;
+  cursor: pointer;
+  user-select: none;
+  transition: all .15s;
+}
+.tw-kw-tag.strong { background: #e6f4ea; color: #137333; border: 1px solid #a8dab5; }
+.tw-kw-tag.defend { background: #fef7e0; color: #92600a; border: 1px solid #fcd34d; }
+.tw-kw-tag.longtail { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+.tw-kw-tag.selected { box-shadow: 0 0 0 2px var(--brand); transform: scale(1.05); }
+
+/* 标题候选 */
+.tw-candidate {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.tw-candidate-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.tw-candidate-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tw-candidate-label {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #e8f0fe;
+  color: #1967d2;
+}
+.tw-btn-copy {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.tw-btn-copy:hover { background: #f3f4f6; color: var(--text); }
+
+/* 历史记录 */
+.tw-history-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.tw-history-item:last-child { border-bottom: none; }
+.tw-history-title { font-weight: 600; margin-bottom: 2px; }
+.tw-history-meta { color: var(--text-muted); font-size: 11px; }
+
+/* 对比视图 */
+.tw-compare-pane {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 60px;
+}
+
 /* ── Main Layout ── */
 .main {
   display: grid;
