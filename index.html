@@ -107,7 +107,7 @@ body {
   border-radius: 6px;
   margin-bottom: 4px;
   background: #f9fafb;
-  transition: all .2s;
+  transition: opacity .2s, background .2s;
 }
 .diag-item.done {
   opacity: .5;
@@ -144,7 +144,7 @@ body {
   cursor: pointer;
   background: #f9fafb;
   user-select: none;
-  transition: all .15s;
+  transition: border-color .15s, background .15s, color .15s;
 }
 .tw-chip:hover { border-color: var(--brand); }
 .tw-chip.selected { background: #fff1eb; border-color: var(--brand); color: var(--brand); font-weight: 600; }
@@ -158,7 +158,7 @@ body {
   margin: 3px;
   cursor: pointer;
   user-select: none;
-  transition: all .15s;
+  transition: box-shadow .15s, transform .15s;
 }
 .tw-kw-tag.strong { background: #e6f4ea; color: #137333; border: 1px solid #a8dab5; }
 .tw-kw-tag.defend { background: #fef7e0; color: #92600a; border: 1px solid #fcd34d; }
@@ -4202,9 +4202,12 @@ function initTitleWorkbench() {
   });
   $('twDanceCustom').addEventListener('input', updateFetchButton);
 
-  // 商品名输入
+  // 商品名输入（防抖 200ms）
+  var _twProductTimer = null;
   $('twProductName').addEventListener('input', function() {
-    showProductSuggestions(this.value);
+    clearTimeout(_twProductTimer);
+    var val = this.value;
+    _twProductTimer = setTimeout(function() { showProductSuggestions(val); }, 200);
   });
   $('twProductName').addEventListener('focus', function() {
     showProductSuggestions(this.value);
@@ -4267,14 +4270,20 @@ function getGenderValue() {
   return checked ? checked.value : '女';
 }
 
+var _twProductNamesCache = null;
+
 function showProductSuggestions(input) {
-  var history = loadTitleHistory();
-  if (!history.length) { $('twProductList').style.display = 'none'; return; }
-  var names = [];
-  var seen = {};
-  history.forEach(function(h) {
-    if (h.product && !seen[h.product]) { names.push(h.product); seen[h.product] = true; }
-  });
+  if (!_twProductNamesCache) {
+    var history = loadTitleHistory();
+    if (!history.length) { return; }
+    var seen = {};
+    _twProductNamesCache = [];
+    history.forEach(function(h) {
+      if (h.product && !seen[h.product]) { seen[h.product] = true; _twProductNamesCache.push(h.product); }
+    });
+  }
+  var names = _twProductNamesCache;
+  if (!names || names.length === 0) { $('twProductList').style.display = 'none'; return; }
   if (!input) {
     if (names.length === 0) { $('twProductList').style.display = 'none'; return; }
     var html = '';
@@ -4660,6 +4669,7 @@ function addTitleHistory(product, title, keywords) {
   });
   if (history.length > 20) history = history.slice(0, 20);
   try { localStorage.setItem('tb_title_history', JSON.stringify(history)); } catch (_) {}
+  _twProductNamesCache = null; // 清除缓存，下次重新读取
 }
 
 function renderHistory() {
