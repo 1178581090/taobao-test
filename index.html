@@ -4411,6 +4411,218 @@ function toggleKwTag(el) {
   var cntEl = document.getElementById('twSelectedCnt');
   if (cntEl) cntEl.textContent = count;
 }
+
+// ===== 标题生成 =====
+var _twCandidates = [];
+
+function generateTitles() {
+  var selected = document.querySelectorAll('#twKwTags .tw-kw-tag.selected');
+  if (selected.length === 0) { showTwToast('请至少选择一个关键词'); return; }
+
+  var words = [];
+  var strong = [], defend = [], longtail = [];
+  selected.forEach(function(el) {
+    var word = el.getAttribute('data-word');
+    if (word) { words.push(word); }
+    if (el.classList.contains('strong')) strong.push(word);
+    else if (el.classList.contains('defend')) defend.push(word);
+    else longtail.push(word);
+  });
+  var sorted = strong.concat(longtail).concat(defend);
+
+  var candidates = [
+    buildTitle('search', sorted),
+    buildTitle('click', sorted),
+    buildTitle('balanced', sorted)
+  ];
+
+  renderTitleCandidates(candidates);
+
+  var productName = ($('twProductName').value || '').trim() || '未命名商品';
+  candidates.forEach(function(c) {
+    addTitleHistory(productName, c.title, words);
+  });
+  renderHistory();
+}
+
+function buildTitle(strategy, sortedWords) {
+  var dance = getDanceValue();
+  var scenes = getSelectedChips('twSceneChips', 'data-scene');
+  var fabrics = getSelectedChips('twFabricChips', 'data-fabric');
+  var gender = getGenderValue();
+
+  var core = dance + '演出服';
+  var sceneStr = scenes.length > 0 ? scenes.join('') : '';
+  var fabricStr = fabrics.length > 0 ? fabrics.join('') : '';
+  var kwStr = sortedWords.filter(function(w) {
+    return w !== core && scenes.indexOf(w) < 0 && fabrics.indexOf(w) < 0;
+  }).slice(0, 6).join('');
+
+  var parts = [];
+  if (strategy === 'search') {
+    parts = [core, kwStr, sceneStr, fabricStr];
+  } else if (strategy === 'click') {
+    var prefix = '新款现货';
+    if (gender === '女') prefix = '新款女装现货';
+    else if (gender === '男') prefix = '新款男装现货';
+    parts = [prefix, core, sceneStr, fabricStr];
+  } else {
+    parts = [core, sceneStr + fabricStr, kwStr.slice(0, 4)];
+  }
+
+  var title = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+
+  if (title.length > 30) {
+    var t = title;
+    while (t.length > 30 && t.lastIndexOf(' ') > 0) {
+      t = t.substring(0, t.lastIndexOf(' ')).trim();
+    }
+    if (t.length > 30) {
+      t = t.substring(0, 29) + '…';
+    }
+    title = t;
+  }
+
+  return { title: title, strategy: strategy, charCount: title.length };
+}
+
+function renderTitleCandidates(candidates) {
+  _twCandidates = candidates;
+  var labels = { search: '搜索导向', click: '点击导向', balanced: '均衡导向' };
+  var html = '';
+  candidates.forEach(function(c, i) {
+    var label = labels[c.strategy] || '';
+    html += '<div class="tw-candidate">' +
+      '<div class="tw-candidate-title" contenteditable="true" oninput="updateCharCount(this, ' + i + ')">' + escHtml(c.title) + '</div>' +
+      '<div class="tw-candidate-meta">' +
+      '<span class="tw-candidate-label">' + label + '</span>' +
+      '<span class="tw-char-count">' + c.charCount + '/30</span>' +
+      '<button class="tw-btn-copy" onclick="copyTitle(' + i + ')">📋 复制</button>' +
+      '</div>' +
+      '</div>';
+  });
+  $('twTitleList').innerHTML = html;
+  $('twTitleCard').style.display = 'block';
+}
+
+function updateCharCount(el, idx) {
+  var text = el.textContent.trim();
+  var count = text.length;
+  var cntEl = el.parentElement.querySelector('.tw-char-count');
+  if (cntEl) cntEl.textContent = count + '/30';
+  if (_twCandidates[idx]) {
+    _twCandidates[idx].title = text;
+    _twCandidates[idx].charCount = count;
+  }
+}
+
+function copyTitle(idx) {
+  var title = _twCandidates[idx] ? _twCandidates[idx].title : '';
+  if (!title) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(title).then(function() {
+      showTwToast('已复制');
+    }).catch(function() {
+      fallbackCopy(title);
+    });
+  } else {
+    fallbackCopy(title);
+  }
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showTwToast('已复制（手动方式）'); } catch (_) { showTwToast('复制失败，请手动 Ctrl+C'); }
+  document.body.removeChild(ta);
+}
+
+function showTwToast(msg) {
+  var toast = $('twToast');
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._twTimer);
+  toast._twTimer = setTimeout(function() { toast.style.opacity = '0'; }, 1500);
+}
+
+// ===== 标题历史 =====
+function loadTitleHistory() {
+  try {
+    var raw = localStorage.getItem('tb_title_history');
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) { return []; }
+}
+
+function addTitleHistory(product, title, keywords) {
+  var history = loadTitleHistory();
+  history.unshift({
+    product: product,
+    time: new Date().toLocaleString(),
+    title: title,
+    keywords: keywords
+  });
+  if (history.length > 20) history = history.slice(0, 20);
+  try { localStorage.setItem('tb_title_history', JSON.stringify(history)); } catch (_) {}
+}
+
+function renderHistory() {
+  var history = loadTitleHistory();
+  $('twHistoryCnt').textContent = history.length;
+  if (history.length > 0) {
+    $('twHistoryCard').style.display = 'block';
+  }
+}
+
+function toggleTwHistory() {
+  var list = $('twHistoryList');
+  var arrow = $('twHistoryArrow');
+  if (list.style.display === 'none') {
+    list.style.display = 'block';
+    arrow.textContent = '▾';
+    renderHistoryList();
+  } else {
+    list.style.display = 'none';
+    arrow.textContent = '▸';
+  }
+}
+
+function renderHistoryList() {
+  var history = loadTitleHistory();
+  if (history.length === 0) {
+    $('twHistoryList').innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;">暂无历史记录</div>';
+    return;
+  }
+  var groups = {};
+  history.forEach(function(h) {
+    var key = h.product || '未命名商品';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(h);
+  });
+  var html = '';
+  Object.keys(groups).forEach(function(product) {
+    html += '<div style="font-size:11px;font-weight:700;padding:8px 12px;background:#f9fafb;color:var(--text-secondary);">' + escHtml(product) + '（' + groups[product].length + '条）</div>';
+    groups[product].forEach(function(h) {
+      html += '<div class="tw-history-item">' +
+        '<div class="tw-history-title">' + escHtml(h.title) + '</div>' +
+        '<div class="tw-history-meta">' + escHtml(h.time) + ' | 关键词：' + (h.keywords || []).map(function(k) { return escHtml(k); }).join('、') + '</div>' +
+        '<button class="tw-btn-copy" style="margin-top:4px;" onclick="copyHistoryTitle(\'' + escHtml(h.title).replace(/'/g, "\\'") + '\')">复制</button>' +
+        '</div>';
+    });
+  });
+  $('twHistoryList').innerHTML = html;
+}
+
+function copyHistoryTitle(title) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(title).then(function() { showTwToast('已复制'); });
+  } else {
+    fallbackCopy(title);
+  }
+}
 </script>
 <div id="twToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;"></div>
 </body>
