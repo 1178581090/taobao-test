@@ -1,11 +1,11 @@
 #!/bin/bash
 # finish-phase.sh — 阶段收尾：清理 + 文档检查 + 提交 + 推送
 # 用法:
-#   ./finish-phase.sh                    仅清理并展示变更，不提交
-#   ./finish-phase.sh "提交信息"          清理 → 文档检查 → 提交 → 推送
+#   ./scripts/finish-phase.sh                    仅清理并展示变更，不提交
+#   ./scripts/finish-phase.sh "提交信息"          清理 → 文档检查 → 提交 → 推送
 
 set -e
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 echo "===== 1. 清理临时文件 ====="

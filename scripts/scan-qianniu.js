@@ -1,12 +1,12 @@
 // scan-qianniu.js — 扫描千牛网页版，输出结构化 JSON
-// 用法：node scan-qianniu.js
-// 输出：scan-qianniu.json
+// 用法：node scripts/scan-qianniu.js
+// 输出：scan-qianniu.json（项目根目录）
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const STATE_FILE = path.join(__dirname, '.browser-state', 'state.json');
-const OUTPUT_FILE = path.join(__dirname, 'scan-qianniu.json');
+const STATE_FILE = path.join(__dirname, '..', '.browser-state', 'state.json');
+const OUTPUT_FILE = path.join(__dirname, '..', 'scan-qianniu.json');
 
 const PAGES = {
   home: 'https://myseller.taobao.com/home.htm',

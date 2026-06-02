@@ -93,8 +93,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 脚本
 
-- `finish-phase.sh` — 阶段收尾脚本：清理临时文件 → 展示变更 → 更新 CHANGELOG → 提交 → 推送。用法：`./finish-phase.sh "提交信息"`
-- `scan-qianniu.js` — Playwright 脚本，扫描千牛 4 个页面（首页/活动报名/推广中心/商品成交锦囊），输出 scan-qianniu.json。需先用 fetch-page.js 登录一次保存 cookie
+- `scripts/finish-phase.sh` — 阶段收尾脚本：清理临时文件 → 展示变更 → 更新 CHANGELOG → 提交 → 推送。用法：`./scripts/finish-phase.sh "提交信息"`
+- `scripts/scan-qianniu.js` — Playwright 脚本，扫描千牛 4 个页面（首页/活动报名/推广中心/商品成交锦囊），输出 scan-qianniu.json。需先用 fetch-page.js 登录一次保存 cookie
 - `fetch-page.js` — 单页抓取工具，登录态保存到 `.browser-state/state.json`
 
 ## 浏览器扩展新增能力
