@@ -3433,6 +3433,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.data && e.data.type === 'tb-qianniu-error') {
       handleQianniuError(e.data.error);
     }
+    if (e.data && e.data.type === 'tb-title-analysis-result') {
+      handleTitleAnalysisResult(e.data.data);
+    }
+    if (e.data && e.data.type === 'tb-title-analysis-error') {
+      clearTimeout(_twFetchTimer);
+      $('btnTwFetch').disabled = false;
+      $('btnTwFetch').textContent = '重新抓取';
+      $('twFetchStatus').style.display = 'block';
+      $('twFetchStatus').textContent = '搜索失败：' + (e.data.error || '未知错误');
+      $('twFetchStatus').style.color = 'var(--red)';
+      $('twKeywordArea').innerHTML = renderManualInputFallback();
+    }
   });
 
   // 初始化默认排除词
