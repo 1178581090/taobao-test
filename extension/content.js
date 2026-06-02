@@ -111,6 +111,32 @@ function extractSingleProduct(cardLink, index) {
   };
 }
 
+function extractSearchTotalCount() {
+  var selectors = [
+    '.search-count',
+    '[class*="total--"]',
+    '[class*="total"] span',
+    '.s-summary .total',
+    '[class*="summary--"]',
+    '[class*="result--"]'
+  ];
+  for (var i = 0; i < selectors.length; i++) {
+    var el = document.querySelector(selectors[i]);
+    if (el) {
+      var text = el.textContent.trim();
+      var match = text.match(/([\d,]+)\s*件/);
+      if (match) {
+        return parseInt(match[1].replace(/,/g, ''));
+      }
+      var numMatch = text.match(/^[\d,]+$/);
+      if (numMatch) {
+        return parseInt(text.replace(/,/g, ''));
+      }
+    }
+  }
+  return null;
+}
+
 // ===== 商品详情页：提取标题 → 拆解关键词 → 跳转搜索 =====
 
 function getProductTitle() {
@@ -760,12 +786,14 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         myProduct.matched = false;
       }
     }
+    var totalCount = extractSearchTotalCount();
     sendResponse({
       action: 'searchExtracted',
       data: {
         source: 'taobao-search',
         url: location.href,
         count: products.length,
+        totalCount: totalCount,
         products: products,
         myProduct: myProduct
       }
