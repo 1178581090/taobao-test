@@ -1053,6 +1053,14 @@ body {
       </div>
     </div>
 
+    <div id="extGuide" style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:8px 10px;margin-bottom:4px;font-size:11px;line-height:1.6;display:none;">
+      <strong>⚙️ 首次使用需要安装浏览器扩展</strong><br>
+      1. 打开 Chrome → <a href="chrome://extensions" target="_blank" style="color:var(--brand);">chrome://extensions</a> → 开启「开发者模式」<br>
+      2. 点击「加载已解压的扩展程序」→ 选择 <code style="background:#f3f4f6;padding:1px 4px;border-radius:2px;">E:\taobaoTest\extension</code> 目录<br>
+      3. 在扩展卡片中开启「允许访问文件网址」<br>
+      <span style="color:var(--text-muted);font-size:10px;">已安装可 <a href="javascript:void(0)" onclick="dismissExtGuide()" style="color:var(--text-muted);">关闭此提示</a></span>
+    </div>
+
     <button class="btn btn-primary" id="btnCompSearch" style="width:100%;margin-top:6px;">分析竞品</button>
 
     <div class="data-source-guide" id="searchHint" style="display:none;"></div>
@@ -1163,7 +1171,7 @@ body {
 
     <!-- 数据状态提示 -->
     <div id="promoDataStatus" class="setup-hint">
-      尚未搜索竞品数据。请先在「竞品分析」Tab 完成一次搜索，再回到这里查看推广建议。
+      尚未搜索竞品数据 — <a href="javascript:void(0)" onclick="switchToTab('competitor')" style="color:var(--brand);text-decoration:underline;">去竞品分析Tab搜索</a>
     </div>
 
     <div class="setup-section-title">我的推广现状</div>
@@ -1265,16 +1273,19 @@ body {
     <div id="afStoreCard" class="af-store-card">
       <div id="afStoreContent">尚未扫描店铺数据</div>
     </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4;">
+      💡 使用前请先在浏览器登录 <a href="https://myseller.taobao.com/home.htm" target="_blank" style="color:var(--brand);">千牛卖家中心</a>，再回来点此按钮
+    </div>
     <button class="btn btn-primary" id="btnAfScan" style="width:100%;margin-top:8px;" onclick="scanStore()">
-      重新扫描店铺数据
+      🔍 一键获取店铺数据
     </button>
     <div id="afScanStatus" class="setup-hint" style="margin-top:6px;display:none;"></div>
 
     <div class="setup-section-title" style="margin-top:14px;">💰 预算计算器</div>
     <div id="afBudgetCard" style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
         <span style="white-space:nowrap;">月预算上限：</span>
-        <input type="number" id="afBudgetInput" value="1500" min="0" step="100"
+        <input type="number" id="afBudgetInput" value="300" min="0" step="50"
           style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"
           onchange="updateBudgetCalc()" oninput="updateBudgetCalc()">
         <span>元</span>
@@ -1383,6 +1394,10 @@ body {
     <div style="margin-bottom:8px;">
       <label style="font-size:11px;color:var(--text-secondary);">价格档位</label>
       <div id="twPriceRange" style="font-size:12px;color:var(--text-muted);"></div>
+    </div>
+
+    <div id="twExtGuide" style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;line-height:1.6;display:none;">
+      <strong>⚙️ 需要浏览器扩展</strong> — 未安装？<a href="chrome://extensions" target="_blank" style="color:var(--brand);">安装指南</a> · <a href="javascript:void(0)" onclick="dismissTwExtGuide()" style="color:var(--text-muted);">关闭</a>
     </div>
 
     <button class="btn btn-primary" id="btnTwFetch" style="width:100%;" onclick="startTitleAnalysis()">
@@ -1880,6 +1895,14 @@ function savePromoStatus() {
   localStorage.setItem('tb_promo_mystatus', JSON.stringify(status));
 }
 
+function markPromoOpened(channelId, cb) {
+  var status = loadPromoStatus();
+  status[channelId] = cb.checked;
+  savePromoStatus();
+  // 刷新渲染
+  renderPromotionTab();
+}
+
 
 function restorePromoCheckboxes() {
   var status = loadPromoStatus();
@@ -1943,7 +1966,7 @@ function renderPromotionTab() {
     $('promoDataStatus').style.background = '#eafaf1';
     $('promoDataStatus').style.borderColor = 'var(--green)';
   } else {
-    $('promoDataStatus').innerHTML = '尚未搜索竞品数据。请先在「竞品分析」Tab 完成一次搜索。';
+    $('promoDataStatus').innerHTML = '尚未搜索竞品数据 — <a href="javascript:void(0)" onclick="switchToTab(\'competitor\')" style="color:var(--brand);text-decoration:underline;">去竞品分析Tab搜索</a>';
     $('promoDataStatus').style.background = '#fef5e7';
     $('promoDataStatus').style.borderColor = 'var(--amber)';
   }
@@ -2007,14 +2030,23 @@ function renderPromoManual() {
     else { sections[0].items.push(ch); }
   });
 
-  // 新手优先摘要
+  // 新手优先摘要 — 醒目展示
   var freeUnopened = sections[0].items.filter(function(ch) { return ch.costLevel === 'low'; });
   if (freeUnopened.length >= 3) {
-    html += '<div style="background:#f0f7ff;border:1px solid var(--brand);border-radius:8px;padding:12px;margin-bottom:14px;">' +
-      '<div style="font-weight:700;font-size:13px;color:var(--brand);margin-bottom:6px;">新手优先：建议从这 3 个免费的开始</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);line-height:1.8;">' +
-      freeUnopened.slice(0, 3).map(function(ch) { return '· <strong>' + escHtml(ch.name) + '</strong> — ' + escHtml(ch.effectDesc).slice(0, 60) + '...'; }).join('<br>') +
-      '</div></div>';
+    html += '<div style="background:linear-gradient(135deg,#fff5f0,#fff1eb);border:2px solid var(--brand);border-radius:12px;padding:14px 16px;margin-bottom:16px;">' +
+      '<div style="font-weight:700;font-size:14px;color:var(--brand);margin-bottom:8px;">🚀 新手先开这 3 个，0 成本提升搜索权重</div>' +
+      '<div style="font-size:12px;line-height:2;">' +
+      freeUnopened.slice(0, 3).map(function(ch) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border-radius:6px;margin-bottom:6px;">' +
+          '<span style="font-weight:700;font-size:13px;min-width:60px;">' + escHtml(ch.name) + '</span>' +
+          '<span style="font-size:11px;color:var(--text-secondary);">' + escHtml(ch.effectDesc).slice(0, 50) + '</span>' +
+          '<label style="cursor:pointer;margin-left:auto;font-size:11px;color:var(--brand);white-space:nowrap;" onclick="event.stopPropagation();switchToTab(\'promotion\');">' +
+          '<input type="checkbox" onchange="markPromoOpened(\'' + escHtml(ch.id) + '\',this)" style="margin-right:4px;">标记已开通</label>' +
+          '</div>';
+      }).join('') +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">开通后在下方勾选框标记状态，工具会帮你追踪覆盖进度</div>' +
+      '</div>';
   }
 
   sections.forEach(function(sec) {
@@ -3262,6 +3294,35 @@ function escHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ===== 扩展安装引导 =====
+function switchToTab(target) {
+  document.querySelectorAll('.topbar-tab').forEach(function(t) {
+    t.classList.remove('active');
+    if (t.dataset.tab === target) t.classList.add('active');
+  });
+  document.querySelectorAll('.main').forEach(function(m) { m.style.display = 'none'; });
+  if (target === 'competitor') {
+    $('tabCompetitor').style.display = 'grid';
+  } else if (target === 'activityFilter') {
+    $('tabActivityFilter').style.display = 'grid';
+    initActivityFilter();
+  } else if (target === 'diagnosis') {
+    $('tabDiagnosis').style.display = 'grid';
+    initDiagnosisTab();
+  } else {
+    $('tabPromotion').style.display = 'grid';
+    renderPromotionTab();
+  }
+}
+function dismissExtGuide() {
+  $('extGuide').style.display = 'none';
+  localStorage.setItem('tb_ext_guide_dismissed', '1');
+}
+function dismissTwExtGuide() {
+  $('twExtGuide').style.display = 'none';
+  localStorage.setItem('tb_ext_guide_dismissed', '1');
+}
+
 // ===== 术语解释 =====
 var TERM_GLOSSARY = {
   '淘金币': '淘宝积分体系。买家购物攒金币，下单时抵扣 2-5%。卖家承担抵扣费用（单均几分到几毛）。开通有搜索加权。',
@@ -3413,6 +3474,12 @@ function dictReset() {
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', function() {
+  // 扩展安装引导——首次访问时显示
+  if (!localStorage.getItem('tb_ext_guide_dismissed')) {
+    var eg = $('extGuide'); if (eg) eg.style.display = 'block';
+    var teg = $('twExtGuide'); if (teg) teg.style.display = 'block';
+  }
+
   // 搜索按钮绑定
   $('btnCompSearch').onclick = startAutoAnalysis;
 
@@ -3988,6 +4055,16 @@ function initBudgetCalc() {
   var saved = localStorage.getItem('tb_af_budget');
   if (saved !== null) {
     $('afBudgetInput').value = saved;
+  } else {
+    // 首次使用：根据成本推荐起步预算（月营业额 10%）
+    var cost = parseFloat(localStorage.getItem('tb_my_cost'));
+    if (!isNaN(cost) && cost > 0) {
+      // 假设月销 30 件 × 成本 = 月营业额，10% 用于推广
+      var rec = Math.round(cost * 30 * 0.1 / 50) * 50; // 50 元一档
+      if (rec < 100) rec = 100;
+      if (rec > 500) rec = 500;
+      $('afBudgetInput').value = rec;
+    }
   }
   updateBudgetCalc();
 }
@@ -4179,7 +4256,7 @@ function toggleChip(el) {
 function updatePriceRange() {
   var cost = parseFloat(localStorage.getItem('tb_my_cost'));
   if (isNaN(cost) || cost <= 0) {
-    $('twPriceRange').textContent = '未设置成本（请在竞品分析Tab填写）';
+    $('twPriceRange').innerHTML = '未设置成本 — <a href="javascript:void(0)" onclick="switchToTab(\'competitor\')" style="color:var(--brand);text-decoration:underline;">去竞品分析Tab填写</a>';
   } else {
     $('twPriceRange').textContent = '¥' + Math.round(cost * 1.5) + ' ~ ¥' + Math.round(cost * 2.5);
   }
@@ -4371,7 +4448,11 @@ function renderKeywordTags(keywords, totalCount) {
 
   checkKeywordStale();
 
-  var html = '<div style="margin-bottom:8px;font-size:12px;color:var(--text-secondary);">点击关键词选中，已选词将用于标题生成：</div><div id="twKwTags" style="line-height:2;">';
+  var html = '<div style="margin-bottom:6px;font-size:11px;color:var(--text-muted);line-height:1.8;">' +
+    '<span style="background:#e6f4ea;padding:1px 6px;border-radius:3px;font-size:10px;color:#137333;">强推词</span> 搜索量大、竞争低，用了容易排前面 · ' +
+    '<span style="background:#fef7e0;padding:1px 6px;border-radius:3px;font-size:10px;color:#92600a;">防守词</span> 大家都在用，不用就落后 · ' +
+    '<span style="background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:10px;color:#6b7280;">长尾词</span> 精准但搜索量小，做补充</div>' +
+    '<div style="margin-bottom:8px;font-size:12px;color:var(--text-secondary);">点击关键词选中，已选词将用于标题生成：</div><div id="twKwTags" style="line-height:2;">';
   keywords.forEach(function(kw) {
     var level;
     if (totalCount === null || totalCount === undefined) {
