@@ -4073,6 +4073,203 @@ function openChecklistUrl(url, name) {
     steps: '<div style="font-size:12px;line-height:2;">请按左侧清单指引完成操作</div>'
   }, '*');
 }
+
+// ===== 标题工作台 =====
+var TW_FABRICS = ['蕾丝', '雪纺', '氨纶', '亮片', '流苏', '棉麻', '网纱'];
+var TW_SCENES = ['年会', '舞台', '考级', '婚礼', '广场舞', '日常'];
+
+var _twPendingResult = null; // Tab 切换时暂存的搜索结果
+
+function initDiagnosisTab() {
+  renderChecklist();
+  initTitleWorkbench();
+}
+
+function initTitleWorkbench() {
+  // 渲染面料芯片
+  var fabricHtml = '';
+  TW_FABRICS.forEach(function(f) {
+    fabricHtml += '<span class="tw-chip" data-fabric="' + escHtml(f) + '" onclick="toggleChip(this)">' + escHtml(f) + '</span>';
+  });
+  $('twFabricChips').innerHTML = fabricHtml;
+
+  // 渲染场景芯片
+  var sceneHtml = '';
+  TW_SCENES.forEach(function(s) {
+    sceneHtml += '<span class="tw-chip" data-scene="' + escHtml(s) + '" onclick="toggleChip(this)">' + escHtml(s) + '</span>';
+  });
+  $('twSceneChips').innerHTML = sceneHtml;
+
+  // 舞种下拉变化处理
+  $('twDance').addEventListener('change', function() {
+    var custom = $('twDanceCustom');
+    if (this.value === '__custom__') {
+      custom.style.display = 'block';
+      custom.focus();
+    } else {
+      custom.style.display = 'none';
+    }
+    updateFetchButton();
+  });
+  $('twDanceCustom').addEventListener('input', updateFetchButton);
+
+  // 商品名输入
+  $('twProductName').addEventListener('input', function() {
+    showProductSuggestions(this.value);
+  });
+  $('twProductName').addEventListener('focus', function() {
+    showProductSuggestions(this.value);
+  });
+  $('twProductName').addEventListener('blur', function() {
+    setTimeout(function() { $('twProductList').style.display = 'none'; }, 200);
+  });
+
+  // 恢复偏好
+  restoreTitlePrefs();
+  updatePriceRange();
+  updateFetchButton();
+
+  // 渲染暂存结果
+  if (_twPendingResult) {
+    handleTitleAnalysisResult(_twPendingResult);
+    _twPendingResult = null;
+  }
+}
+
+function updateFetchButton() {
+  var dance = getDanceValue();
+  $('btnTwFetch').disabled = !dance;
+  $('btnTwFetch').style.opacity = dance ? '1' : '.5';
+}
+
+function getDanceValue() {
+  return $('twDance').value === '__custom__' ? $('twDanceCustom').value.trim() : $('twDance').value;
+}
+
+function getSelectedChips(containerId, dataAttr) {
+  var chips = document.querySelectorAll('#' + containerId + ' .tw-chip.selected');
+  var result = [];
+  chips.forEach(function(c) {
+    result.push(c.getAttribute(dataAttr));
+  });
+  // 自填面料
+  if (containerId === 'twFabricChips') {
+    var custom = $('twFabricCustom').value.trim();
+    if (custom) result.push(custom);
+  }
+  return result;
+}
+
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+function updatePriceRange() {
+  var cost = parseFloat(localStorage.getItem('tb_my_cost'));
+  if (isNaN(cost) || cost <= 0) {
+    $('twPriceRange').textContent = '未设置成本（请在竞品分析Tab填写）';
+  } else {
+    $('twPriceRange').textContent = '¥' + Math.round(cost * 1.5) + ' ~ ¥' + Math.round(cost * 2.5);
+  }
+}
+
+function getGenderValue() {
+  var checked = document.querySelector('input[name="twGender"]:checked');
+  return checked ? checked.value : '女';
+}
+
+function showProductSuggestions(input) {
+  var history = loadTitleHistory();
+  if (!history.length) { $('twProductList').style.display = 'none'; return; }
+  var names = [];
+  var seen = {};
+  history.forEach(function(h) {
+    if (h.product && !seen[h.product]) { names.push(h.product); seen[h.product] = true; }
+  });
+  if (!input) {
+    if (names.length === 0) { $('twProductList').style.display = 'none'; return; }
+    var html = '';
+    names.forEach(function(n) {
+      html += '<div class="tw-chip" style="display:block;border:none;border-radius:4px;padding:6px 10px;cursor:pointer;" onmousedown="selectProduct(\'' + escHtml(n).replace(/'/g, "\\'") + '\')">' + escHtml(n) + '</div>';
+    });
+    $('twProductList').innerHTML = html;
+    $('twProductList').style.display = 'block';
+    return;
+  }
+  var matches = names.filter(function(n) { return n.indexOf(input) >= 0; });
+  if (matches.length === 0) { $('twProductList').style.display = 'none'; return; }
+  var html = '';
+  matches.forEach(function(n) {
+    html += '<div class="tw-chip" style="display:block;border:none;border-radius:4px;padding:6px 10px;cursor:pointer;" onmousedown="selectProduct(\'' + escHtml(n).replace(/'/g, "\\'") + '\')">' + escHtml(n) + '</div>';
+  });
+  $('twProductList').innerHTML = html;
+  $('twProductList').style.display = 'block';
+}
+
+function selectProduct(name) {
+  $('twProductName').value = name;
+  $('twProductList').style.display = 'none';
+  restoreTitlePrefs(name);
+}
+
+function restoreTitlePrefs(productName) {
+  try {
+    var raw = localStorage.getItem('tb_title_prefs');
+    if (raw) {
+      var allPrefs = JSON.parse(raw);
+      var prefs = (productName && allPrefs[productName]) || {};
+      if (prefs.dance) {
+        if (['肚皮舞','民族舞','爵士','现代','古典','拉丁','街舞','芭蕾'].indexOf(prefs.dance) < 0) {
+          $('twDance').value = '__custom__';
+          $('twDanceCustom').style.display = 'block';
+          $('twDanceCustom').value = prefs.dance;
+        } else {
+          $('twDance').value = prefs.dance;
+          $('twDanceCustom').style.display = 'none';
+        }
+      }
+      if (prefs.gender) {
+        var radios = document.querySelectorAll('input[name="twGender"]');
+        radios.forEach(function(r) { if (r.value === prefs.gender) r.checked = true; });
+      }
+      if (prefs.fabrics) {
+        var chips = document.querySelectorAll('#twFabricChips .tw-chip');
+        chips.forEach(function(c) { c.classList.remove('selected'); });
+        prefs.fabrics.forEach(function(f) {
+          chips.forEach(function(c) { if (c.getAttribute('data-fabric') === f) c.classList.add('selected'); });
+        });
+      }
+      if (prefs.scenes) {
+        var sChips = document.querySelectorAll('#twSceneChips .tw-chip');
+        sChips.forEach(function(c) { c.classList.remove('selected'); });
+        prefs.scenes.forEach(function(s) {
+          sChips.forEach(function(c) { if (c.getAttribute('data-scene') === s) c.classList.add('selected'); });
+        });
+      }
+    }
+  } catch (_) {}
+  updateFetchButton();
+}
+
+function saveTitlePrefs() {
+  var productName = ($('twProductName').value || '').trim();
+  var prefs = {
+    dance: getDanceValue(),
+    gender: getGenderValue(),
+    fabrics: getSelectedChips('twFabricChips', 'data-fabric'),
+    scenes: getSelectedChips('twSceneChips', 'data-scene')
+  };
+  try {
+    var raw = localStorage.getItem('tb_title_prefs');
+    var allPrefs = raw ? JSON.parse(raw) : {};
+    if (productName) {
+      allPrefs[productName] = prefs;
+    } else {
+      allPrefs['_default'] = prefs;
+    }
+    localStorage.setItem('tb_title_prefs', JSON.stringify(allPrefs));
+  } catch (_) {}
+}
 </script>
 <div id="twToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;"></div>
 </body>
