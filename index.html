@@ -3979,6 +3979,100 @@ function initBudgetCalc() {
   }
   updateBudgetCalc();
 }
+
+// ===== 店铺激活向导 =====
+var STORE_CHECKLIST = [
+  { id: 1, cat: '装修', title: '店招上传', desc: '1200×120横幅，放店名+主营类目。参考同行：搜"肚皮舞演出服"看前3名店铺。', url: 'https://myseller.taobao.com/home.htm' },
+  { id: 2, cat: '装修', title: '店铺简介', desc: '100字以内：我是___，专注___，___年经验。告诉买家你是谁/做什么。', url: 'https://myseller.taobao.com/home.htm' },
+  { id: 3, cat: '装修', title: '类目属性补全', desc: '品牌、适用性别、适用场景等属性填满，帮助搜索匹配。', url: 'https://myseller.taobao.com/home.htm' },
+  { id: 4, cat: '装修', title: '店铺认证', desc: '保证金缴纳 / 主体认证状态检查，确保店铺正常展示。', url: 'https://myseller.taobao.com/home.htm' },
+  { id: 5, cat: '权重', title: '破零销量', desc: '完成第1单打破零销量。建议：找朋友下单/低价引流款/送样给熟人。', url: null },
+  { id: 6, cat: '权重', title: '首场活动报名', desc: '从活动筛选Tab可参加中选门槛最低的先报。免费活动优先。', url: null },
+  { id: 7, cat: '内容', title: '微淘/订阅基础帖', desc: '发2-3条内容（没粉丝也要发，店铺权重因子）。模板：上新预告/买家秀/面料展示。', url: 'https://myseller.taobao.com/home.htm' },
+  { id: 8, cat: '内容', title: '商品短视频', desc: '30秒以内主图视频。拍摄提纲：前3秒全身→细节→场景→舞者上身。', url: 'https://myseller.taobao.com/home.htm' }
+];
+
+var _checklistStatus = null;
+
+function loadChecklistStatus() {
+  if (_checklistStatus) return _checklistStatus;
+  try {
+    var raw = localStorage.getItem('tb_store_checklist');
+    if (raw) { _checklistStatus = JSON.parse(raw); }
+  } catch (_) {}
+  if (!_checklistStatus) { _checklistStatus = {}; }
+  return _checklistStatus;
+}
+
+function saveChecklistStatus() {
+  try {
+    localStorage.setItem('tb_store_checklist', JSON.stringify(_checklistStatus));
+  } catch (_) { /* 静默降级 */ }
+}
+
+function renderChecklist() {
+  var status = loadChecklistStatus();
+  var doneCount = 0;
+  var html = '';
+  STORE_CHECKLIST.forEach(function(item) {
+    var isDone = !!status[item.id];
+    if (isDone) doneCount++;
+    if (isDone) {
+      html += '<div class="diag-item done">' +
+        '<input type="checkbox" checked disabled>' +
+        '<div class="diag-item-body"><div class="diag-item-title">' + escHtml(item.title) + '</div></div>' +
+        '<span style="font-size:11px;color:var(--green);flex-shrink:0;">✓ 已完成</span>' +
+        '</div>';
+    } else {
+      html += '<div class="diag-item">' +
+        '<input type="checkbox" onchange="toggleChecklistItem(' + item.id + ', this)">' +
+        '<div class="diag-item-body">' +
+        '<div class="diag-item-title">' + escHtml(item.title) + '</div>' +
+        '<div class="diag-item-desc">' + escHtml(item.desc) + '</div>' +
+        '</div>' +
+        (item.url
+          ? '<span class="diag-item-link" onclick="openChecklistUrl(\'' + escHtml(item.url) + '\',\'' + escHtml(item.title) + '\')">去操作 →</span>'
+          : '<span class="diag-item-link" style="color:var(--text-muted);">待完成</span>') +
+        '</div>';
+    }
+  });
+  $('diagChecklist').innerHTML = html;
+
+  // 进度条
+  var pct = Math.round(doneCount / STORE_CHECKLIST.length * 100);
+  var barHtml = '<div class="diag-progress-bar"><div class="diag-progress-fill" style="width:' + pct + '%;"></div></div>' +
+    '<div class="diag-progress-text">' + doneCount + '/' + STORE_CHECKLIST.length + ' 已完成</div>';
+  $('diagProgress').innerHTML = barHtml;
+
+  // 全完成
+  if (doneCount === STORE_CHECKLIST.length) {
+    $('diagComplete').style.display = 'block';
+    $('diagComplete').innerHTML = '<div class="diag-complete-msg">🎉 店铺基础搭建完成！<br><span style="font-size:12px;font-weight:400;color:var(--text-secondary);">接下来用标题工作台优化商品搜索排名</span></div>';
+  } else {
+    $('diagComplete').style.display = 'none';
+  }
+}
+
+function toggleChecklistItem(id, checkbox) {
+  // 200ms 防抖
+  if (checkbox._debounce) return;
+  checkbox._debounce = true;
+  setTimeout(function() { checkbox._debounce = false; }, 200);
+
+  var status = loadChecklistStatus();
+  status[id] = checkbox.checked;
+  saveChecklistStatus();
+  renderChecklist();
+}
+
+function openChecklistUrl(url, name) {
+  window.postMessage({
+    type: 'tb-open-with-steps',
+    url: url,
+    name: name,
+    steps: '<div style="font-size:12px;line-height:2;">请按左侧清单指引完成操作</div>'
+  }, '*');
+}
 </script>
 <div id="twToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;"></div>
 </body>
