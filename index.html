@@ -4270,6 +4270,147 @@ function saveTitlePrefs() {
     localStorage.setItem('tb_title_prefs', JSON.stringify(allPrefs));
   } catch (_) {}
 }
+
+// ===== 关键词抓取 =====
+var _twFetchTimer = null;
+
+function startTitleAnalysis() {
+  var dance = getDanceValue();
+  if (!dance) { showTwToast('请先选择舞种'); return; }
+
+  saveTitlePrefs();
+
+  $('btnTwFetch').disabled = true;
+  $('btnTwFetch').textContent = '搜索中...';
+  $('twFetchStatus').style.display = 'block';
+  $('twFetchStatus').textContent = '正在搜索同类商品...';
+  $('twFetchStatus').style.color = 'var(--text-secondary)';
+
+  $('twEmpty').style.display = 'none';
+  $('twResult').style.display = 'block';
+  $('twKeywordCard').style.display = 'block';
+  $('twKeywordArea').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">⏳ 等待搜索结果...</div>';
+
+  clearTimeout(_twFetchTimer);
+  _twFetchTimer = setTimeout(function() {
+    $('btnTwFetch').disabled = false;
+    $('btnTwFetch').textContent = '重新抓取';
+    $('twFetchStatus').textContent = '搜索超时，请重试或切换到手动输入模式';
+    $('twFetchStatus').style.color = 'var(--red)';
+    $('twKeywordArea').innerHTML = renderManualInputFallback();
+  }, 40000);
+
+  window.postMessage({
+    type: 'tb-search-competitors',
+    keyword: dance + '演出服'
+  }, '*');
+}
+
+function renderManualInputFallback() {
+  return '<div style="padding:12px;">' +
+    '<p style="font-size:12px;color:var(--amber);margin-bottom:8px;">⚠ 扩展未连接或搜索超时，请手动粘贴竞品标题进行分析：</p>' +
+    '<textarea id="twManualTitles" rows="5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;" placeholder="每行一个竞品标题，从淘宝搜索结果页复制..."></textarea>' +
+    '<button class="btn btn-primary" style="margin-top:8px;" onclick="analyzeManualTitles()">分析关键词</button>' +
+    '</div>';
+}
+
+function analyzeManualTitles() {
+  var text = ($('twManualTitles').value || '').trim();
+  if (!text) { showTwToast('请粘贴竞品标题'); return; }
+  var titles = text.split('\n').filter(function(l) { return l.trim(); });
+  if (titles.length === 0) { showTwToast('未识别到有效标题'); return; }
+  var keywords = getKeywordFrequency(titles);
+  renderKeywordTags(keywords, null);
+}
+
+function handleTitleAnalysisResult(data) {
+  clearTimeout(_twFetchTimer);
+  $('btnTwFetch').disabled = false;
+  $('btnTwFetch').textContent = '重新抓取';
+  $('twFetchStatus').style.display = 'none';
+
+  var titles = [];
+  if (data.products && data.products.length > 0) {
+    data.products.forEach(function(p) { if (p.title) titles.push(p.title); });
+  } else if (Array.isArray(data)) {
+    data.forEach(function(p) { if (p.title) titles.push(p.title); });
+  }
+
+  if (titles.length === 0) {
+    $('twKeywordArea').innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-muted);">未找到相关竞品，尝试换一个舞种或关键词</p>';
+    return;
+  }
+
+  var keywords = getKeywordFrequency(titles);
+  var totalCount = data.totalCount;
+  renderKeywordTags(keywords, totalCount);
+
+  try {
+    var cache = { fetchedAt: new Date().toLocaleString(), keyword: getDanceValue() + '演出服', titles: titles, totalCount: totalCount };
+    localStorage.setItem('tb_title_keywords', JSON.stringify(cache));
+  } catch (_) {}
+}
+
+function renderKeywordTags(keywords, totalCount) {
+  if (!keywords || keywords.length === 0) {
+    $('twKeywordArea').innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-muted);">未提取到有效关键词</p>';
+    return;
+  }
+
+  checkKeywordStale();
+
+  var html = '<div style="margin-bottom:8px;font-size:12px;color:var(--text-secondary);">点击关键词选中，已选词将用于标题生成：</div><div id="twKwTags" style="line-height:2;">';
+  keywords.forEach(function(kw) {
+    var level;
+    if (totalCount === null || totalCount === undefined) {
+      level = 'longtail';
+    } else if (kw.pct >= 30 && totalCount < 5000) {
+      level = 'strong';
+    } else if (kw.pct >= 30 && totalCount >= 5000) {
+      level = 'defend';
+    } else {
+      level = 'longtail';
+    }
+    html += '<span class="tw-kw-tag ' + level + '" data-word="' + escHtml(kw.word) + '" onclick="toggleKwTag(this)">' +
+      escHtml(kw.word) + ' <span style="font-size:10px;opacity:.7;">' + kw.count + '</span></span> ';
+  });
+  html += '</div>';
+
+  if (totalCount === null || totalCount === undefined) {
+    html += '<div style="font-size:11px;color:var(--amber);margin-top:4px;">⚠ 竞争度数据暂不可用，所有关键词按频次展示</div>';
+  }
+
+  html += '<div style="margin-top:10px;font-size:12px;color:var(--text-secondary);">已选 <span id="twSelectedCnt" style="font-weight:600;color:var(--brand);">0</span> 个词</div>';
+  html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="generateTitles()">✨ 生成标题候选</button>';
+  $('twKeywordArea').innerHTML = html;
+
+  $('twTitleCard').style.display = 'none';
+}
+
+function checkKeywordStale() {
+  try {
+    var raw = localStorage.getItem('tb_title_keywords');
+    if (!raw) return;
+    var cache = JSON.parse(raw);
+    if (!cache.fetchedAt) return;
+    var fetched = new Date(cache.fetchedAt);
+    var now = new Date();
+    var daysOld = (now - fetched) / (1000 * 60 * 60 * 24);
+    if (daysOld > 7) {
+      $('twKeywordStale').style.display = 'inline';
+      $('twKeywordStale').textContent = '（数据已过期，建议重新抓取）';
+    } else {
+      $('twKeywordStale').style.display = 'none';
+    }
+  } catch (_) {}
+}
+
+function toggleKwTag(el) {
+  el.classList.toggle('selected');
+  var count = document.querySelectorAll('#twKwTags .tw-kw-tag.selected').length;
+  var cntEl = document.getElementById('twSelectedCnt');
+  if (cntEl) cntEl.textContent = count;
+}
 </script>
 <div id="twToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;"></div>
 </body>
