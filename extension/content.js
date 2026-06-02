@@ -858,7 +858,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
   // —— 主页面：收到结果后转发给页面 JS ——
   if (message.action === 'searchResults' || message.action === 'searchError' || message.action === 'searchProgress' ||
-      message.action === 'qianniuData' || message.action === 'qianniuError') {
+      message.action === 'qianniuData' || message.action === 'qianniuError' ||
+      message.action === 'titleAnalysisResult' || message.action === 'titleAnalysisError') {
     var eventType;
     var payload;
     if (message.action === 'qianniuData') {
@@ -872,6 +873,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       payload = message.data;
     } else if (message.action === 'searchError') {
       eventType = 'tb-competitor-error';
+      payload = message.error;
+    } else if (message.action === 'titleAnalysisResult') {
+      eventType = 'tb-title-analysis-result';
+      payload = message.data;
+    } else if (message.action === 'titleAnalysisError') {
+      eventType = 'tb-title-analysis-error';
       payload = message.error;
     } else {
       eventType = 'tb-competitor-progress';
@@ -912,6 +919,12 @@ function setupMainPageRelay() {
         url: e.data.url,
         name: e.data.name,
         steps: e.data.steps
+      });
+    }
+    if (e.data && e.data.type === 'tb-search-competitors') {
+      chrome.runtime.sendMessage({
+        action: 'searchCompetitors',
+        keyword: e.data.keyword
       });
     }
   });
