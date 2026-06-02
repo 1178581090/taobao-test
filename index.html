@@ -851,6 +851,7 @@ body {
     <button class="topbar-tab active" data-tab="competitor">竞品分析</button>
     <button class="topbar-tab" data-tab="promotion">推广分析</button>
     <button class="topbar-tab" data-tab="activityFilter">活动筛选</button>
+    <button class="topbar-tab" data-tab="diagnosis">店铺诊断</button>
   </div>
   <span class="topbar-sub">淘宝演出服定制类目</span>
 </div>
@@ -1175,6 +1176,100 @@ body {
       <div class="card" id="afGroupPaused" style="display:none;">
         <div class="card-header"><h3>🔒 平台暂停 (<span id="afGroupPausedCnt">0</span>) <span style="font-weight:400;font-size:11px;color:var(--text-muted);">（点击展开）</span></h3></div>
         <div id="afListPaused" class="promo-collapsible" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tabDiagnosis" class="main" style="display:none;">
+  <!-- 左侧面板 -->
+  <div class="setup-panel">
+    <!-- === 店铺激活向导 === -->
+    <div class="setup-section-title">店铺激活向导</div>
+    <div id="diagChecklistCard" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;">
+      <div id="diagProgress" style="margin-bottom:10px;"></div>
+      <div id="diagChecklist"></div>
+      <div id="diagComplete" style="display:none;text-align:center;padding:16px;color:var(--green);"></div>
+    </div>
+
+    <!-- === 标题工作台 === -->
+    <div class="setup-section-title" style="margin-top:14px;">标题工作台</div>
+
+    <div style="margin-bottom:8px;">
+      <label style="font-size:11px;color:var(--text-secondary);">商品名称</label>
+      <input class="field-input" id="twProductName" placeholder="如：红色肚皮舞套装（选填）" maxlength="30" style="margin-bottom:4px;">
+      <div id="twProductList" style="display:none;max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:var(--surface);"></div>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--text-secondary);">舞种 <span style="color:var(--red);">*</span></label>
+      <select id="twDance" class="field-input" style="margin-bottom:2px;">
+        <option value="">请选择</option>
+        <option>肚皮舞</option><option>民族舞</option><option>爵士</option><option>现代</option>
+        <option>古典</option><option>拉丁</option><option>街舞</option><option>芭蕾</option>
+        <option value="__custom__">其他（自填）</option>
+      </select>
+      <input id="twDanceCustom" class="field-input" placeholder="自填舞种" maxlength="20" style="display:none;">
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--text-secondary);">性别</label>
+      <div style="display:flex;gap:8px;">
+        <label style="font-size:12px;"><input type="radio" name="twGender" value="女" checked> 女</label>
+        <label style="font-size:12px;"><input type="radio" name="twGender" value="男"> 男</label>
+        <label style="font-size:12px;"><input type="radio" name="twGender" value="通用"> 通用</label>
+      </div>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--text-secondary);">面料（选填）</label>
+      <div id="twFabricChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"></div>
+      <input id="twFabricCustom" class="field-input" placeholder="自填面料" maxlength="20" style="width:100%;">
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--text-secondary);">场景（选填）</label>
+      <div id="twSceneChips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+    </div>
+
+    <div style="margin-bottom:8px;">
+      <label style="font-size:11px;color:var(--text-secondary);">价格档位</label>
+      <div id="twPriceRange" style="font-size:12px;color:var(--text-muted);"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btnTwFetch" style="width:100%;" onclick="startTitleAnalysis()">
+      抓取竞品关键词
+    </button>
+    <div id="twFetchStatus" class="setup-hint" style="margin-top:6px;display:none;"></div>
+  </div>
+
+  <!-- 右侧面板 -->
+  <div class="result-panel">
+    <div id="twEmpty" class="empty-state">
+      <div class="empty-icon">📝</div>
+      <div class="empty-title">标题工作台</div>
+      <div class="empty-desc">选择舞种后点击「抓取竞品关键词」，分析竞品用词帮你生成标题</div>
+    </div>
+
+    <div id="twResult" style="display:none;">
+      <!-- 关键词分析 -->
+      <div class="card" id="twKeywordCard">
+        <div class="card-header"><h3>📊 关键词分析 <span id="twKeywordStale" style="font-weight:400;font-size:11px;color:var(--amber);display:none;"></span></h3></div>
+        <div id="twKeywordArea"></div>
+      </div>
+
+      <!-- 标题候选 -->
+      <div class="card" id="twTitleCard" style="display:none;">
+        <div class="card-header"><h3>✨ 标题候选</h3></div>
+        <div id="twTitleList"></div>
+      </div>
+
+      <!-- 历史记录 -->
+      <div class="card" id="twHistoryCard" style="display:none;">
+        <div class="card-header" style="cursor:pointer;" onclick="toggleTwHistory()">
+          <h3>📋 历史记录（<span id="twHistoryCnt">0</span>）<span id="twHistoryArrow" style="font-size:11px;color:var(--text-muted);">▸</span></h3>
+        </div>
+        <div id="twHistoryList" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -3734,5 +3829,6 @@ function initBudgetCalc() {
   updateBudgetCalc();
 }
 </script>
+<div id="twToast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;"></div>
 </body>
 </html>
